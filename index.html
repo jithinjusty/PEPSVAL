@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Where Shipping Trust Exists.</title>
-  <meta name="description" content="Pepsval is a welcoming trust layer for the global shipping industry — a Seafarers’ e-Passport that brings verified sea time and reputation into one profile. Launching soon." />
+  <meta name="description" content="Pepsval is a welcoming trust layer for the global shipping industry — verified identity, verified sea time, and employer appraisals. Launching soon." />
 
   <meta property="og:title" content="Pepsval — Where Shipping Trust Exists." />
-  <meta property="og:description" content="A Seafarers’ e-Passport that brings verified sea time and reputation into one profile." />
+  <meta property="og:description" content="Seafarers’ e-Passport that brings trust, verified sea time, and reputation into one profile." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pepsval.com" />
 
@@ -20,8 +20,8 @@
       --shadow: 0 18px 60px rgba(0,0,0,.18);
       --shadow2: 0 14px 35px rgba(0,0,0,.14);
 
-      --grad1: linear-gradient(135deg, #a855f7, #3b82f6);
-      --grad2: linear-gradient(135deg, rgba(168,85,247,.18), rgba(59,130,246,.14));
+      --grad1: linear-gradient(135deg, #7c3aed, #2563eb);
+      --grad2: linear-gradient(135deg, rgba(124,58,237,.22), rgba(37,99,235,.18));
     }
 
     /* Light theme */
@@ -66,8 +66,8 @@
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
       color: var(--text);
       background:
-        radial-gradient(1100px 650px at 15% -5%, rgba(168,85,247,.28), transparent 55%),
-        radial-gradient(900px 580px at 92% 10%, rgba(59,130,246,.22), transparent 55%),
+        radial-gradient(1100px 650px at 15% -5%, rgba(124,58,237,.28), transparent 55%),
+        radial-gradient(900px 580px at 92% 10%, rgba(37,99,235,.22), transparent 55%),
         linear-gradient(180deg, var(--bg), var(--bg2));
       min-height:100vh;
     }
@@ -80,21 +80,23 @@
       display:flex;align-items:center;justify-content:space-between;gap:14px;
       padding:14px 16px;
       border:1px solid var(--border);
-      border-radius: var(--radius-xl);
+      border-radius: var(--radius-lg);
       background: var(--card);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow2);
     }
 
     .topRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+
     .pill{
       display:inline-flex;align-items:center;gap:8px;
-      padding:9px 14px;border-radius:999px;
+      padding:8px 12px;border-radius:999px;
       border:1px solid var(--border);
       background: var(--chip);
       color: var(--muted);
       font-size:13px;
-      font-weight:700;
+      font-weight:800;
+      letter-spacing:.2px;
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
     .toggle{
@@ -106,43 +108,6 @@
       color: var(--text);
       font-weight:800;
       user-select:none;
-    }
-
-    /* ✅ BIG BRANDING (blended, not boxed) */
-    .brandBig{
-      display:flex;
-      align-items:center;
-      gap:18px;
-      min-width:260px;
-    }
-    .heroLogo{
-      height:72px;
-      width:auto;
-      filter: drop-shadow(0 25px 40px rgba(168,85,247,.30));
-      border-radius:0;
-    }
-    .brandBigText{display:flex;flex-direction:column}
-    .brandTitle{
-      font-size:34px;
-      font-weight:1000;
-      letter-spacing:1.4px;
-      line-height:1.05;
-      background: linear-gradient(135deg,#a855f7,#3b82f6);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-    }
-    .brandSubtitle{
-      font-size:13px;
-      color:var(--muted);
-      margin-top:6px;
-      font-weight:700;
-      letter-spacing:.2px;
-    }
-
-    @media (max-width:600px){
-      .heroLogo{ height:56px; }
-      .brandTitle{ font-size:26px; }
-      .pill{display:none;} /* keep clean on mobile */
     }
 
     /* Hero layout */
@@ -165,8 +130,8 @@
 
     .headline{
       margin:0;
-      font-size:44px;
-      line-height:1.06;
+      font-size:46px;
+      line-height:1.05;
       letter-spacing:.2px;
     }
     @media (max-width: 480px){ .headline{font-size:36px} }
@@ -223,7 +188,7 @@
     }
 
     /* Right column form */
-    .kicker{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin-bottom:10px;font-weight:800}
+    .kicker{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin-bottom:10px}
     .kicon{
       width:22px;height:22px;border-radius:8px;
       border:1px solid var(--border);
@@ -247,7 +212,7 @@
     .status.ok{color: var(--ok)}
     .status.bad{color: var(--warn)}
 
-    /* Sections */
+    /* Tiles */
     .grid3{
       margin-top:16px;
       display:grid;
@@ -305,17 +270,205 @@
       display:grid;place-items:center;color:#fff;font-weight:900;
     }
 
-    /* Partnership box */
-    .partnerBox{
-      margin-top:14px;
-      padding:14px;
-      border-radius: var(--radius-lg);
+    /* Partner contact pill */
+    .partnerPill{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:999px;
       border:1px solid var(--border);
-      background: rgba(0,0,0,.03);
+      background: var(--chip);
+      color: var(--text);
+      font-weight:800;
     }
-    :root[data-theme="dark"] .partnerBox{background: rgba(0,0,0,.18)}
-    .partnerBox strong{display:block;margin-bottom:6px}
-    .partnerBox a{font-weight:900}
+    .partnerPill:hover{ text-decoration:none; filter:brightness(1.03); }
+    .partnerPill .mailDot{
+      width:10px;height:10px;border-radius:999px;background:rgba(59,130,246,.9);
+      box-shadow: 0 10px 30px rgba(59,130,246,.25);
+    }
+
+    /* ---------- Premium Brand FX (Apple-style) ---------- */
+
+    .brandBig{ min-width: 520px; }
+    @media (max-width: 920px){ .brandBig{ min-width: unset; } }
+
+    .brandWrap{
+      display:flex;
+      align-items:center;
+      gap:18px;
+    }
+
+    /* Apple-like entrance: fade + rise + slight scale */
+    .reveal{
+      opacity:0;
+      transform: translateY(16px) scale(.98);
+      filter: blur(6px);
+      transition: opacity .9s cubic-bezier(.2,.9,.2,1),
+                  transform .9s cubic-bezier(.2,.9,.2,1),
+                  filter .9s cubic-bezier(.2,.9,.2,1);
+    }
+    .reveal.in{
+      opacity:1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+
+    /* Logo container (blended, no box look) */
+    .logoFX{
+      position:relative;
+      width:132px;
+      height:132px;
+      display:grid;
+      place-items:center;
+      border-radius: 28px; /* not visible - controls shine mask */
+      overflow: visible;
+    }
+
+    /* The actual image */
+    .heroLogo{
+      width:132px;
+      height:auto;
+      display:block;
+      filter: drop-shadow(0 35px 80px rgba(168,85,247,.35));
+      mix-blend-mode: screen;
+      animation: logoFloat 6s ease-in-out infinite, logoBreathe 4.5s ease-in-out infinite;
+      will-change: transform, filter;
+    }
+
+    /* Subtle floating movement */
+    @keyframes logoFloat{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-6px); }
+    }
+
+    /* Gentle “breathing” */
+    @keyframes logoBreathe{
+      0%,100%{ filter: drop-shadow(0 35px 80px rgba(168,85,247,.35)); }
+      50%{ filter: drop-shadow(0 45px 95px rgba(59,130,246,.38)); }
+    }
+
+    /* Glow halo behind logo */
+    .logoGlow{
+      position:absolute;
+      inset:-18px;
+      border-radius: 42px;
+      background: radial-gradient(circle at 30% 30%, rgba(168,85,247,.35), transparent 55%),
+                  radial-gradient(circle at 70% 60%, rgba(59,130,246,.30), transparent 58%);
+      filter: blur(18px);
+      opacity:.78;
+      z-index:-1;
+      animation: glowDrift 7s ease-in-out infinite;
+    }
+
+    @keyframes glowDrift{
+      0%,100%{ transform: translateY(0) scale(1); opacity:.70; }
+      50%{ transform: translateY(-8px) scale(1.06); opacity:.90; }
+    }
+
+    /* Light sweep shimmer */
+    .logoShine{
+      position:absolute;
+      width:132px;
+      height:132px;
+      border-radius: 28px;
+      overflow:hidden;
+      pointer-events:none;
+      mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
+    }
+    .logoShine::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: linear-gradient(115deg,
+        transparent 35%,
+        rgba(255,255,255,.32) 45%,
+        rgba(255,255,255,.12) 55%,
+        transparent 65%);
+      transform: translateX(-60%) rotate(10deg);
+      animation: shineSweep 4.8s ease-in-out infinite;
+    }
+
+    @keyframes shineSweep{
+      0%{ transform: translateX(-70%) rotate(10deg); opacity:0; }
+      20%{ opacity:.55; }
+      50%{ transform: translateX(70%) rotate(10deg); opacity:.65; }
+      70%{ opacity:.20; }
+      100%{ transform: translateX(90%) rotate(10deg); opacity:0; }
+    }
+
+    /* Glass reflection effect below logo */
+    .logoReflect{
+      position:absolute;
+      top:108px;
+      left:50%;
+      width:98px;
+      height:36px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.22), transparent);
+      filter: blur(10px);
+      opacity:.36;
+      pointer-events:none;
+      animation: reflectPulse 5.2s ease-in-out infinite;
+    }
+
+    @keyframes reflectPulse{
+      0%,100%{ opacity:.26; transform: translateX(-50%) scaleX(1); }
+      50%{ opacity:.46; transform: translateX(-50%) scaleX(1.12); }
+    }
+
+    /* Premium title styling */
+    .brandTitle{
+      font-size: 38px;
+      font-weight: 1000;
+      letter-spacing: 2px;
+      line-height: 1.05;
+      background: linear-gradient(135deg,#a855f7,#3b82f6);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      text-shadow: 0 18px 55px rgba(168,85,247,.25);
+    }
+    @media (max-width: 520px){
+      .logoFX{ width:110px; height:110px; }
+      .heroLogo{ width:110px; }
+      .logoShine{ width:110px; height:110px; }
+      .logoReflect{ top:92px; width:86px; }
+      .brandTitle{ font-size: 30px; }
+    }
+
+    .brandSubtitle{
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .9px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .brandMicro{
+      margin-top:10px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--chip);
+      color: var(--muted);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .brandMicro .spark{
+      width:8px;height:8px;border-radius:999px;
+      background: rgba(168,85,247,.95);
+      box-shadow: 0 10px 30px rgba(168,85,247,.25);
+    }
+
+    /* Reduce motion accessibility */
+    @media (prefers-reduced-motion: reduce){
+      .heroLogo, .logoGlow, .logoShine::before, .logoReflect{ animation:none !important; }
+      .reveal{ transition:none !important; opacity:1; transform:none; filter:none; }
+    }
   </style>
 </head>
 
@@ -323,13 +476,27 @@
   <div class="wrap">
 
     <div class="topbar">
-      <!-- ✅ BIG BRAND AREA -->
+      <!-- BIG BRANDING (blended logo, no box look) -->
       <div class="brandBig">
-        <!-- Put your logo file in the repo as: logo.png -->
-        <img src="logo.png" class="heroLogo" alt="Pepsval logo">
-        <div class="brandBigText">
-          <div class="brandTitle">PEPSVAL</div>
-          <div class="brandSubtitle">Where Shipping Trust Exists.</div>
+        <div class="brandWrap reveal" id="brandReveal">
+          <!-- IMPORTANT: upload your logo into the repo root and name it: pepsval-logo.png -->
+          <div class="logoFX">
+            <img src="pepsval-logo.png" class="heroLogo" alt="Pepsval logo">
+            <div class="logoGlow" aria-hidden="true"></div>
+            <div class="logoShine" aria-hidden="true"></div>
+            <div class="logoReflect" aria-hidden="true"></div>
+          </div>
+
+          <div class="brandText">
+            <div class="brandTitle">PEPSVAL</div>
+            <div class="brandSubtitle">Where Shipping Trust Exists.</div>
+
+            <!-- Small highlight line (NOT a big news blog headline) -->
+            <div class="brandMicro">
+              <span class="spark"></span>
+              Seafarers’ e-Passport: trust • verified sea time • reputation — in one profile
+            </div>
+          </div>
         </div>
       </div>
 
@@ -341,17 +508,17 @@
 
     <div class="hero">
       <div class="card">
-        <h1 class="headline">A Seafarers’ e-Passport that brings trust into one profile.</h1>
-
+        <h1 class="headline">A friendly trust layer for global shipping.</h1>
         <div class="tagline">
-          Verified identity • verified sea time • verified reputation — built to help seafarers and shipping companies connect with confidence.
+          <strong>Pepsval</strong> helps seafarers and companies connect with confidence —
+          without pressure, without confusion, and always with clear verification labels.
         </div>
 
         <p class="sub">
-          Pepsval is being built to help seafarers and companies connect with confidence — welcoming, respectful,
-          and always clear about what is verified and what is self-declared.
+          We focus on three things that matter in real hiring:
+          <strong>identity</strong>, <strong>sea time</strong>, and <strong>professional reputation</strong>.
           <br/><br/>
-          This is not about suspicion — it’s about clarity and quality. You stay in control of your profile and what you share.
+          This is about <strong>clarity and quality</strong>. You stay in control of your profile and what you share.
         </p>
 
         <div class="chips">
@@ -368,23 +535,23 @@
           <a class="btn ghost" href="#how">How it works</a>
         </div>
 
+        <div class="mini">
+          Note: Pepsval supports trust and transparency — it does not replace official flag-state or compliance processes.
+        </div>
+
         <div class="grid3">
           <div class="tile">
             <h4>For Seafarers</h4>
-            <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
+            <p>Build a trusted profile, store documents, track sea time, and grow your global network.</p>
           </div>
           <div class="tile">
             <h4>For Companies</h4>
-            <p>Confirm sea time and leave appraisals respectfully, with clear labels and consent-based visibility.</p>
+            <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
           </div>
           <div class="tile">
             <h4>For the Industry</h4>
             <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
           </div>
-        </div>
-
-        <div class="mini">
-          Note: Pepsval supports trust and transparency — it does not replace official flag-state or compliance processes.
         </div>
       </div>
 
@@ -395,6 +562,7 @@
           Join the waitlist for launch updates. We’ll invite early users first: seafarers, masters, crewing teams and employers.
         </p>
 
+        <!-- Formspree -->
         <form class="form" id="waitlistForm" action="https://formspree.io/f/mwvpwrdp" method="POST">
           <input type="email" name="email" placeholder="Enter your email" required />
           <button class="btn primary" id="submitBtn" type="submit">Join waitlist</button>
@@ -414,24 +582,15 @@
           <div class="level">
             <strong>Social + Community</strong>
             <div>
-              Post updates, photos and videos, connect with seafarers worldwide — a platform built only for shipping.
+              Post updates, photos and videos, connect with other seafarers worldwide — a professional social platform built only for shipping.
             </div>
           </div>
 
           <div class="level">
             <strong>Worldwide jobs (Sea & Shore)</strong>
             <div>
-              A global board for maritime opportunities — vessel roles and shore-based roles.
+              A global board for maritime opportunities — vessel roles and shore-based roles — so careers don’t stop at one contract.
             </div>
-          </div>
-        </div>
-
-        <!-- ✅ Partnership contact -->
-        <div class="partnerBox">
-          <strong>Partnerships / Company onboarding</strong>
-          <div style="color:var(--muted);line-height:1.6;">
-            Want to partner, onboard your company, or pilot confirmations/appraisals?
-            Email: <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
           </div>
         </div>
 
@@ -449,121 +608,4 @@
           <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
           <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
           <li><strong>Request confirmations</strong> when you choose.</li>
-          <li>Earn clear labels — never confusing claims.</li>
-        </ol>
-        <div class="mini">
-          We keep the language simple so nobody feels accused: it’s about clarity, not suspicion.
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="kicker"><span class="kicon">2</span> Verification labels (v1)</div>
-
-        <div class="levels">
-          <div class="level">
-            <strong>Self-declared</strong>
-            <div>Info entered by the seafarer. Visible with clear labeling.</div>
-          </div>
-          <div class="level">
-            <strong>Document Verified</strong>
-            <div>Admin/partner checks document validity signals and expiry (format + consistency).</div>
-          </div>
-          <div class="level">
-            <strong>Employment Confirmed</strong>
-            <div>Employer confirms key details with a simple “Yes/No” flow (dates / vessel / rank).</div>
-          </div>
-          <div class="level">
-            <strong>Peer Confirmed</strong>
-            <div>A senior officer confirms “served together” — optional, but powerful.</div>
-          </div>
-        </div>
-
-        <div class="mini">
-          Practical, globally realistic — built for the real world where not every company replies.
-        </div>
-      </div>
-    </div>
-
-    <footer>
-      <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
-
-      <a class="footA" href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
-        <span class="miniIcon">in</span>
-        Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
-      </a>
-    </footer>
-
-  </div>
-
-  <script>
-    // Set year
-    document.getElementById("year").textContent = new Date().getFullYear();
-
-    // Theme: system default with toggle override
-    const root = document.documentElement;
-    const btn = document.getElementById("themeToggle");
-
-    function systemPrefersDark(){
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-
-    function applyTheme(theme){
-      root.setAttribute("data-theme", theme);
-      localStorage.setItem("pepsval_theme", theme);
-      btn.textContent = (theme === "dark") ? "☀️ Light" : "🌙 Dark";
-    }
-
-    const saved = localStorage.getItem("pepsval_theme");
-    if(saved === "light" || saved === "dark"){
-      applyTheme(saved);
-    }else{
-      applyTheme(systemPrefersDark() ? "dark" : "light");
-    }
-
-    btn.addEventListener("click", () => {
-      const current = root.getAttribute("data-theme");
-      applyTheme(current === "dark" ? "light" : "dark");
-    });
-
-    // Formspree AJAX submit (nice UX, no redirect)
-    const form = document.getElementById("waitlistForm");
-    const statusEl = document.getElementById("formStatus");
-    const submitBtn = document.getElementById("submitBtn");
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      submitBtn.disabled = true;
-      const oldText = submitBtn.textContent;
-      submitBtn.textContent = "Submitting…";
-      statusEl.className = "status";
-      statusEl.textContent = "Sending…";
-
-      try{
-        const formData = new FormData(form);
-        const res = await fetch(form.action, {
-          method: "POST",
-          body: formData,
-          headers: { "Accept": "application/json" }
-        });
-
-        if(res.ok){
-          form.reset();
-          statusEl.className = "status ok";
-          statusEl.textContent = "✅ You’re on the waitlist. We’ll email you when early access opens.";
-          submitBtn.textContent = "Joined!";
-        }else{
-          statusEl.className = "status bad";
-          statusEl.textContent = "⚠️ Could not submit right now. Please try again in a minute.";
-          submitBtn.disabled = false;
-          submitBtn.textContent = oldText;
-        }
-      }catch(err){
-        statusEl.className = "status bad";
-        statusEl.textContent = "⚠️ Network error. Please check your connection and try again.";
-        submitBtn.disabled = false;
-        submitBtn.textContent = oldText;
-      }
-    });
-  </script>
-</body>
-</html>
+          <li>Earn clear labels — never confusing claim
