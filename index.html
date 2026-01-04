@@ -1,559 +1,842 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="auto">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pepsval — Where Shipping Trust Exists.</title>
+  <meta name="description" content="Pepsval is a seafarers’ e-Passport that brings verified identity, sea time, and reputation into one trusted profile." />
 
-<title>Pepsval — Where Shipping Trust Exists</title>
+  <!-- Bookmark / icon -->
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <meta name="theme-color" content="#0b1220" />
 
-<meta name="description" content="Pepsval is a seafarer e-passport that brings verified identity, verified sea time, and trusted reputation into one profile — welcoming, respectful, and clear." />
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Favicon / bookmark -->
-<link rel="icon" type="image/png" href="/logo.png">
-<link rel="apple-touch-icon" href="/logo.png">
+  <style>
+    :root{
+      --radius-xl: 26px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
 
-<!-- Social preview -->
-<meta property="og:title" content="Pepsval — Where Shipping Trust Exists">
-<meta property="og:description" content="A seafarer e-passport that brings verified sea time, trust and reputation into one profile.">
-<meta property="og:image" content="https://pepsval.com/logo.png">
-<meta property="og:url" content="https://pepsval.com">
-<meta property="og:type" content="website">
+      --shadow: 0 22px 70px rgba(0,0,0,.20);
+      --shadow2: 0 16px 45px rgba(0,0,0,.14);
 
-<style>
-  :root{
-    --grad: linear-gradient(135deg,#8b5cf6,#3b82f6);
-    --radius-xl: 26px;
-    --radius-lg: 20px;
-    --radius-md: 14px;
-    --shadow: 0 22px 70px rgba(0,0,0,.20);
-    --shadow2: 0 16px 45px rgba(0,0,0,.14);
-  }
+      --grad1: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      --grad2: radial-gradient(700px 380px at 20% 0%, rgba(139,92,246,.25), transparent 60%),
+               radial-gradient(700px 380px at 80% 0%, rgba(59,130,246,.20), transparent 60%);
+    }
 
-  /* Light theme */
-  :root[data-theme="light"]{
-    --bg:#f7f8ff;
-    --bg2:#ffffff;
-    --text:#0b1020;
-    --muted:rgba(11,16,32,.72);
-    --muted2:rgba(11,16,32,.55);
-    --card:rgba(255,255,255,.78);
-    --border:rgba(11,16,32,.10);
-    --chip:rgba(11,16,32,.06);
-    --ghost:rgba(11,16,32,.06);
-    --ghostBorder:rgba(11,16,32,.12);
-    --inputBg:rgba(0,0,0,.04);
-    --ok:#16a34a;
-    --warn:#f59e0b;
-  }
+    /* Light theme */
+    :root[data-theme="light"]{
+      --bg: #f7f8ff;
+      --bg2:#ffffff;
+      --text:#0b1020;
+      --muted: rgba(11,16,32,.72);
+      --muted2: rgba(11,16,32,.55);
+      --card: rgba(255,255,255,.78);
+      --border: rgba(11,16,32,.10);
+      --chip: rgba(11,16,32,.06);
+      --link: #0ea5e9;
+      --btnText:#07101b;
+      --btnGhostBg: rgba(11,16,32,.06);
+      --btnGhostBorder: rgba(11,16,32,.12);
+      --inputBg: rgba(0,0,0,.04);
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+    }
 
-  /* Dark theme */
-  :root[data-theme="dark"]{
-    --bg:#070b17;
-    --bg2:#0b1220;
-    --text:#eaf0ff;
-    --muted:rgba(234,240,255,.76);
-    --muted2:rgba(234,240,255,.56);
-    --card:rgba(255,255,255,.06);
-    --border:rgba(255,255,255,.12);
-    --chip:rgba(255,255,255,.06);
-    --ghost:rgba(255,255,255,.06);
-    --ghostBorder:rgba(255,255,255,.14);
-    --inputBg:rgba(255,255,255,.06);
-    --ok:#22c55e;
-    --warn:#f59e0b;
-  }
+    /* Dark theme */
+    :root[data-theme="dark"]{
+      --bg: #070b17;
+      --bg2:#0b1220;
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.78);
+      --muted2: rgba(234,240,255,.58);
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --chip: rgba(255,255,255,.06);
+      --link: #8be9ff;
+      --btnText:#06101b;
+      --btnGhostBg: rgba(255,255,255,.06);
+      --btnGhostBorder: rgba(255,255,255,.14);
+      --inputBg: rgba(255,255,255,.06);
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#fb7185;
+    }
 
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    color:var(--text);
-    background:
-      radial-gradient(1200px 700px at 20% -10%, rgba(139,92,246,.35), transparent 55%),
-      radial-gradient(1000px 600px at 90% 10%, rgba(59,130,246,.30), transparent 55%),
-      linear-gradient(180deg, var(--bg), var(--bg2));
-    overflow-x:hidden;
-  }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1100px 650px at 15% -5%, rgba(139,92,246,.28), transparent 55%),
+        radial-gradient(900px 580px at 92% 10%, rgba(59,130,246,.22), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
 
-  a{color:#8be9ff;text-decoration:none}
-  a:hover{text-decoration:underline}
+    a{color:var(--link);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1120px;margin:0 auto;padding:26px 18px 64px}
 
-  .wrap{max-width:1120px;margin:0 auto;padding:28px 18px 84px}
+    /* Top bar */
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow2);
+      position:sticky;top:12px;z-index:20;
+    }
 
-  /* Top bar */
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:14px;
-    padding:14px 16px;
-    border:1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--card);
-    backdrop-filter: blur(12px);
-    box-shadow: var(--shadow2);
-  }
-  .brandLeft{display:flex;align-items:center;gap:14px;min-width:240px}
-  .brandText{display:flex;flex-direction:column;gap:2px}
-  .brandName{font-weight:900;letter-spacing:1.2px}
-  .brandLine{color:var(--muted2);font-size:13px}
+    /* Brand (big + blended, not inside a box) */
+    .brand{display:flex;align-items:center;gap:14px}
+    .logoWrap{
+      position:relative;
+      width:58px;height:58px;
+      display:grid;place-items:center;
+      transform-origin:center;
+      animation: popIn 900ms cubic-bezier(.16,1,.3,1) 120ms both;
+    }
+    .logoWrap::before{
+      content:"";
+      position:absolute;inset:-16px;
+      background: radial-gradient(circle at 30% 30%, rgba(139,92,246,.36), transparent 60%),
+                  radial-gradient(circle at 70% 70%, rgba(59,130,246,.30), transparent 62%);
+      filter: blur(10px);
+      opacity:.95;
+      animation: floatGlow 5.4s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .logoWrap::after{
+      content:"";
+      position:absolute;inset:-6px;
+      background: linear-gradient(115deg, rgba(255,255,255,.22), rgba(255,255,255,0) 45%);
+      opacity:.18;
+      transform: translateX(-35%) skewX(-10deg);
+      pointer-events:none;
+      animation: sweep 6.5s ease-in-out infinite;
+      border-radius: 18px;
+      mix-blend-mode: screen;
+    }
+    .logoWrap img{
+      width:58px;height:58px;object-fit:contain;
+      display:block;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,.25));
+      animation: logoFloat 5.4s ease-in-out infinite;
+    }
 
-  .topRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-  .pill{
-    display:inline-flex;align-items:center;gap:8px;
-    padding:8px 12px;border-radius:999px;
-    border:1px solid var(--border);
-    background: var(--chip);
-    color: var(--muted);
-    font-size:13px;
-  }
-  .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
-  .toggle{
-    display:inline-flex;align-items:center;gap:8px;
-    padding:10px 12px;border-radius:999px;
-    border:1px solid var(--border);
-    background: var(--ghost);
-    cursor:pointer;
-    color: var(--text);
-    font-weight:900;
-    user-select:none;
-  }
+    .brandText{display:flex;flex-direction:column;line-height:1.05}
+    .brandText .name{font-weight:1000;letter-spacing:1.4px;font-size:18px}
+    .brandText .line{color:var(--muted2);font-size:12.5px;margin-top:4px}
 
-  /* Hero */
-  .hero{text-align:center;padding-top:44px}
+    .topRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--chip);
+      color: var(--muted);
+      font-size:13px;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
+    .toggle{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 12px;border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--btnGhostBg);
+      cursor:pointer;
+      color: var(--text);
+      font-weight:900;
+      user-select:none;
+    }
 
-  .logoWrap{
-    position:relative;
-    display:inline-block;
-    animation: floatIn 1.6s cubic-bezier(.16,1,.3,1) forwards;
-  }
-  .logo{
-    width:260px; max-width:76vw;
-    filter:
-      drop-shadow(0 0 40px rgba(139,92,246,.55))
-      drop-shadow(0 0 90px rgba(59,130,246,.45));
-    animation: glow 5.2s ease-in-out infinite, slowFloat 6.5s ease-in-out infinite;
-  }
-  /* Glass reflection sweep */
-  .logoWrap:after{
-    content:"";
-    position:absolute;
-    inset:-8px;
-    background: linear-gradient(115deg, rgba(255,255,255,.28), rgba(255,255,255,0) 45%);
-    opacity:.12;
-    transform: translateX(-35%) rotate(0.0001deg);
-    pointer-events:none;
-    animation: sweep 6.5s ease-in-out infinite;
-    border-radius: 24px;
-    mix-blend-mode: screen;
-  }
+    /* Buttons */
+    .btn{
+      appearance:none;border:0;cursor:pointer;
+      padding:12px 14px;border-radius:
+var(--radius-md);
+      font-weight:1000;
+      letter-spacing:.1px;
+      text-decoration:none;
+      display:inline-flex;align-items:center;justify-content:center;
+      gap:10px;
+    }
+    .btn.primary{
+      background: var(--grad1);
+      color: var(--btnText);
+      box-shadow: 0 18px 45px rgba(0,0,0,.20);
+    }
+    .btn.ghost{
+      background: var(--btnGhostBg);
+      border:1px solid var(--btnGhostBorder);
+      color: var(--text);
+    }
 
-  .wordmark{
-    margin-top:14px;
-    font-size:52px;
-    font-weight:1000;
-    letter-spacing:2px;
-  }
-  .tagline{
-    margin-top:6px;
-    font-size:18px;
-    color:var(--muted);
-  }
+    /* Hero layout */
+    .hero{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap:16px;
+      align-items:stretch;
+    }
+    @media (max-width: 920px){ .hero{grid-template-columns:1fr} }
 
-  /* Make the big sentence smaller (not news blog) */
-  .microHeadline{
-    margin:34px auto 0;
-    max-width:860px;
-    font-size:18px;
-    color:var(--muted);
-    line-height:1.7;
-  }
-  .microHeadline strong{color:var(--text)}
-  .noteLine{
-    margin:10px auto 0;
-    max-width:860px;
-    font-size:14px;
-    color:var(--muted2);
-    line-height:1.7;
-  }
+    .card{
+      border:1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding:26px;
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;inset:-2px;
+      background: var(--grad2);
+      opacity:.85;
+      pointer-events:none;
+    }
 
-  .chips{
-    display:flex;justify-content:center;flex-wrap:wrap;gap:12px;
-    margin-top:22px;
-  }
-  .chip{
-    padding:10px 14px;border-radius:999px;
-    background:var(--chip);
-    border:1px solid var(--border);
-    font-size:14px;color:var(--muted);
-  }
+    .headline{
+      margin:0;
+      font-size:46px;
+      line-height:1.05;
+      letter-spacing:-.3px;
+      animation: riseIn 950ms cubic-bezier(.16,1,.3,1) 140ms both;
+      position:relative;
+    }
+    @media (max-width: 480px){ .headline{font-size:38px} }
 
-  .cta{
-    margin-top:26px;
-    display:flex;justify-content:center;gap:12px;flex-wrap:wrap;
-  }
-  .btn{
-    padding:14px 18px;border-radius: var(--radius-md);
-    font-weight:1000;border:0;cursor:pointer;
-    display:inline-flex;align-items:center;justify-content:center;
-    text-decoration:none;
-  }
-  .btn.primary{
-    background:var(--grad);
-    color:#070b17;
-    box-shadow: 0 22px 60px rgba(139,92,246,.28);
-  }
-  .btn.ghost{
-    background:var(--ghost);
-    border:1px solid var(--ghostBorder);
-    color:var(--text);
-  }
+    /* Keep the main sentence SMALL (not blog feel) */
+    .microHeadline{
+      margin:14px 0 0;
+      font-size:18px;
+      color: var(--muted);
+      line-height:1.7;
+      position:relative;
+      animation: riseIn 950ms cubic-bezier(.16,1,.3,1) 220ms both;
+    }
+    .microHeadline strong{color:var(--text)}
+    .mini{
+      margin-top:10px;
+      color: var(--muted2);
+      font-size:13px;
+      line-height:1.6;
+      position:relative;
+      animation: riseIn 950ms cubic-bezier(.16,1,.3,1) 300ms both;
+    }
 
-  /* Sections */
-  .sectionTitle{
-    margin:72px 0 14px;
-    font-size:22px;
-    letter-spacing:.2px;
-  }
+    .chips{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;position:relative}
+    .chip{
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--chip);
+      color: var(--muted);
+      font-size:13px;
+    }
 
-  .grid2{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:14px;
-  }
-  @media (max-width: 920px){ .grid2{grid-template-columns:1fr} }
+    .grid3{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      position:relative;
+    }
+    @media (max-width: 920px){ .grid3{grid-template-columns:1fr} }
+    .tile{
+      padding:18px;border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.04);
+    }
+    :root[data-theme="dark"] .tile{background: rgba(255,255,255,.05)}
+    .tile h4{margin:0 0 8px;font-size:16px}
+    .tile p{margin:0;color: var(--muted);line-height:1.65}
 
-  .grid3{
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:14px;
-  }
-  @media (max-width: 920px){ .grid3{grid-template-columns:1fr} }
+    .section2{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 920px){ .section2{grid-template-columns:1fr} }
 
-  .card{
-    padding:22px;
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    border:1px solid var(--border);
-    box-shadow: var(--shadow2);
-  }
-  .card h3{margin:0 0 10px}
-  .card p{margin:0;color:var(--muted);line-height:1.75}
+    .levels{display:grid;gap:10px;margin-top:10px}
+    .level{
+      padding:12px 12px;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.03);
+    }
+    :root[data-theme="dark"] .level{background: rgba(0,0,0,.18)}
+    .level strong{display:block;margin-bottom:4px}
+    .level div{color:var(--muted);line-height:1.6}
 
-  .list{
-    margin:10px 0 0;
-    padding-left:18px;
-    color:var(--muted);
-    line-height:1.85;
-  }
+    /* Partnership card */
+    .partnerBox{
+      margin-top:12px;
+      padding:14px;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.03);
+      position:relative;
+    }
+    :root[data-theme="dark"] .partnerBox{background: rgba(0,0,0,.18)}
+    .partnerBox p{margin:0;color:var(--muted);line-height:1.6}
+    .partnerBox a{font-weight:900}
 
-  /* Waitlist */
-  .form{
-    margin-top:12px;
-    display:flex;gap:10px;flex-wrap:wrap;
-  }
-  input{
-    flex:1;min-width:240px;
-    padding:14px 14px;
-    border-radius: var(--radius-md);
-    border:1px solid var(--border);
-    background: var(--inputBg);
-    color:var(--text);
-    outline:none;
-  }
-  input::placeholder{color:var(--muted2)}
+    footer{
+      margin-top:20px;
+      padding:18px 6px;
+      display:flex;flex-wrap:wrap;gap:12px;
+      justify-content:space-between;align-items:center;
+      color: var(--muted2);
+    }
+    .footA{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--chip);
+      color: var(--text);
+      font-weight:1000;
+    }
+    .footA:hover{text-decoration:none;filter:brightness(1.03)}
+    .footA .miniIcon{
+      width:22px;height:22px;border-radius:8px;background: var(--grad1);
+      display:grid;place-items:center;color:var(--btnText);font-weight:1000;
+    }
 
-  .status{margin-top:10px;font-size:13px;color:var(--muted2)}
-  .status.ok{color:var(--ok)}
-  .status.bad{color:var(--warn)}
+    /* Modal */
+    .modalOverlay{
+      position:fixed;inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:100;
+    }
+    .modalOverlay.show{display:flex}
 
-  /* Footer */
-  footer{
-    margin-top:70px;
-    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
-    color:var(--muted2);
-  }
-  .founderLink{
-    display:inline-flex;align-items:center;gap:10px;
-    padding:10px 12px;border-radius:999px;
-    border:1px solid var(--border);
-    background: var(--chip);
-    color:var(--text);
-    font-weight:900;
-  }
-  .founderLink:hover{text-decoration:none;filter:brightness(1.03)}
-  .inBadge{
-    width:22px;height:22px;border-radius:8px;
-    display:grid;place-items:center;
-    background:var(--grad);
-    color:#070b17;font-weight:1000;
-  }
+    .modal{
+      width:min(520px, 100%);
+      border-radius: var(--radius-xl);
+      border:1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .modal::before{
+      content:"";
+      position:absolute;inset:-2px;
+      background: var(--grad2);
+      opacity:.85;
+      pointer-events:none;
+    }
+    .modalInner{padding:18px;position:relative}
+    .modalTop{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:10px;
+    }
+    .modalTop h3{margin:0;font-size:16px;letter-spacing:.2px}
+    .xBtn{
+      border:1px solid var(--border);
+      background: var(--btnGhostBg);
+      color: var(--text);
+      border-radius: 999px;
+      padding:10px 12px;
+      cursor:pointer;
+      font-weight:900;
+    }
 
-  /* Animations */
-  @keyframes floatIn{from{transform:translateY(36px);opacity:0}to{transform:none;opacity:1}}
-  @keyframes glow{
-    0%,100%{filter:drop-shadow(0 0 38px rgba(139,92,246,.55)) drop-shadow(0 0 85px rgba(59,130,246,.42))}
-    50%{filter:drop-shadow(0 0 70px rgba(59,130,246,.60)) drop-shadow(0 0 110px rgba(139,92,246,.45))}
-  }
-  @keyframes slowFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-  @keyframes sweep{
-    0%{transform:translateX(-38%) skewX(-10deg); opacity:.06}
-    35%{opacity:.14}
-    60%{opacity:.10}
-    100%{transform:translateX(38%) skewX(-10deg); opacity:.06}
-  }
-</style>
+    .tabs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;position:relative}
+    .tab{
+      padding:9px 12px;border-radius:999px;
+      border:1px solid var(--border);
+      background: var(--btnGhostBg);
+      color: var(--muted);
+      font-size:12.5px;font-weight:900;
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(120,190,255,.35);
+      background: linear-gradient(180deg, rgba(88,170,255,.18), rgba(139,92,246,.10));
+    }
+
+    .form{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;position:relative}
+    input{
+      flex:1;min-width:200px;
+      padding:12px 14px;border-radius: var(--radius-md);
+      border:1px solid var(--border);
+      background: var(--inputBg);
+      color: var(--text);
+      outline:none;
+    }
+    input::placeholder{color: var(--muted2)}
+    .status{
+      margin-top:10px;
+      font-size:13px;
+      color: var(--muted2);
+      position:relative;
+    }
+    .status.ok{color: var(--ok)}
+    .status.bad{color: var(--bad)}
+    .status.warn{color: var(--warn)}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;position:relative}
+    .linkBtn{
+      border:0;background:transparent;color:var(--link);cursor:pointer;
+      font-weight:900;padding:0;
+    }
+
+    /* Mini dashboard inside modal after login */
+    .dash{
+      margin-top:12px;
+      border-top:1px solid var(--border);
+      padding-top:12px;
+      display:none;
+      position:relative;
+    }
+    .dash.show{display:block}
+    .dashHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+    .dashHead .who{color:var(--muted);font-size:13px}
+    .dashForm{margin-top:10px;display:grid;gap:10px}
+    .dashForm input{min-width:unset;width:100%}
+
+    /* Animations */
+    @keyframes popIn{
+      from{opacity:0;transform: scale(.92) translateY(8px)}
+      to{opacity:1;transform: scale(1)
+translateY(0)}
+    }
+    @keyframes riseIn{
+      from{opacity:0;transform: translateY(14px)}
+      to{opacity:1;transform: translateY(0)}
+    }
+    @keyframes logoFloat{
+      0%,100%{transform: translateY(0)}
+      50%{transform: translateY(-5px)}
+    }
+    @keyframes floatGlow{
+      0%,100%{transform: translateY(0);opacity:.88}
+      50%{transform: translateY(-7px);opacity:1}
+    }
+    @keyframes sweep{
+      0%{transform: translateX(-40%) skewX(-10deg); opacity:.08}
+      35%{opacity:.18}
+      60%{opacity:.12}
+      100%{transform: translateX(40%) skewX(-10deg); opacity:.08}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none!important;transition:none!important}
+    }
+  </style>
 </head>
 
 <body>
-<div class="wrap">
+  <div class="wrap">
 
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <div class="brandLeft">
-      <div class="brandText">
-        <div class="brandName">PEPSVAL</div>
-        <div class="brandLine">Where Shipping Trust Exists.</div>
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logoWrap">
+          <img src="logo.png" alt="Pepsval logo" />
+        </div>
+        <div class="brandText">
+          <div class="name">PEPSVAL</div>
+          <div class="line">Where Shipping Trust Exists.</div>
+        </div>
+      </div>
+
+      <div class="topRight">
+        <div class="pill"><span class="dot"></span> Launching soon • Early access open</div>
+        <button class="toggle" id="themeToggle" type="button">🌙 / ☀️</button>
+        <button class="btn primary" id="openLogin">Login</button>
       </div>
     </div>
 
-    <div class="topRight">
-      <div class="pill"><span class="dot"></span> Launching soon • Early access open</div>
-      <button class="toggle" id="themeToggle" type="button" aria-label="Toggle dark and light mode">☀️ Light</button>
+    <!-- Hero -->
+    <div class="hero">
+      <div class="card">
+        <h1 class="headline">A friendly trust layer for global shipping.</h1>
+
+        <p class="microHeadline">
+          <strong>A seafarers’ e-Passport</strong> that brings <strong>verified identity</strong>,
+          <strong>verified sea time</strong> and <strong>professional reputation</strong> into <strong>one profile</strong>.
+        </p>
+
+        <div class="mini">
+          Built to be welcoming and clear — profiles are private by default and you decide what to share and when.
+        </div>
+
+        <div class="chips">
+          <span class="chip">Verified Identity</span>
+          <span class="chip">Verified Sea Time</span>
+          <span class="chip">Employer Appraisal</span>
+          <span class="chip">Connections & Posts</span>
+          <span class="chip">Photos & Videos</span>
+          <span class="chip">Sea & Shore Jobs</span>
+        </div>
+
+        <div class="grid3">
+          <div class="tile">
+            <h4>For Seafarers</h4>
+            <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
+          </div>
+          <div class="tile">
+            <h4>For Companies</h4>
+            <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
+          </div>
+          <div class="tile">
+            <h4>For the Industry</h4>
+            <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="how">
+        <div class="mini" style="margin-top:0">
+          <strong>How it works (practical)</strong>
+        </div>
+
+        <ol style="margin:10px 0 0;padding-left:18px;color:var(--muted);line-height:1.75;position:relative;">
+          <li><strong>Create your profile</strong> (your “Seafarer Passport”).</li>
+          <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
+          <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
+          <li><strong>Request confirmations</strong> when you choose.</li>
+          <li>Earn clear labels — never confusing claims.</li>
+        </ol>
+
+        <div class="mini" style="margin-top:12px">
+          <strong>Verification labels (v1)</strong>
+        </div>
+
+        <div class="levels">
+          <div class="level">
+            <strong>Self-declared</strong>
+            <div>Information added by the seafarer — visible with clear labeling.</div>
+          </div>
+          <div class="level">
+            <strong>Document Verified</strong>
+            <div>Admin/partner checks document validity signals + expiry (format + consistency).</div>
+          </div>
+          <div class="level">
+            <strong>Employment Confirmed</strong>
+            <div>Employer confirms key details with a simple Yes/No flow (dates / vessel / rank).</div>
+          </div>
+          <div class="level">
+            <strong>Peer Confirmed</strong>
+            <div>A senior officer confirms “served together” — optional, but powerful.</div>
+          </div>
+        </div>
+
+        <div class="partnerBox">
+          <p><strong>Partnerships / companies</strong></p>
+          <p style="margin-top:6px;">
+            For collaborations and partnerships:
+            <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
+
+      <a class="footA"
+         href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+         target="_blank" rel="noopener">
+        <span class="miniIcon">in</span>
+        Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
+      </a>
+    </footer>
+
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div class="modalOverlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Pepsval login">
+      <div class="modalInner">
+        <div class="modalTop">
+          <h3>Login to Pepsval</h3>
+          <button class="xBtn" id="closeModal" type="button">✕</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" id="tabLogin">Login</div>
+          <div class="tab" id="tabSignup">Create account</div>
+        </div>
+
+        <div class="status" id="authStatus">Email + password. Your profile stays private by default.</div>
+
+        <form class="form" id="authForm">
+          <input type="email" id="email" name="email" placeholder="Email" required />
+          <input type="password" id="password" name="password" placeholder="Password" required />
+          <button class="btn primary" id="authSubmit" type="submit">Login</button>
+        </form>
+
+        <div class="row">
+          <button class="linkBtn" type="button" id="forgotPw">Forgot password?</button>
+          <span style="color:var(--muted2);font-size:12.5px;">•</span>
+          <button class="linkBtn" type="button" id="switchMode">Create an account</button>
+        </div>
+
+        <!-- Logged-in mini dashboard -->
+        <div class="dash" id="dash">
+          <div class="dashHead">
+            <div>
+              <div style="font-weight:1000;">Signed in</div>
+              <div class="who" id="who"></div>
+            </div>
+            <button class="btn ghost" id="logoutBtn" type="button">Logout</button>
+          </div>
+
+          <div class="status" id="profileStatus" style="margin-top:10px;">Complete your basic profile (start).</div>
+
+          <form class="dashForm" id="profileForm">
+            <input id="full_name" placeholder="Full name" />
+            <input id="nationality" placeholder="Nationality" />
+            <input id="rank" placeholder="Rank" />
+            <input id="dob" type="date" />
+            <button class="btn primary" type="submit">Save profile</button>
+          </form>
+        </div>
+
+      </div>
     </div>
   </div>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="logoWrap">
-      <img src="logo.png" class="logo" alt="Pepsval Logo">
-    </div>
+  <script>
+    // =========================
+    // Supabase config (yours)
+    // =========================
+    const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <div class="wordmark">PEPSVAL</div>
-    <div class="tagline">Where Shipping Trust Exists</div>
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
 
-    <!-- keep this small, not blog-like -->
-    <p class="microHeadline">
-      <strong>A seafarers’ e-passport</strong> that brings <strong>trust</strong>, <strong>verified sea time</strong>, and
-      <strong>professional reputation</strong> into <strong>one profile</strong>.
-    </p>
+    // Theme (auto -> system, with toggle override)
+    const root = document.documentElement;
+    const themeBtn = document.getElementById("themeToggle");
 
-    <p class="noteLine">
-      Pepsval is welcoming and respectful — not about suspicion. It’s about clarity and quality. You stay in control of your profile and what you share.
-    </p>
-
-    <div class="chips">
-      <div class="chip">Verified Identity</div>
-      <div class="chip">Verified Sea Time</div>
-      <div class="chip">Employer Appraisal</div>
-      <div class="chip">Connections & Posts</div>
-      <div class="chip">Photos & Videos</div>
-      <div class="chip">Sea & Shore Jobs</div>
-    </div>
-
-    <div class="cta">
-      <a class="btn primary" href="#early-access">Join Early Access</a>
-      <a class="btn ghost" href="#how">How it Works</a>
-    </div>
-  </div>
-
-  <!-- FOR WHO -->
-  <div class="sectionTitle">Built for the whole shipping ecosystem</div>
-  <div class="grid3">
-    <div class="card">
-      <h3>For Seafarers</h3>
-      <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
-    </div>
-    <div class="card">
-      <h3>For Companies</h3>
-      <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
-    </div>
-    <div class="card">
-      <h3>For the Industry</h3>
-      <p>A single place for trust, connections and opportunities — built for sea and shore careers.</p>
-    </div>
-  </div>
-
-  <!-- HOW -->
-  <div class="sectionTitle" id="how">How it works (practical)</div>
-  <div class="grid2">
-    <div class="card">
-      <h3>Simple steps</h3>
-      <ol class="list">
-        <li><strong>Create your profile</strong> (your “Seafarer Passport”).</li>
-        <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
-        <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
-        <li><strong>Request confirmations</strong> when you choose.</li>
-        <li><strong>Earn clear labels</strong> — never confusing claims.</li>
-      </ol>
-      <p style="margin-top:10px;color:var(--muted2);font-size:13px;line-height:1.7;">
-        We keep the language simple so nobody feels accused — it’s about clarity, not suspicion.
-      </p>
-    </div>
-
-    <div class="card">
-      <h3>Verification labels (v1)</h3>
-      <ul class="list">
-        <li><strong>Self-declared</strong> — info entered by the seafarer (clearly labeled).</li>
-        <li><strong>Document Verified</strong> — admin/partner checks document validity signals + expiry.</li>
-        <li><strong>Employment Confirmed</strong> — employer confirms key details (dates/vessel/rank) with a simple Yes/No.</li>
-        <li><strong>Peer Confirmed</strong> — senior officer confirms “served together” (optional, powerful).</li>
-      </ul>
-      <p style="margin-top:10px;color:var(--muted2);font-size:13px;line-height:1.7;">
-        Designed for real-world shipping — even when not every company replies, the labeling stays honest and clear.
-      </p>
-    </div>
-  </div>
-
-  <!-- FEATURES -->
-  <div class="sectionTitle">What Pepsval will include</div>
-  <div class="grid2">
-    <div class="card">
-      <h3>Employer appraisal (after each contract)</h3>
-      <p>
-        Optional and respectful: your current employer can leave an appraisal after a contract.
-        You control visibility — <strong>private</strong>, <strong>share-on-request</strong>, or <strong>public</strong>.
-      </p>
-    </div>
-    <div class="card">
-      <h3>Social + community</h3>
-      <p>
-        Post updates, photos and videos, connect with seafarers worldwide —
-        a professional social platform built only for shipping.
-      </p>
-    </div>
-  </div>
-
-  <div class="grid2" style="margin-top:14px;">
-    <div class="card">
-      <h3>Worldwide jobs (Sea & Shore)</h3>
-      <p>
-        A global board for maritime opportunities — vessel roles and shore-based roles —
-        so careers don’t stop at one contract.
-      </p>
-    </div>
-    <div class="card">
-      <h3>Welcoming by design</h3>
-      <p>
-        Pepsval is built to make trust easier — not to shame anyone.
-        Profiles are controlled by the user, and verification is always clearly labeled.
-      </p>
-    </div>
-  </div>
-
-  <!-- EARLY ACCESS + PARTNERSHIPS -->
-  <div class="sectionTitle" id="early-access">Early access</div>
-  <div class="grid2">
-    <div class="card">
-      <h3>Join the waitlist</h3>
-      <p>We’ll invite early users first: seafarers, masters, crewing teams and employers.</p>
-
-      <form class="form" id="waitlistForm" action="https://formspree.io/f/mwvpwrdp" method="POST">
-        <input type="email" name="email" placeholder="Enter your email" required />
-        <button class="btn primary" id="submitBtn" type="submit">Join Waitlist</button>
-      </form>
-      <div class="status" id="formStatus">No spam. You can unsubscribe anytime.</div>
-    </div>
-
-    <div class="card">
-      <h3>Partnerships & companies</h3>
-      <p>
-        If you’re a shipping company, crewing agency, training partner, or maritime service provider — let’s talk.
-      </p>
-      <p style="margin-top:10px;">
-        Email: <a href="mailto:jithinilip@gmail.com"><strong>jithinilip@gmail.com</strong></a>
-      </p>
-      <p style="margin-top:10px;color:var(--muted2);font-size:13px;line-height:1.7;">
-        We’ll respond with a simple next step — no long forms, no pressure.
-      </p>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer>
-    <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
-
-    <a class="founderLink" href="https://www.linkedin.com/in/jithinilip" target="_blank" rel="noopener">
-      <span class="inBadge">in</span>
-      Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
-    </a>
-  </footer>
-
-</div>
-
-<script>
-  // Year
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  // Theme toggle (auto -> system, with saved override)
-  const root = document.documentElement;
-  const btn = document.getElementById("themeToggle");
-
-  function systemPrefersDark(){
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-
-  function applyTheme(theme){
-    root.setAttribute("data-theme", theme);
-    localStorage.setItem("pepsval_theme", theme);
-    btn.textContent = (theme === "dark") ? "☀️ Light" : "🌙 Dark";
-  }
-
-  const saved = localStorage.getItem("pepsval_theme");
-  if(saved === "light" || saved === "dark"){
-    applyTheme(saved);
-  }else{
-    applyTheme(systemPrefersDark() ? "dark" : "light");
-  }
-
-  btn.addEventListener("click", () => {
-    const current = root.getAttribute("data-theme");
-    applyTheme(current === "dark" ? "light" : "dark");
-  });
-
-  // Formspree AJAX submit (no redirect)
-  const form = document.getElementById("waitlistForm");
-  const statusEl = document.getElementById("formStatus");
-  const submitBtn = document.getElementById("submitBtn");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    submitBtn.disabled = true;
-    const oldText = submitBtn.textContent;
-    submitBtn.textContent = "Submitting…";
-    statusEl.className = "status";
-    statusEl.textContent = "Sending…";
-
-    try{
-      const formData = new FormData(form);
-      const res = await fetch(form.action, {
-        method: "POST",
-        body: formData,
-        headers: { "Accept": "application/json" }
-      });
-
-      if(res.ok){
-        form.reset();
-        statusEl.className = "status ok";
-        statusEl.textContent = "✅ You’re on the waitlist. We’ll email you when early access opens.";
-        submitBtn.textContent = "Joined!";
-      }else{
-        statusEl.className = "status bad";
-        statusEl.textContent = "⚠️ Could not submit right now. Please try again in a minute.";
-        submitBtn.disabled = false;
-        submitBtn.textContent = oldText;
-      }
-    }catch(err){
-      statusEl.className = "status bad";
-      statusEl.textContent = "⚠️ Network error. Please check your connection and try again.";
-      submitBtn.disabled = false;
-      submitBtn.textContent = oldText;
+    function systemPrefersDark(){
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
-  });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
+    function applyTheme(theme){
+      root.setAttribute("data-theme", theme);
+      localStorage.setItem("pepsval_theme", theme);
+      themeBtn.textContent = (theme === "dark") ? "☀️ Light" : "🌙 Dark";
+    }
+    const savedTheme = localStorage.getItem("pepsval_theme");
+    if(savedTheme === "light" || savedTheme === "dark"){
+      applyTheme(savedTheme);
+    }else{
+      applyTheme(systemPrefersDark() ? "dark" : "light");
+    }
+    themeBtn.addEventListener("click", () => {
+      const cur = root.getAttribute("data-theme");
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
+    // Modal
+    const overlay = document.getElementById("modalOverlay");
+    const openLogin = document.getElementById("openLogin");
+    const closeModal = document.getElementById("closeModal");
+
+    function openModal(){
+      overlay.classList.add("show");
+      overlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => document.getElementById("email").focus(), 80);
+    }
+    function hideModal(){
+      overlay.classList.remove("show");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    openLogin.addEventListener("click", openModal);
+    closeModal.addEventListener("click", hideModal);
+    overlay.addEventListener("click", (e) => { if(e.target === overlay) hideModal(); });
+    document.addEventListener("keydown", (e) => { if(e.key === "Escape") hideModal(); });
+
+    // Auth UI
+    const tabLogin = document.getElementById("tabLogin");
+    const tabSignup = document.getElementById("tabSignup");
+    const switchMode = document.getElementById("switchMode");
+    const authStatus = document.getElementById("authStatus");
+    const authSubmit = document.getElementById("authSubmit");
+    const authForm = document.getElementById("authForm");
+    const forgotPw = document.getElementById("forgotPw");
+
+    const dash = document.getElementById("dash");
+    const who = document.getElementById("who");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const profileForm = document.getElementById("profileForm");
+    const profileStatus = document.getElementById("profileStatus");
+
+    let mode = "login"; // or "signup"
+
+    function setStatus(el, text, cls){
+      el.className = "status " + (cls || "");
+      el.textContent = text;
+    }
+
+    function setMode(next){
+      mode = next;
+      if(mode === "login"){
+        tabLogin.classList.add("active");
+        tabSignup.classList.remove("active");
+        authSubmit.textContent = "Login";
+        switchMode.textContent = "Create an account";
+        setStatus(authStatus, "Email + password. Your profile stays private by default.", "");
+      }else{
+        tabSignup.classList.add("active");
+        tabLogin.classList.remove("active");
+        authSubmit.textContent = "Create account";
+        switchMode.textContent = "I already have an account";
+        setStatus(authStatus, "Create your account. If email confirmation is enabled, check your inbox to confirm.", "");
+      }
+    }
+
+    tabLogin.addEventListener("click", () => setMode("login"));
+    tabSignup.addEventListener("click", () => setMode("signup"));
+    switchMode.addEventListener("click", () => setMode(mode === "login" ? "signup" : "login"));
+
+    // Auth submit
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try{
+        if(mode === "login"){
+          const { error } = await sb.auth.signInWithPassword({ email, password });
+          if(error) throw error;
+          setStatus(authStatus, "✅ Logged in successfully.", "ok");
+          await renderSession();
+        }else{
+          const { error } = await sb.auth.signUp({ email, password });
+          if(error) throw error;
+          setStatus(authStatus, "✅ Account created. If required, confirm your email and then login.", "ok");
+          setMode("login");
+        }
+      }catch(err){
+        setStatus(authStatus, "⚠️ " + (err.message || "Something went wrong."), "bad");
+      }
+    });
+
+    // Password reset
+    forgotPw.addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      if(!email){
+        setStatus(authStatus, "Enter your email first, then tap “Forgot password?”.", "warn");
+        return;
+      }
+      try{
+        const { error } = await sb.auth.resetPasswordForEmail(email);
+        if(error) throw error;
+        setStatus(authStatus, "✅ Password reset email sent (if that email exists).", "ok");
+      }catch(err){
+        setStatus(authStatus, "⚠️ " + (err.message || "Could not send reset email."), "bad");
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener("click", async () => {
+      await sb.auth.signOut();
+      dash.classList.remove("show");
+      setMode("login");
+      setStatus(authStatus, "Logged out.", "ok");
+    });
+
+    // Load profile
+    async function loadProfile(){
+      const { data: { user } } = await sb.auth.getUser();
+      if(!user) return;
+
+      const { data, error } = await sb
+        .from("profiles")
+        .select("full_name, nationality, rank, dob")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if(error){
+        setStatus(profileStatus, "⚠️ Could not load profile: " + error.message, "bad");
+        return;
+      }
+
+      document.getElementById("full_name").value = data?.full_name || "";
+      document.getElementById("nationality").value = data?.nationality || "";
+      document.getElementById("rank").value = data?.rank || "";
+      document.getElementById("dob").value = data?.dob || "";
+      setStatus(profileStatus, "Complete your basic profile (start).", "");
+    }
+
+    // Save profile
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const { data: { user } } = await sb.auth.getUser();
+      if(!user){
+        setStatus(profileStatus, "You are not logged in.", "bad");
+        return;
+      }
+
+      const payload = {
+        id: user.id,
+        full_name:
+document.getElementById("full_name").value.trim() || null,
+        nationality: document.getElementById("nationality").value.trim() || null,
+        rank: document.getElementById("rank").value.trim() || null,
+        dob: document.getElementById("dob").value || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await sb.from("profiles").upsert(payload, { onConflict: "id" });
+
+      if(error){
+        setStatus(profileStatus, "⚠️ Save failed: " + error.message, "bad");
+        return;
+      }
+      setStatus(profileStatus, "✅ Profile saved.", "ok");
+    });
+
+    // Session render
+    async function renderSession(){
+      const { data: { session } } = await sb.auth.getSession();
+      if(session?.user){
+        dash.classList.add("show");
+        who.textContent = session.user.email || "Signed in";
+        await loadProfile();
+      }else{
+        dash.classList.remove("show");
+      }
+    }
+
+    // Keep in sync
+    sb.auth.onAuthStateChange(async () => {
+      await renderSession();
+    });
+
+    // Initial render
+    renderSession();
+    setMode("login");
+  </script>
 </body>
 </html>
