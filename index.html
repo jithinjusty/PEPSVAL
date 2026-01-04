@@ -4,12 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Where Shipping Trust Exists.</title>
-  <meta name="description" content="Pepsval is building a welcoming trust layer for the global shipping industry — verified identity, sea time, and contract appraisals. Launching soon." />
+  <meta name="description" content="Pepsval is a welcoming trust layer for global shipping — a Seafarers’ e-Passport for identity, sea time, and reputation. Launching soon." />
 
+  <!-- Open Graph -->
   <meta property="og:title" content="Pepsval — Where Shipping Trust Exists." />
-  <meta property="og:description" content="A welcoming trust layer for seafarers and shipping companies. Launching soon." />
+  <meta property="og:description" content="A Seafarers’ e-Passport of trust & quality for the global shipping industry. Launching soon." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pepsval.com" />
+
+  <!-- (Optional) If you upload a social preview image later -->
+  <!-- <meta property="og:image" content="https://pepsval.com/og-image.png" /> -->
 
   <style>
     :root{
@@ -31,7 +35,7 @@
       --text:#0b1020;
       --muted: rgba(11,16,32,.72);
       --muted2: rgba(11,16,32,.55);
-      --card: rgba(255,255,255,.78);
+      --card: rgba(255,255,255,.80);
       --border: rgba(11,16,32,.10);
       --chip: rgba(11,16,32,.06);
       --link: #0ea5e9;
@@ -40,6 +44,7 @@
       --btnGhostBorder: rgba(11,16,32,.12);
       --ok:#16a34a;
       --warn:#f59e0b;
+      --danger:#ef4444;
     }
 
     /* Dark theme */
@@ -58,9 +63,11 @@
       --btnGhostBorder: rgba(255,255,255,.14);
       --ok:#22c55e;
       --warn:#f59e0b;
+      --danger:#fb7185;
     }
 
     *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
     body{
       margin:0;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
@@ -78,36 +85,67 @@
     /* Top bar */
     .topbar{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
-      padding:12px 14px;
+      padding:14px 14px;
       border:1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--card);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow2);
     }
-    .brand{display:flex;align-items:center;gap:12px;min-width: 220px}
-    .logoMark{
-      width:44px;height:44px;border-radius:14px;
-      background: var(--grad1);
-      box-shadow: 0 18px 40px rgba(0,0,0,.18);
-      flex:0 0 auto;
-      display:grid;place-items:center;
-      color:#fff;font-weight:900;letter-spacing:.5px;
-      user-select:none;
-    }
-    .brand h3{margin:0;font-size:16px;letter-spacing:.3px}
-    .brand span{display:block;color:var(--muted2);font-size:12px;margin-top:2px}
 
-    .topRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 12px;border-radius:999px;
-      border:1px solid var(--border);
-      background: var(--chip);
-      color: var(--muted);
-      font-size:13px;
+    .brand{
+      display:flex;align-items:center;gap:18px;
+      min-width: 220px;
     }
-    .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
+
+    /* Upload your logo as /logo.png in the repo */
+    .brandLogo{
+      width:64px;height:64px;
+      border-radius:16px;
+      object-fit:cover;
+      box-shadow: 0 18px 45px rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.10);
+      background: var(--grad1);
+    }
+
+    .brandText h3{
+      margin:0;
+      font-size:22px;
+      letter-spacing:.45px;
+      line-height:1.1;
+    }
+    .brandText span{
+      display:block;
+      color:var(--muted2);
+      font-size:14px;
+      margin-top:5px;
+      letter-spacing:.15px;
+    }
+
+    .topRight{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end
+    }
+
+    .launchPill{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 16px;border-radius:999px;
+      border:1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,58,237,.18), rgba(37,99,235,.14));
+      color: var(--text);
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.2px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.12);
+    }
+    .launchPill .badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:5px 10px;border-radius:999px;
+      background: var(--grad1);
+      color:#fff;
+      font-size:12px;
+      font-weight:900;
+    }
+
     .toggle{
       display:inline-flex;align-items:center;gap:8px;
       padding:10px 12px;border-radius:999px;
@@ -115,8 +153,9 @@
       background: var(--btnGhostBg);
       cursor:pointer;
       color: var(--text);
-      font-weight:700;
+      font-weight:800;
       user-select:none;
+      white-space:nowrap;
     }
 
     /* Hero layout */
@@ -139,11 +178,11 @@
 
     .headline{
       margin:0;
-      font-size:48px;
-      line-height:1.05;
+      font-size:46px;
+      line-height:1.08;
       letter-spacing:.2px;
     }
-    @media (max-width: 480px){ .headline{font-size:38px} }
+    @media (max-width: 480px){ .headline{font-size:36px} }
 
     .tagline{
       margin-top:10px;
@@ -166,6 +205,7 @@
       background: var(--chip);
       color: var(--muted);
       font-size:13px;
+      font-weight:700;
     }
 
     .cta{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -176,7 +216,10 @@
       letter-spacing:.1px;
       text-decoration:none;
       display:inline-flex;align-items:center;justify-content:center;
+      transition: transform .12s ease, filter .12s ease;
     }
+    .btn:hover{transform: translateY(-1px)}
+    .btn:active{transform: translateY(0)}
     .btn.primary{
       background: var(--grad1);
       color: var(--btnText);
@@ -202,7 +245,7 @@
       border:1px solid var(--border);
       background: var(--chip);
       display:grid;place-items:center;
-      font-weight:800;
+      font-weight:900;
       color: var(--muted);
     }
     .form{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
@@ -217,8 +260,8 @@
     :root[data-theme="dark"] input{background: rgba(255,255,255,.06)}
     input::placeholder{color: var(--muted2)}
     .status{margin-top:12px;font-size:13px;color: var(--muted2)}
-    .status.ok{color: var(--ok)}
-    .status.bad{color: var(--warn)}
+    .status.ok{color: var(--ok);font-weight:800}
+    .status.bad{color: var(--danger);font-weight:800}
 
     /* Sections */
     .grid3{
@@ -257,6 +300,17 @@
     .level strong{display:block;margin-bottom:4px}
     .level div{color:var(--muted);line-height:1.6}
 
+    .noteBox{
+      margin-top:12px;
+      padding:12px 12px;
+      border-radius: var(--radius-lg);
+      border:1px dashed var(--border);
+      background: linear-gradient(135deg, rgba(124,58,237,.10), rgba(37,99,235,.08));
+      color: var(--muted);
+      line-height:1.65;
+      font-size:13px;
+    }
+
     footer{
       margin-top:20px;
       padding:18px 6px;
@@ -271,8 +325,10 @@
       background: var(--chip);
       color: var(--text);
       font-weight:900;
+      transition: transform .12s ease, filter .12s ease;
     }
-    .footA:hover{text-decoration:none;filter:brightness(1.03)}
+    .footA:hover{text-decoration:none;transform: translateY(-1px);filter:brightness(1.03)}
+    .footA:active{transform: translateY(0)}
     .footA .miniIcon{
       width:22px;height:22px;border-radius:8px;background: var(--grad1);
       display:grid;place-items:center;color:#fff;font-weight:900;
@@ -283,37 +339,46 @@
 <body>
   <div class="wrap">
 
+    <!-- TOP BAR -->
     <div class="topbar">
       <div class="brand">
-        <!-- Replace this block with your real logo image later if you want:
-             <img src="your-logo.png" alt="Pepsval" style="height:44px" />
-        -->
-        <div class="logoMark" aria-hidden="true">PV</div>
-        <div>
+        <!-- Upload your logo file in the repo as: logo.png -->
+        <img class="brandLogo" src="logo.png" alt="Pepsval logo" />
+        <div class="brandText">
           <h3>Pepsval</h3>
           <span>Where Shipping Trust Exists.</span>
         </div>
       </div>
 
       <div class="topRight">
-        <div class="pill"><span class="dot"></span> Launching soon • Early access open</div>
-        <button class="toggle" id="themeToggle" type="button" aria-label="Toggle dark and light mode">🌙 / ☀️</button>
+        <div class="launchPill" title="Launching soon">
+          <span class="badge">NEW</span>
+          🚀 Launching Soon — Early Access Open
+        </div>
+
+        <button class="toggle" id="themeToggle" type="button" aria-label="Toggle dark and light mode">
+          🌙 / ☀️
+        </button>
       </div>
     </div>
 
+    <!-- HERO -->
     <div class="hero">
+
+      <!-- LEFT -->
       <div class="card">
-        <h1 class="headline">A friendly trust layer for global shipping.</h1>
+        <h1 class="headline">
+          A Seafarers’ e-Passport that brings trust, verified sea time, and reputation into one profile.
+        </h1>
+
         <div class="tagline">
           <strong>Pepsval</strong> is being built to help seafarers and companies connect with confidence —
-          without pressure, without confusion, and always with clear verification labels.
+          welcoming, respectful, and always clear about what is verified and what is self-declared.
         </div>
 
         <p class="sub">
-          We focus on three things that matter in real hiring:
-          <strong>identity</strong>, <strong>sea time</strong>, and <strong>professional reputation</strong>.
-          <br/><br/>
-          Your profile stays under your control — you choose what to share and when.
+          This is not about suspicion — it’s about <strong>clarity</strong> and <strong>quality</strong>.
+          You stay in control of your profile and what you share.
         </p>
 
         <div class="chips">
@@ -321,6 +386,7 @@
           <span class="chip">Verified Sea Time</span>
           <span class="chip">Employer Appraisal</span>
           <span class="chip">Connections & Posts</span>
+          <span class="chip">Photos & Videos</span>
           <span class="chip">Sea & Shore Jobs</span>
         </div>
 
@@ -329,8 +395,9 @@
           <a class="btn ghost" href="#how">How it works</a>
         </div>
 
-        <div class="mini">
-          Note: Pepsval is designed to support trust and transparency — it does not replace flag-state or official compliance processes.
+        <div class="noteBox">
+          Pepsval is designed to support trust and transparency in a friendly way.
+          It does not replace flag-state requirements or official compliance processes.
         </div>
 
         <div class="grid3">
@@ -340,7 +407,7 @@
           </div>
           <div class="tile">
             <h4>For Companies</h4>
-            <p>Request confirmations and appraisals in a respectful way, and shortlist faster with clearer signals.</p>
+            <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
           </div>
           <div class="tile">
             <h4>For the Industry</h4>
@@ -349,13 +416,15 @@
         </div>
       </div>
 
+      <!-- RIGHT -->
       <div class="card" id="early-access">
         <div class="kicker"><span class="kicon">✦</span> Early access</div>
         <h2 style="margin:0 0 8px;font-size:22px;">Get invited first</h2>
         <p style="margin:0;color:var(--muted);line-height:1.65;">
-          Join the waitlist for launch updates. We’ll invite early users first: seafarers, masters, crewing teams and employers.
+          Join the waitlist for launch updates. Early invites will go to seafarers, masters, crewing teams and employers.
         </p>
 
+        <!-- YOUR FORMSPREE ENDPOINT -->
         <form class="form" id="waitlistForm" action="https://formspree.io/f/mwvpwrdp" method="POST">
           <input type="email" name="email" placeholder="Enter your email" required />
           <button class="btn primary" id="submitBtn" type="submit">Join waitlist</button>
@@ -367,37 +436,41 @@
           <div class="level">
             <strong>Employer appraisal (after each contract)</strong>
             <div>
-              Optional and respectful: your current employer can leave an appraisal after a contract.
-              You control visibility — private, share-on-request, or public (your choice).
+              Optional and respectful: your employer can leave an appraisal after a contract.
+              You control visibility — private, share-on-request, or public.
             </div>
           </div>
 
           <div class="level">
             <strong>Social + Community</strong>
             <div>
-              Post updates, photos and videos, connect with other seafarers worldwide — like a professional social platform built only for shipping.
+              Post updates, photos and videos, connect with other seafarers worldwide —
+              like a professional social platform built only for shipping.
             </div>
           </div>
 
           <div class="level">
             <strong>Worldwide jobs (Sea & Shore)</strong>
             <div>
-              A global board for maritime opportunities — vessel roles and shore-based roles — so careers don’t stop at one contract.
+              A global board for maritime opportunities — vessel roles and shore roles —
+              so careers don’t stop at one contract.
             </div>
           </div>
         </div>
 
         <div class="mini">
-          Tip: share pepsval.com with friends onboard — your early users become your early network.
+          Tip: share pepsval.com with friends onboard — early users become your early network.
         </div>
       </div>
     </div>
 
+    <!-- HOW IT WORKS -->
     <div class="section2" id="how">
       <div class="card">
         <div class="kicker"><span class="kicon">1</span> How it works (practical)</div>
+
         <ol style="margin:0;padding-left:18px;color:var(--muted);line-height:1.75;">
-          <li><strong>Create your profile</strong> (your “Seafarer Passport”).</li>
+          <li><strong>Create your profile</strong> (your “Seafarers’ e-Passport”).</li>
           <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
           <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
           <li><strong>Request confirmations</strong> when you choose.</li>
@@ -405,7 +478,7 @@
         </ol>
 
         <div class="mini">
-          We keep the language simple so nobody feels accused: it’s about clarity, not suspicion.
+          We keep the language simple so nobody feels accused — it’s about clarity, not suspicion.
         </div>
       </div>
 
@@ -419,7 +492,7 @@
           </div>
           <div class="level">
             <strong>Document Verified</strong>
-            <div>Admin/partner checks document validity signals and expiry (format + consistency).</div>
+            <div>Admin/partner checks validity signals + expiry (format + consistency).</div>
           </div>
           <div class="level">
             <strong>Employment Confirmed</strong>
@@ -432,15 +505,18 @@
         </div>
 
         <div class="mini">
-          These are practical and globally realistic — built for the real world where not every company replies.
+          Practical and globally realistic — built for the real world where not every company replies.
         </div>
       </div>
     </div>
 
+    <!-- FOOTER -->
     <footer>
       <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
 
-      <a class="footA" href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
+      <a class="footA"
+         href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+         target="_blank" rel="noopener">
         <span class="miniIcon">in</span>
         Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
       </a>
@@ -449,10 +525,10 @@
   </div>
 
   <script>
-    // Set year
+    // Year
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // Theme: auto -> system preference, with toggle override
+    // Theme toggle (system default, with saved preference)
     const root = document.documentElement;
     const btn = document.getElementById("themeToggle");
 
@@ -478,7 +554,7 @@
       applyTheme(current === "dark" ? "light" : "dark");
     });
 
-    // Formspree AJAX submit (nice UX, no redirect)
+    // Formspree AJAX submit (no redirect)
     const form = document.getElementById("waitlistForm");
     const statusEl = document.getElementById("formStatus");
     const submitBtn = document.getElementById("submitBtn");
@@ -489,7 +565,7 @@
       const oldText = submitBtn.textContent;
       submitBtn.textContent = "Submitting…";
       statusEl.className = "status";
-      statusEl.textContent = "Sending securely…";
+      statusEl.textContent = "Sending…";
 
       try{
         const formData = new FormData(form);
