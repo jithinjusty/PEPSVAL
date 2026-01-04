@@ -1,494 +1,987 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pepsval — Where Shipping Trust Exists</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0B1020" />
+  <title>Pepsval — Where Shipping Trust Exists.</title>
 
+  <!-- Favicon / bookmark icon -->
+  <!-- Note: some browsers don't show .webp favicons reliably. This still helps; later you can add favicon.ico -->
   <link rel="icon" type="image/webp" href="logo.webp" />
   <link rel="apple-touch-icon" href="logo.webp" />
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     :root{
-      --bg0:#050714; --bg1:#0b1030;
-      --card:rgba(255,255,255,.08); --stroke:rgba(255,255,255,.14);
-      --text:#f4f7ff; --muted:rgba(244,247,255,.72);
-      --shadow: 0 30px 90px rgba(0,0,0,.45);
-      --a:#7c3aed; --b:#22d3ee; --c:#ff5ad6;
-      --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
-      --r:22px;
+      --bg0:#070A12;
+      --bg1:#0B1020;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --muted2: rgba(255,255,255,.55);
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --shadow2: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius2: 26px;
+
+      --a1:#7C3AED;  /* purple */
+      --a2:#22D3EE;  /* cyan */
+      --a3:#3B82F6;  /* blue */
+      --ok:#34D399;
+      --warn:#FBBF24;
+      --bad:#FB7185;
+
+      --btn: rgba(255,255,255,.10);
+      --btnH: rgba(255,255,255,.14);
+      --input: rgba(255,255,255,.10);
+      --inputH: rgba(255,255,255,.14);
+
+      --grid: rgba(255,255,255,.06);
     }
+
     [data-theme="light"]{
-      --bg0:#f7f8ff; --bg1:#eef1ff;
-      --card:rgba(0,0,0,.05); --stroke:rgba(0,0,0,.10);
-      --text:#0b1022; --muted:rgba(11,16,34,.70);
-      --shadow: 0 24px 70px rgba(0,0,0,.16);
+      --bg0:#F6F7FB;
+      --bg1:#EEF1FA;
+      --card: rgba(255,255,255,.65);
+      --card2: rgba(255,255,255,.55);
+      --stroke: rgba(10,20,40,.12);
+      --text: rgba(10,20,40,.92);
+      --muted: rgba(10,20,40,.70);
+      --muted2: rgba(10,20,40,.55);
+      --shadow: 0 20px 60px rgba(10,20,40,.12);
+      --shadow2: 0 10px 30px rgba(10,20,40,.10);
+      --btn: rgba(10,20,40,.08);
+      --btnH: rgba(10,20,40,.12);
+      --input: rgba(10,20,40,.08);
+      --inputH: rgba(10,20,40,.12);
+      --grid: rgba(10,20,40,.08);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
-      margin:0; color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:
-        radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.35), transparent 55%),
-        radial-gradient(900px 700px at 85% 18%, rgba(34,211,238,.22), transparent 55%),
-        radial-gradient(800px 900px at 55% 95%, rgba(255,90,214,.18), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.25), transparent 60%),
+                  radial-gradient(900px 700px at 85% 10%, rgba(34,211,238,.18), transparent 55%),
+                  radial-gradient(1000px 900px at 60% 90%, rgba(59,130,246,.20), transparent 60%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
-    header{
-      position:sticky; top:12px; z-index:10;
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:14px 14px;
+
+    /* subtle grid */
+    .grid{
+      position:fixed; inset:0; pointer-events:none; opacity:.55;
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(circle at 40% 20%, rgba(0,0,0,1), rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 78%);
+    }
+
+    /* floating glow blobs */
+    .blob{
+      position:fixed; width:520px; height:520px; border-radius:999px; filter: blur(40px);
+      opacity:.30; pointer-events:none;
+      animation: float 10s ease-in-out infinite;
+      transform: translate3d(0,0,0);
+    }
+    .b1{ left:-220px; top:-120px; background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.9), transparent 60%); }
+    .b2{ right:-240px; top:-140px; background: radial-gradient(circle at 30% 30%, rgba(34,211,238,.8), transparent 60%); animation-duration: 12s; }
+    .b3{ left:30%; bottom:-260px; background: radial-gradient(circle at 30% 30%, rgba(59,130,246,.85), transparent 60%); animation-duration: 14s; }
+    @keyframes float{
+      0%,100%{ transform: translate3d(0,0,0); }
+      50%{ transform: translate3d(0,-18px,0); }
+    }
+
+    .wrap{ max-width:1100px; margin:0 auto;
+padding:22px 18px 56px; }
+
+    /* top nav */
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; padding:12px 12px;
       border:1px solid var(--stroke);
-      border-radius:18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      backdrop-filter: blur(16px);
-      box-shadow: 0 16px 60px rgba(0,0,0,.20);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      backdrop-filter: blur(14px);
+      border-radius: 999px;
+      box-shadow: var(--shadow2);
+      position:sticky; top:14px; z-index:40;
     }
-    .brand{display:flex; align-items:center; gap:12px; min-width:240px}
-    .logo{
-      width:56px;height:56px;border-radius:16px; overflow:hidden;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      box-shadow: 0 22px 60px rgba(124,58,237,.20);
-      position:relative;
+    .brand{
+      display:flex; align-items:center; gap:12px; min-width:0;
     }
-    .logo img{width:100%;height:100%;object-fit:cover;transform:scale(1.06)}
-    .brand .name{font-weight:900; letter-spacing:.10em; font-size:15px; line-height:1}
-    .brand .tag{font-size:12px;color:var(--muted); margin-top:3px}
-    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
-    .pill{
-      display:flex; align-items:center; gap:10px;
-      padding:8px 10px; border-radius:999px;
+    .brand img{
+      width:38px; height:38px; border-radius:12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .brand .t{
+      display:flex; flex-direction:column; line-height:1.1; min-width:0;
+    }
+    .brand .name{
+      font-weight:800; letter-spacing:.6px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .badge{
+      font-size:12px; padding:4px 10px; border-radius:999px;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
-      font-size:12px; color:var(--muted);
+      color: var(--muted);
     }
-    .dot{width:8px;height:8px;border-radius:99px;background:linear-gradient(120deg,var(--a),var(--b))}
+    .brand .tag{ font-size:12px; color:var(--muted2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .nav-actions{ display:flex; align-items:center; gap:10px; }
     .btn{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.07);
+      appearance:none; border:1px solid var(--stroke);
+      background: var(--btn);
       color:var(--text);
       padding:10px 14px;
-      border-radius:999px;
-      font-weight:800;
+      border-radius: 999px;
       cursor:pointer;
-      transition:.15s ease;
-      user-select:none;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      font-weight:700;
     }
-    .btn:hover{transform:translateY(-1px); background: rgba(255,255,255,.10)}
-    .btn:active{transform:translateY(0)}
+    .btn:hover{ background: var(--btnH); transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0px); }
     .btn.primary{
-      border:1px solid rgba(255,255,255,.14);
-      background: linear-gradient(120deg, rgba(124,58,237,.9), rgba(34,211,238,.55));
-      box-shadow: 0 18px 55px rgba(124,58,237,.18);
+      border-color: rgba(124,58,237,.35);
+      background: linear-gradient(135deg, rgba(124,58,237,.85), rgba(59,130,246,.75));
+      box-shadow: 0 16px 40px rgba(124,58,237,.25);
     }
-    .btn.small{padding:8px 12px; font-size:13px}
+    .btn.primary:hover{ filter: brightness(1.05); }
+
+    .toggle{
+      display:flex; align-items:center; gap:8px;
+      border:1px solid var(--stroke);
+      background: var(--btn);
+      border-radius:999px;
+      padding:6px 10px;
+    }
+    .toggle span{ font-size:12px; color:var(--muted); font-weight:700; }
+    .toggle button{
+      border:none; background:transparent; color:var(--text);
+      cursor:pointer; font-weight:800; padding:6px 10px; border-radius:999px;
+    }
+    .toggle button.active{
+      background: rgba(255,255,255,.10);
+      border:1px solid var(--stroke);
+    }
+
+    /* pages */
+    .page{ display:none; }
+    .page.active{ display:block; }
+
+    /* hero */
+    .hero{
+      margin-top:18px;
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* glass reflection strip */
+    .hero::before{
+      content:"";
+      position:absolute; inset:-30% -40%;
+      background: linear-gradient(120deg, rgba(255,255,255,.0), rgba(255,255,255,.18), rgba(255,255,255,0));
+      transform: rotate(12deg);
+      animation: sheen 8s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes sheen{
+      0%{ transform: translateX(-35%) rotate(12deg); opacity:.0; }
+      12%{ opacity:.20; }
+      35%{ opacity:.10; }
+      55%{ transform: translateX(35%) rotate(12deg); opacity:.0; }
+      100%{ transform: translateX(35%) rotate(12deg); opacity:.0; }
+    }
+
+    .hero-inner{
+      padding:26px 18px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:center;
+    }
+    @media (max-width: 860px){
+      .hero-inner{ grid-template-columns: 1fr; padding:22px 16px; }
+    }
+
+    .bigbrand{
+      display:flex; gap:16px; align-items:center;
+      animation: enter .7s cubic-bezier(.2,.9,.2,1) both;
+    }
+    @keyframes enter{
+      from{ opacity:0; transform:
+translateY(10px); filter: blur(6px); }
+      to{ opacity:1; transform: translateY(0); filter: blur(0); }
+    }
+
+    .logo-wrap{
+      width:92px; height:92px; border-radius: 22px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo-wrap::after{
+      content:"";
+      position:absolute; inset:-30% -30%;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 45%);
+      filter: blur(10px);
+      opacity:.8;
+      pointer-events:none;
+    }
+    .logo-wrap img{
+      width:78px; height:auto;
+      animation: logoPop .85s cubic-bezier(.2,.9,.2,1) both;
+      transform-origin: 50% 70%;
+      filter: drop-shadow(0 16px 26px rgba(0,0,0,.35));
+    }
+    @keyframes logoPop{
+      0%{ transform: translateY(10px) scale(.88); opacity:0; }
+      55%{ opacity:1; }
+      100%{ transform: translateY(0) scale(1); opacity:1; }
+    }
+
+    .h-title{
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 900;
+      letter-spacing: -.6px;
+      margin:0;
+    }
+    .h-sub{
+      margin:10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 52ch;
+    }
+    .cta{
+      margin-top:16px;
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+
+    /* stats cards */
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 860px){
+      .cards{ grid-template-columns: 1fr; }
+    }
 
     .card{
       border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
-      backdrop-filter: blur(16px);
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      border-radius: var(--radius);
+      padding:14px 14px 12px;
+      box-shadow: var(--shadow2);
+      position:relative;
       overflow:hidden;
     }
-    .inner{padding:22px}
-    .hero{margin-top:16px; display:grid; grid-template-columns: 1.2fr .8fr; gap:14px}
-    @media (max-width:920px){ .hero{grid-template-columns:1fr} .brand{min-width:auto} }
-    h1{margin:0 0 10px 0; font-size: clamp(30px, 4vw, 54px); letter-spacing:-.02em; line-height:1.02}
-    .sub{margin:0 0 16px 0; color:var(--muted); line-height:1.6; font-size:15px; max-width:65ch}
-    .grid{display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:14px}
-    @media (max-width:920px){ .grid{grid-template-columns:1fr} }
-    .mini{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      border-radius:18px;
-      padding:16px;
-      min-height:120px;
+    .card::before{
+      content:"";
+      position:absolute; inset:-40% -40%;
+      background: radial-gradient(circle at 20% 10%, rgba(124,58,237,.25), transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(34,211,238,.18), transparent 55%);
+      filter: blur(18px);
+      opacity:.8;
+      pointer-events:none;
     }
-    .mini h3{margin:0 0 8px 0; font-size:15px}
-    .mini p{margin:0; color:var(--muted); font-size:13px; line-height:1.55}
+    .card h3{ margin:0 0 8px; font-size:14px; letter-spacing:.2px; }
+    .card p{ margin:0; color: var(--muted); font-size:13px; line-height:1.55; }
 
-    .page{display:none}
-    .page.active{display:block}
-
-    .field{display:flex; flex-direction:column; gap:6px; margin-top:10px}
-    label{font-size:12px; color:rgba(255,255,255,.65)}
-    [data-theme="light"] label{color:rgba(0,0,0,.55)}
-    input{
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
+    /* section */
+    .section{
+      margin-top:18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: var(--radius2);
+      padding:18px;
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
+    .section h2{
+      margin:0 0 10px;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .cols{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px){
+      .cols{ grid-template-columns: 1fr; }
+    }
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
+      padding:8px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:12px; font-weight:800;
+    }
+    .dot{ width:8px; height:8px; border-radius:99px; background: var(--a2); box-shadow: 0 0 0 4px rgba(34,211,238,.12); }
+
+    /* forms */
+    .auth{
+      max-width: 520px;
+      margin: 22px auto 0;
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(16px);
+      position:relative;
+      overflow:hidden;
+    }
+    .auth::before{
+      content:"";
+      position:absolute; inset:-50% -40%;
+      background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.18), transparent 50%),
+                  radial-gradient(circle at 70% 20%, rgba(34,211,238,.14), transparent 55%);
+      filter: blur(24px);
+      pointer-events:none;
+    }
+    .auth > *{ position:relative; z-index:1; }
+
+    .tabs{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+    .tab{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+      color:var(--muted);
+    }
+    .tab.active{
       color:var(--text);
+      background: rgba(255,255,255,.10);
+    }
+    .field{ margin-top:10px; }
+    label{ display:block; font-size:12px; color:var(--muted); font-weight:800; margin-bottom:6px; }
+    input, select{
+      width:100%;
+      border:1px solid var(--stroke);
+      background: var(--input);
+      color:var(--text);
+      padding: 12px 12px;
+      border-radius: 14px;
       outline:none;
+      transition: background .15s ease, border-color .15s ease;
     }
-    input::placeholder{color: rgba(255,255,255,.45)}
-    [data-theme="light"] input::placeholder{color: rgba(0,0,0,.35)}
-    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    @media (max-width:920px){ .row{grid-template-columns:1fr} }
+    input:focus, select:focus{
+      background: var(--inputH);
+      border-color: rgba(124,58,237,.45);
+    }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media (max-width: 520px){ .row{ grid-template-columns: 1fr; } }
 
-    .toast{
-      margin-top:12px; padding:10px 12px;
-      border-radius:14px; border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color:var(--muted); font-size:13px; display:none;
+    .help{
+      margin-top:10px;
+      font-size:13px;
+      color: var(--muted);
+      line-height:1.55;
     }
-    .toast.show{display:block}
-    .toast.ok{border-color: rgba(34,197,94,.35); color: rgba(34,197,94,.95)}
-    .toast.warn{border-color: rgba(245,158,11,.35); color: rgba(245,158,11,.95)}
-    .toast.err{border-color: rgba(239,68,68,.35); color: rgba(239,68,68,.95)}
+    .msg{
+      margin-top:10px;
+      font-size:13px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+    .msg.ok{ border-color: rgba(52,211,153,.35); color: rgba(52,211,153,.95); }
+    .msg.bad{ border-color: rgba(251,113,133,.35); color: rgba(251,113,133,.95); }
+    .msg.warn{ border-color: rgba(251,191,36,.40); color: rgba(251,191,36,.95); }
+
+    .actions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .link{
+      border:none;
+      background:transparent;
+      color: rgba(34,211,238,.95);
+      font-weight:900;
+      cursor:pointer;
+      padding:10px 0;
+    }
+
+    /* profile */
+    .profile-head{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .user-pill{
+      display:flex; align-items:center; gap:10px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      padding: 10px 12px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-weight:800;
+      max-width: 100%;
+      overflow:hidden;
+    }
+    .avatar{
+      width:34px; height:34px; border-radius: 12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      display:grid; place-items:center;
+      overflow:hidden;
+      flex: 0 0 auto;
+    }
+    .avatar img{ width:100%; height:100%; object-fit:cover; }
+    .email-clip{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 240px; }
+    @media (max-width: 420px){ .email-clip{ max-width: 180px; } }
 
     footer{
-      margin-top:18px; padding:18px 4px 0;
-      color:rgba(255,255,255,.55); font-size:12px;
-      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-top:24px;
+      color: var(--muted2);
+      font-size: 12px;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      opacity:.9;
     }
-    [data-theme="light"] footer{color:rgba(0,0,0,.55)}
-    footer a{color:inherit; text-decoration:none}
-    footer a:hover{text-decoration:underline}
+    footer a{ color: rgba(34,211,238,.95); font-weight:900; text-decoration:none; }
+    footer a:hover{ text-decoration:underline; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="grid"></div>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
 
-    <header>
-      <div class="brand">
-        <div class="logo"><img src="logo.webp" alt="Pepsval"></div>
-        <div>
-          <div class="name">PEPSVAL</div>
+  <div class="wrap">
+    <!-- NAV -->
+    <div class="nav">
+      <div class="brand" role="button" tabindex="0" onclick="go('home')" title="Go to home">
+        <img src="logo.webp" alt="Pepsval logo">
+        <div class="t">
+          <div class="name">PEPSVAL <span class="badge">Private beta</span></div>
           <div class="tag">Where Shipping Trust Exists.</div>
         </div>
       </div>
 
-      <div class="actions">
-        <div class="pill"><span class="dot"></span><span id="statusText">Early access open</span></div>
-        <button class="btn small" id="themeBtn" type="button">🌙 Dark</button>
-        <button class="btn small primary" id="navLoginBtn" type="button">Login</button>
-        <button class="btn small" id="navLogoutBtn" type="button" style="display:none;">Logout</button>
+      <div class="nav-actions">
+        <div class="toggle" aria-label="Theme toggle">
+          <span id="themeLabel">Dark</span>
+          <button id="darkBtn" class="active" onclick="setTheme('dark')">🌙</button>
+          <button id="lightBtn" onclick="setTheme('light')">☀️</button>
+        </div>
+        <button class="btn" onclick="go('login')">Login</button>
+        <button class="btn primary" onclick="go('login'); setAuthTab('signup')">Create account</button>
       </div>
-    </header>
+    </div>
 
-    <!-- PAGE: LANDING -->
-    <section id="landing" class="page active">
+    <!-- HOME PAGE -->
+    <section id="page-home" class="page active">
       <div class="hero">
-        <div class="card">
-          <div class="inner">
-            <h1>A friendly trust layer for global shipping.</h1>
-            <p class="sub">
-              Pepsval helps seafarers and companies share verified details in a calm, respectful way.
-              Your profile stays private by default — you decide what to share and when.
-            </p>
-
-            <div style="display:flex;
-gap:10px; flex-wrap:wrap;">
-              <button class="btn primary" id="landingLoginBtn" type="button">Login / Create account</button>
-              <button class="btn" id="landingAboutBtn" type="button">How it works</button>
-            </div>
-
-            <div class="grid">
-              <div class="mini">
-                <h3>For Seafarers</h3>
-                <p>Build a trusted profile, keep your key details organized, and share only what you choose.</p>
+        <div class="hero-inner">
+          <div>
+            <div class="bigbrand">
+              <div class="logo-wrap" aria-hidden="true">
+                <img src="logo.webp" alt="">
               </div>
-              <div class="mini">
-                <h3>For Companies</h3>
-                <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
-              </div>
-              <div class="mini">
-                <h3>For the Industry</h3>
-                <p>A single place for trust, connections, and opportunities — built for sea & shore careers.</p>
+              <div>
+                <h1 class="h-title">A friendly trust layer for global shipping.</h1>
+                <p class="h-sub">
+                  Pepsval is a private,
+login-only platform that brings <b>verified identity</b>, <b>verified sea time</b>,
+                  and <b>professional reputation</b> into one profile — built to be welcoming, clear, and respectful.
+                </p>
+                <div class="cta">
+                  <button class="btn primary" onclick="go('login')">Login</button>
+                  <button class="btn" onclick="go('login'); setAuthTab('signup')">Create account</button>
+                </div>
               </div>
             </div>
 
-            <div style="margin-top:14px;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)">
-              <div style="font-weight:900;margin-bottom:6px;">Partnerships</div>
-              <div style="color:var(--muted);font-size:13px;line-height:1.5">
-                Training institutes, crewing agencies, unions/associations, and ship managers are welcome to collaborate.
-                Email: <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
+            <div class="section" style="margin-top:16px;">
+              <span class="pill"><span class="dot"></span> Profiles are private by default — you choose what to share.</span>
+              <div style="height:10px"></div>
+              <div class="cols">
+                <div class="card">
+                  <h3>For Seafarers</h3>
+                  <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
+                </div>
+                <div class="card">
+                  <h3>For Companies</h3>
+                  <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
+                </div>
+                <div class="card">
+                  <h3>For the Industry</h3>
+                  <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="card">
-          <div class="inner">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
-              <div style="font-weight:900;letter-spacing:.06em;">v1 foundations</div>
-              <div style="font-size:12px;color:var(--muted);">simple • clear</div>
+          <div class="cards">
+            <div class="card">
+              <h3>Seafarer e-Passport</h3>
+              <p>One profile that combines identity, sea time, and reputation — designed to be simple and professional.</p>
             </div>
-
-            <div style="height:10px"></div>
-
-            <div class="mini" style="margin-bottom:12px;">
-              <h3>Document Verified</h3>
-              <p>Key documents can be checked for authenticity and expiry.</p>
+            <div class="card">
+              <h3>Employer appraisal</h3>
+              <p>After each contract, employers can add a short appraisal — respectful, structured, and useful.</p>
             </div>
-            <div class="mini" style="margin-bottom:12px;">
-              <h3>Employment Confirmed</h3>
-              <p>Companies can confirm dates and vessel details with a simple response.</p>
+            <div class="card">
+              <h3>Connections & posts</h3>
+              <p>Social features (posts/photos/videos) built for the maritime community — not noise.</p>
             </div>
-            <div class="mini">
-              <h3>Peer Confirmed</h3>
-              <p>Senior crew can confirm “served together” — optional but powerful.</p>
+            <div class="card">
+              <h3>Sea & shore jobs</h3>
+              <p>Worldwide job listings (future) for both sea and shore roles — one place to explore.</p>
             </div>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- PAGE: AUTH -->
-    <section id="auth" class="page">
-      <div class="card" style="margin-top:16px;">
-        <div class="inner">
-          <h2 style="margin:0 0 6px 0;">Login</h2>
-          <p class="sub" style="margin-top:0">Email + password. Create an account if you are new.</p>
-
-          <div class="row">
-            <div class="field">
-              <label>Email</label>
-              <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
-            </div>
-            <div class="field">
-              <label>Password</label>
-              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-            </div>
+      <div class="section">
+        <h2>Verification levels (v1)</h2>
+        <div class="cols">
+          <div class="card">
+            <h3>Document Verified</h3>
+            <p>Admin/partner checks document authenticity format + expiry, then marks it verified.</p>
           </div>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-            <button class="btn primary" id="btnLogin" type="button">Login</button>
-            <button class="btn" id="btnSignup" type="button">Create account</button>
-            <button class="btn" id="btnBack" type="button">← Back</button>
+          <div class="card">
+            <h3>Employment Confirmed</h3>
+            <p>Company confirms dates/vessel via a simple Yes/No workflow.</p>
           </div>
+          <div class="card">
+            <h3>Peer Confirmed</h3>
+            <p>A senior officer you served with can confirm “served together” (optional, but powerful).</p>
+          </div>
+        </div>
 
-          <div id="authToast" class="toast"></div>
-
-          <p class="sub" style="margin-top:12px">
-            If email confirmation is enabled in Supabase, you must confirm from your inbox once after signup.
+        <div style="height:10px"></div>
+        <div class="card">
+          <h3>Partnerships</h3>
+          <p>
+            We’re open to partnerships with manning agencies, shipping companies, maritime institutes, unions, and port-state stakeholders.
+            If you want to collaborate, email: <b>jithinilip@gmail.com</b>
           </p>
         </div>
       </div>
     </section>
 
-    <!-- PAGE: ONBOARDING / PROFILE -->
-    <section id="profile" class="page">
-      <div class="card" style="margin-top:16px;">
-        <div class="inner">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
-            <div>
-              Signed in as <b id="who">—</b>
-              <div style="font-size:12px;color:var(--muted);margin-top:4px">Create your profile (private by default).</div>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn" id="btnHome" type="button">Home</button>
-              <button class="btn" id="btnLogout" type="button">Logout</button>
-            </div>
-          </div>
+    <!-- LOGIN PAGE -->
+    <section id="page-login" class="page">
+      <div class="auth">
+        <h2 style="margin:0 0 6px; font-size:18px;">Login to Pepsval</h2>
+        <div class="help">Email + password only. After login, you’ll be taken to the Profile Setup page.</div>
 
-          <div class="row" style="margin-top:12px;">
-            <div class="field">
-              <label>Full name</label>
-              <input id="full_name" type="text" placeholder="Jithin Philip">
-            </div>
-            <div class="field">
-              <label>Nationality</label>
-              <input id="nationality" type="text" placeholder="Indian">
-            </div>
-          </div>
+        <div class="tabs" style="margin-top:12px;">
+          <button id="tab-login" class="tab active" onclick="setAuthTab('login')">Login</button>
+          <button id="tab-signup" class="tab" onclick="setAuthTab('signup')">Create account</button>
+          <button id="tab-reset" class="tab" onclick="setAuthTab('reset')">Forgot password</button>
+        </div>
 
-          <div class="row">
-            <div class="field">
-              <label>Rank</label>
-              <input id="rank" type="text" placeholder="Second Officer">
-            </div>
-            <div class="field">
-              <label>Date of birth</label>
-              <input id="dob" type="date">
-            </div>
-          </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="email" type="email" autocomplete="email" placeholder="name@example.com" />
+        </div>
 
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-            <button class="btn primary" id="btnSave" type="button">Save profile</button>
-            <button class="btn" id="btnLoad" type="button">Load my profile</button>
-          </div>
+        <div class="field" id="pwWrap">
+          <label>Password</label>
+          <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
 
-          <div id="profileToast" class="toast"></div>
+        <div class="actions">
+          <button id="authBtn" class="btn primary" onclick="handleAuth()">Login</button>
+          <button class="btn" onclick="go('home')">Back</button>
+        </div>
+
+        <div id="msg" class="msg" style="display:none;"></div>
+
+        <div class="actions" style="justify-content:space-between;">
+          <button class="link" onclick="setAuthTab('reset')">Forgot password?</button>
+          <button class="link" onclick="setAuthTab('signup')">Create an account</button>
+        </div>
+
+        <div class="help" style="margin-top:8px;">
+          If “Confirm email” is ON in Supabase, you must confirm from your email before logging in.
+          You can also resend confirmation from the message prompt if needed.
         </div>
       </div>
     </section>
 
-    <footer>
-      <div>© <span id="year"></span> Pepsval</div>
-      <div>
-        Founder
-        <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">JITHIN PHILIP</a>
+    <!-- PROFILE PAGE -->
+    <section id="page-profile" class="page">
+      <div class="auth" style="max-width:720px;">
+        <div class="profile-head">
+          <h2 style="margin:0; font-size:18px;">Profile setup</h2>
+          <div class="user-pill">
+            <div class="avatar" id="avatarBox">👤</div>
+            <div class="email-clip" id="userEmail">Signed in</div>
+          </div>
+        </div>
+
+        <div class="help" style="margin-bottom:10px;">
+          Add your basic details now. You can improve your profile later.
+        </div>
+
+        <div class="field">
+          <label>Profile picture (optional)</label>
+          <input id="avatarFile" type="file" accept="image/*" />
+          <div class="help">Tip: For best results use a square photo. (Upload uses a Supabase Storage bucket named <b>avatars</b>.)</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Full name</label>
+            <input id="full_name" type="text" placeholder="e.g., Jithin Philip" />
+          </div>
+          <div class="field">
+            <label>Nationality</label>
+            <input id="nationality" type="text" placeholder="e.g., Indian" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Rank</label>
+            <input id="rank" type="text"
+placeholder="e.g., Second Officer" />
+          </div>
+          <div class="field">
+            <label>Date of birth</label>
+            <input id="dob" type="date" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" onclick="saveProfile()">Save profile</button>
+          <button class="btn" onclick="loadProfile()">Reload</button>
+          <button class="btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="pmsg" class="msg" style="display:none;"></div>
       </div>
+    </section>
+
+    <footer>
+      <div>© <span id="yr"></span> Pepsval. All rights reserved.</div>
+      <div>Founder <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">JITHIN PHILIP</a></div>
     </footer>
   </div>
 
+  <!-- Supabase JS (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
   <script>
-    // --- Supabase ---
+    // =========================
+    // 1) CONFIG — your keys
+    // =========================
     const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // --- Helpers ---
-    const $ = (id) => document.getElementById(id);
-    const pages = { landing: $("landing"), auth: $("auth"), profile: $("profile") };
-
-    function showPage(name){
-      Object.values(pages).forEach(p => p.classList.remove("active"));
-      pages[name].classList.add("active");
-      window.scrollTo({top:0, behavior:"smooth"});
-    }
-    function toast(el, type, msg){
-      el.className = "toast show " + (type || "");
-      el.textContent = msg;
-    }
-    function clearToast(el){
-      el.className = "toast";
-      el.textContent = "";
+    // =========================
+    // 2) Routing / Pages
+    // =========================
+    const pages = ["home", "login", "profile"];
+    function go(name){
+      pages.forEach(p => document.getElementById("page-"+p).classList.remove("active"));
+      document.getElementById("page-"+name).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // --- Theme ---
-    function applyTheme(t){
-      document.documentElement.setAttribute("data-theme", t);
-      $("themeBtn").textContent = (t === "light") ? "☀️ Light" : "🌙 Dark";
-      localStorage.setItem("pepsval_theme", t);
+    // =========================
+    // 3) Theme
+    // =========================
+    function setTheme(mode){
+      document.documentElement.setAttribute("data-theme", mode === "light" ? "light" : "dark");
+      localStorage.setItem("pepsval_theme", mode);
+
+      document.getElementById("themeLabel").textContent = mode === "light" ? "Light" : "Dark";
+      document.getElementById("darkBtn").classList.toggle("active", mode !== "light");
+      document.getElementById("lightBtn").classList.toggle("active", mode === "light");
     }
-    applyTheme(localStorage.getItem("pepsval_theme") || "dark");
-    $("themeBtn").addEventListener("click", () => {
-      const cur = document.documentElement.getAttribute("data-theme") || "dark";
-      applyTheme(cur === "dark" ? "light" : "dark");
-    });
+    (function initTheme(){
+      const saved = localStorage.getItem("pepsval_theme") || "dark";
+      setTheme(saved);
+    })();
 
-    $("year").textContent = new Date().getFullYear();
+    document.getElementById("yr").textContent = new Date().getFullYear();
 
-    // --- Nav Buttons ---
-    $("landingLoginBtn").addEventListener("click", () => showPage("auth"));
-    $("navLoginBtn").addEventListener("click", async () => {
-      const { data } = await supabase.auth.getSession();
-      showPage(data.session ? "profile" : "auth");
-    });
-    $("navLogoutBtn").addEventListener("click", logout);
-    $("btnBack").addEventListener("click", () => showPage("landing"));
-    $("btnHome").addEventListener("click", () => showPage("landing"));
+    // =========================
+    // 4) Auth UI
+    // =========================
+    let authMode = "login"; // login | signup | reset
+    function setAuthTab(mode){
+      authMode = mode;
+      document.getElementById("tab-login").classList.toggle("active", mode === "login");
+      document.getElementById("tab-signup").classList.toggle("active", mode === "signup");
+      document.getElementById("tab-reset").classList.toggle("active", mode === "reset");
 
-    $("landingAboutBtn").addEventListener("click", () => {
-      alert(
-        "Pepsval is building a private-by-default trust layer for seafarers and companies.\n\n" +
-        "Today we focus on:\n" +
-        "1) Login\n2) Profile creation\n\n" +
-        "Next we can add sea time, documents, and employer confirmations."
-      );
-    });
+      document.getElementById("pwWrap").style.display = (mode === "reset") ? "none" : "block";
+      document.getElementById("authBtn").textContent =
+        mode === "login" ? "Login" : (mode === "signup" ? "Create account" : "Send reset link");
 
-    // --- Auth ---
-    $("btnSignup").addEventListener("click", signUp);
-    $("btnLogin").addEventListener("click", signIn);
-    $("btnLogout").addEventListener("click", logout);
-
-    async function signUp(){
-      clearToast($("authToast"));
-      const email = $("email").value.trim();
-      const password = $("password").value;
-      if (!email || !password) return toast($("authToast"), "warn", "Enter email and password.");
-
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) return toast($("authToast"), "err", error.message);
-
-      toast($("authToast"), "ok", "Account created. If confirmation email is enabled, confirm from inbox, then login.");
+      hideMsg();
     }
 
-    async function signIn(){
-      clearToast($("authToast"));
-      const email = $("email").value.trim();
-      const password = $("password").value;
-      if (!email || !password) return toast($("authToast"), "warn", "Enter email and password.");
+    function showMsg(text, type=""){
+      const el = document.getElementById("msg");
+      el.style.display = "block";
+      el.className = "msg" + (type ? " " + type : "");
+      el.innerHTML = text;
+    }
+    function hideMsg(){ document.getElementById("msg").style.display = "none"; }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return toast($("authToast"), "err", error.message);
+    async function handleAuth(){
+      const email = (document.getElementById("email").value || "").trim();
+      const password = document.getElementById("password").value || "";
 
-      await syncUI();
-      showPage("profile");
+      if(!email) return showMsg("Please enter your email.", "warn");
+      if(authMode !== "reset" && password.length < 6) return showMsg("Password must be at least 6 characters.", "warn");
+
+      try{
+        if(authMode === "login"){
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if(error){
+            // Friendly guidance for email confirmation
+            if((error.message || "").toLowerCase().includes("email not confirmed")){
+              return showMsg(
+                `Your email is not confirmed yet. Please check your inbox.<br><br>
+                 <button class="btn" style="padding:8px 12px;" onclick="resendConfirm('${email}')">Resend confirmation</button>`,
+                "warn"
+              );
+            }
+            return showMsg(error.message, "bad");
+          }
+          await onSignedIn(data.user);
+        }
+
+        if(authMode === "signup"){
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+              // IMPORTANT: set this to your live domain so confirm/reset links come back correctly
+              emailRedirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          if(error) return showMsg(error.message, "bad");
+
+          // If confirm email is ON, user must verify.
+          showMsg("Account created. Please check your email to confirm, then login.", "ok");
+        }
+
+        if(authMode === "reset"){
+          const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + window.location.pathname
+          });
+          if(error) return showMsg(error.message, "bad");
+          showMsg("Password reset link sent. Please check your email.", "ok");
+        }
+      }catch(e){
+        showMsg("Something went wrong. Please try again.", "bad");
+      }
+    }
+
+    async function resendConfirm(email){
+      try{
+        const { error } = await supabaseClient.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        });
+        if(error) return showMsg(error.message, "bad");
+        showMsg("Confirmation email resent. Please check inbox/spam.", "ok");
+      }catch(e){
+        showMsg("Could not resend. Please try again.", "bad");
+      }
+    }
+
+    // =========================
+    // 5) After login → Profile page
+    // =========================
+    let currentUser = null;
+
+    async function onSignedIn(user){
+      currentUser = user;
+      document.getElementById("userEmail").textContent = user.email || "Signed in";
+
+      // Load existing profile if present
+      await loadProfile();
+
+      go("profile");
     }
 
     async function logout(){
-      await supabase.auth.signOut();
-      await syncUI();
-      showPage("landing");
+      await supabaseClient.auth.signOut();
+      currentUser = null;
+      go("home");
     }
 
-    // --- Profile ---
-    $("btnSave").addEventListener("click", saveProfile);
-    $("btnLoad").addEventListener("click", loadProfile);
-
-    async function saveProfile(){
-      clearToast($("profileToast"));
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session) return (showPage("auth"), toast($("authToast"), "warn", "Please login first."));
-
-      const user = session.user;
-      const payload = {
-        id: user.id,
-        full_name: $("full_name").value.trim() || null,
-        nationality: $("nationality").value.trim() || null,
-        rank: $("rank").value.trim() || null,
-        dob: $("dob").value || null,
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
-      if (error) return toast($("profileToast"), "err", "Save failed: " + error.message);
-
-      toast($("profileToast"), "ok", "Profile saved successfully.");
+    // =========================
+    // 6) Profile save/load
+    // =========================
+    function showPMsg(text, type=""){
+      const el = document.getElementById("pmsg");
+      el.style.display = "block";
+      el.className = "msg" + (type ? " " + type : "");
+      el.textContent = text;
     }
 
     async function loadProfile(){
-      clearToast($("profileToast"));
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session) return (showPage("auth"), toast($("authToast"), "warn", "Please login first."));
+      showPMsg("Loading profile…", "");
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if(!user){
+        showPMsg("You are signed out. Please login again.", "warn");
+        go("login");
+        return;
+      }
+      currentUser = user;
+      document.getElementById("userEmail").textContent = user.email || "Signed in";
 
-      const user = session.user;
-      const { data: row, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("profiles")
-        .select("full_name, nationality, rank, dob")
+        .select("id, full_name, nationality, rank, dob, avatar_url")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) return toast($("profileToast"), "err", "Load failed: " + error.message);
+      if(error){
+        showPMsg(error.message, "bad");
+        return;
+      }
 
-      $("full_name").value = row.full_name || "";
-      $("nationality").value = row.nationality || "";
-      $("rank").value = row.rank || "";
-      $("dob").value = row.dob || "";
+      if(data){
+        document.getElementById("full_name").value = data.full_name || "";
+        document.getElementById("nationality").value = data.nationality || "";
+        document.getElementById("rank").value
+= data.rank || "";
+        document.getElementById("dob").value = data.dob || "";
 
-      toast($("profileToast"), "ok", "Profile loaded.");
+        if(data.avatar_url){
+          document.getElementById("avatarBox").innerHTML = `<img src="${data.avatar_url}" alt="avatar">`;
+        }else{
+          document.getElementById("avatarBox").textContent = "👤";
+        }
+
+        showPMsg("Profile loaded.", "ok");
+      }else{
+        showPMsg("No profile yet. Fill details and save.", "warn");
+      }
     }
 
-    // --- UI sync ---
-    async function syncUI(){
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
+    async function uploadAvatarIfAny(userId){
+      const fileInput = document.getElementById("avatarFile");
+      const file = fileInput.files && fileInput.files[0];
+      if(!file) return null;
 
-      $("navLoginBtn").style.display = session ? "none" : "inline-flex";
-      $("navLogoutBtn").style.display = session ? "inline-flex" : "none";
+      // Upload to Supabase Storage bucket named "avatars"
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${userId}/${Date.now()}.${ext}`;
 
-      $("who").textContent = session ? (session.user.email || session.user.id) : "—";
-      $("statusText").textContent = session ? "Signed in" : "Early access open";
+      const { error: upErr } = await supabaseClient
+        .storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+
+      if(upErr){
+        throw new Error("Avatar upload failed. Please create a Storage bucket named 'avatars' and allow uploads for authenticated users.");
+      }
+
+      const { data: pub } = supabaseClient.storage.from("avatars").getPublicUrl(path);
+      return pub?.publicUrl || null;
     }
 
-    supabase.auth.onAuthStateChange(() => syncUI());
-    syncUI();
+    async function saveProfile(){
+      showPMsg("Saving…", "");
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if(!user){
+        showPMsg("You are signed out. Please login again.", "warn");
+        go("login");
+        return;
+      }
+
+      const full_name = (document.getElementById("full_name").value || "").trim();
+      const nationality = (document.getElementById("nationality").value || "").trim();
+      const rank = (document.getElementById("rank").value || "").trim();
+      const dob = document.getElementById("dob").value || null;
+
+      try{
+        let avatar_url = null;
+        try{
+          avatar_url = await uploadAvatarIfAny(user.id);
+        }catch(uploadErr){
+          // Don't block saving details if upload bucket isn't ready
+          showPMsg(uploadErr.message + " (Details can still be saved.)", "warn");
+        }
+
+        const payload = {
+          id: user.id,
+          full_name,
+          nationality,
+          rank,
+          dob,
+          updated_at: new Date().toISOString(),
+        };
+        if(avatar_url) payload.avatar_url = avatar_url;
+
+        // Upsert creates row if missing, updates if exists
+        const { error } = await supabaseClient
+          .from("profiles")
+          .upsert(payload, { onConflict: "id" });
+
+        if(error){
+          // This is the exact issue you saw: RLS insert not allowed
+          showPMsg(error.message, "bad");
+          return;
+        }
+
+        if(avatar_url){
+          document.getElementById("avatarBox").innerHTML = `<img src="${avatar_url}" alt="avatar">`;
+          document.getElementById("avatarFile").value = "";
+        }
+
+        showPMsg("Saved successfully.", "ok");
+      }catch(e){
+        showPMsg(e.message || "Save failed. Please try again.", "bad");
+      }
+    }
+
+    // =========================
+    // 7) Session restore
+    // =========================
+    (async function init(){
+      // If user is already logged in, go to profile
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if(session?.user){
+        await onSignedIn(session.user);
+      }else{
+        go("home");
+      }
+
+      // react to auth changes
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        if(session?.user){
+          await onSignedIn(session.user);
+        }
+      });
+    })();
   </script>
 </body>
 </html>
