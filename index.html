@@ -3,51 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pepsval — Where Shipping Trust Exists</title>
 
-  <title>Pepsval — Where Shipping Trust Exists.</title>
-
-  <!-- ✅ Bookmark / Tab icon (uses logo.webp) -->
   <link rel="icon" type="image/webp" href="logo.webp" />
   <link rel="apple-touch-icon" href="logo.webp" />
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{
-      --bg0:#060812;
-      --bg1:#0a0f2a;
-      --card: rgba(255,255,255,.08);
-      --card2: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.14);
-      --text:#f3f6ff;
-      --muted: rgba(243,246,255,.70);
-      --muted2: rgba(243,246,255,.55);
-      --shadow: 0 30px 80px rgba(0,0,0,.45);
-      --accentA:#7c3aed;
-      --accentB:#22d3ee;
-      --accentC:#ff5ad6;
-      --ok:#22c55e;
-      --warn:#f59e0b;
-      --err:#ef4444;
-      --radius: 22px;
+      --bg0:#050714; --bg1:#0b1030;
+      --card:rgba(255,255,255,.08); --stroke:rgba(255,255,255,.14);
+      --text:#f4f7ff; --muted:rgba(244,247,255,.72);
+      --shadow: 0 30px 90px rgba(0,0,0,.45);
+      --a:#7c3aed; --b:#22d3ee; --c:#ff5ad6;
+      --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+      --r:22px;
     }
-
     [data-theme="light"]{
-      --bg0:#f7f8ff;
-      --bg1:#eef1ff;
-      --card: rgba(0,0,0,.05);
-      --card2: rgba(0,0,0,.04);
-      --stroke: rgba(0,0,0,.10);
-      --text:#0b1022;
-      --muted: rgba(11,16,34,.72);
-      --muted2: rgba(11,16,34,.55);
-      --shadow: 0 30px 80px rgba(0,0,0,.16);
+      --bg0:#f7f8ff; --bg1:#eef1ff;
+      --card:rgba(0,0,0,.05); --stroke:rgba(0,0,0,.10);
+      --text:#0b1022; --muted:rgba(11,16,34,.70);
+      --shadow: 0 24px 70px rgba(0,0,0,.16);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
+      margin:0; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       background:
         radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.35), transparent 55%),
         radial-gradient(900px 700px at 85% 18%, rgba(34,211,238,.22), transparent 55%),
@@ -55,282 +38,107 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-
-    /* Subtle grain */
-    body::before{
-      content:"";
-      position:fixed; inset:0;
-      pointer-events:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
-      mix-blend-mode: overlay;
-      opacity:.35;
-    }
-
-    a{color:inherit}
-    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 60px;position:relative}
-
-    /* Header */
+    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
     header{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:14px;
-      padding:14px 16px;
+      position:sticky; top:12px; z-index:10;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 14px;
       border:1px solid var(--stroke);
+      border-radius:18px;
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
       backdrop-filter: blur(16px);
-      border-radius: 18px;
-      box-shadow: 0 16px 50px rgba(0,0,0,.20);
-      position:sticky; top:14px; z-index:10;
+      box-shadow: 0 16px 60px rgba(0,0,0,.20);
     }
-
-    .brand{
-      display:flex; align-items:center; gap:12px;
-      min-width: 220px;
-    }
-
-    /* Bigger logo + animation */
-    .logoBox{
-      width:56px;height:56px;
-      border-radius:16px;
-      overflow:hidden;
-      position:relative;
-      box-shadow:
-        0 22px 60px rgba(124,58,237,.25),
-        0 18px 70px rgba(34,211,238,.14);
-      border: 1px solid rgba(255,255,255,.14);
+    .brand{display:flex; align-items:center; gap:12px; min-width:240px}
+    .logo{
+      width:56px;height:56px;border-radius:16px; overflow:hidden;
+      border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
-      transform: translateY(0);
-      animation: floaty 6.5s ease-in-out infinite;
+      box-shadow: 0 22px 60px rgba(124,58,237,.20);
+      position:relative;
     }
-    .logoBox img{
-      width:100%; height:100%;
-      object-fit:cover;
-      transform: scale(1.08);
-      animation: logoIn 900ms cubic-bezier(.2,.9,.2,1) both;
-      will-change: transform, filter;
-      filter: saturate(1.08) contrast(1.02);
-    }
-
-    /* Glass reflection sweep */
-    .logoBox::after{
-      content:"";
-      position:absolute; inset:-40%;
-      background: linear-gradient(115deg,
-        transparent 35%,
-        rgba(255,255,255,.55) 44%,
-        rgba(255,255,255,.15) 52%,
-        transparent 60%);
-      transform: translateX(-60%) rotate(10deg);
-      animation: sweep 3.8s ease-in-out infinite;
-      mix-blend-mode: screen;
-      opacity:.65;
-      pointer-events:none;
-    }
-
-    /* Subtle glowing halo */
-    .logoBox::before{
-      content:"";
-      position:absolute; inset:-18px;
-      background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.35), transparent 55%),
-                  radial-gradient(circle at 70% 70%, rgba(34,211,238,.20), transparent 58%);
-      filter: blur(10px);
-      opacity:.65;
-      pointer-events:none;
-    }
-
-    .brandText{line-height:1.05}
-    .brandText .name{
-      font-size:16px; letter-spacing:.10em; font-weight:800;
-    }
-    .brandText .tag{
-      margin-top:2px;
-      font-size:12px;
-      color:var(--muted2);
-    }
-
+    .logo img{width:100%;height:100%;object-fit:cover;transform:scale(1.06)}
+    .brand .name{font-weight:900; letter-spacing:.10em; font-size:15px; line-height:1}
+    .brand .tag{font-size:12px;color:var(--muted); margin-top:3px}
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
     .pill{
       display:flex; align-items:center; gap:10px;
-      padding:8px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-    }
-    .dot{
-      width:8px;height:8px;border-radius:999px;
-      background: linear-gradient(120deg, var(--accentA), var(--accentB));
-      box-shadow: 0 0 0 6px rgba(124,58,237,.10);
-    }
-    .pill span{color:var(--muted);font-size:12px}
-
-    .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    .btn{
-      appearance:none; border:none;
-      cursor:pointer;
-      padding:10px 14px;
-      border-radius: 999px;
-      font-weight:700;
-      color:var(--text);
-      background: rgba(255,255,255,.08);
+      padding:8px 10px; border-radius:999px;
       border:1px solid var(--stroke);
-      backdrop-filter: blur(10px);
-      transition: transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+      background: rgba(255,255,255,.06);
+      font-size:12px; color:var(--muted);
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background:linear-gradient(120deg,var(--a),var(--b))}
+    .btn{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.07);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s ease;
       user-select:none;
     }
-    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.10)}
-    .btn:active{transform: translateY(0px) scale(.99)}
+    .btn:hover{transform:translateY(-1px); background: rgba(255,255,255,.10)}
+    .btn:active{transform:translateY(0)}
     .btn.primary{
-      border: 1px solid rgba(255,255,255,.14);
-      background: linear-gradient(120deg, rgba(124,58,237,.85), rgba(34,211,238,.55));
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(120deg, rgba(124,58,237,.9), rgba(34,211,238,.55));
       box-shadow: 0 18px 55px rgba(124,58,237,.18);
     }
-    .btn.ghost{background: rgba(255,255,255,.06)}
     .btn.small{padding:8px 12px; font-size:13px}
 
-    /* Entrance animation (Apple-ish) */
-    .enter{
-      opacity:0;
-      transform: translateY(16px) scale(.99);
-      filter: blur(6px);
-      animation: enter 900ms cubic-bezier(.2,.9,.2,1) forwards;
-    }
-    .delay1{animation-delay: 80ms}
-    .delay2{animation-delay: 160ms}
-    .delay3{animation-delay: 240ms}
-    .delay4{animation-delay: 320ms}
-
-    @keyframes enter{
-      to{opacity:1; transform: translateY(0)
-scale(1); filter: blur(0)}
-    }
-    @keyframes floaty{
-      0%,100%{transform: translateY(0)}
-      50%{transform: translateY(-4px)}
-    }
-    @keyframes sweep{
-      0%{transform: translateX(-70%) rotate(10deg); opacity:.0}
-      15%{opacity:.7}
-      55%{opacity:.55}
-      100%{transform: translateX(65%) rotate(10deg); opacity:.0}
-    }
-    @keyframes logoIn{
-      0%{transform: scale(.86) rotate(-6deg); filter: blur(4px) saturate(1.2)}
-      100%{transform: scale(1.08) rotate(0deg); filter: blur(0) saturate(1.08)}
-    }
-
-    /* Hero */
-    .hero{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 18px;
-      margin-top: 18px;
-      align-items: stretch;
-    }
-    @media (max-width: 920px){
-      .hero{grid-template-columns: 1fr}
-      .brand{min-width:auto}
-    }
-
     .card{
-      border: 1px solid var(--stroke);
+      border:1px solid var(--stroke);
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
       backdrop-filter: blur(16px);
-      border-radius: var(--radius);
+      border-radius: var(--r);
       box-shadow: var(--shadow);
       overflow:hidden;
-      position:relative;
     }
-    .card .inner{padding: 22px}
-
-    .bigTitle{
-      font-size: clamp(30px, 4vw, 54px);
-      line-height: 1.02;
-      letter-spacing:-0.02em;
-      margin: 0 0 10px 0;
-    }
-    .sub{
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.55;
-      margin: 0 0 16px 0;
-      max-width: 62ch;
-    }
-
-    .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-    .chip{
-      padding:10px 12px;
-      border-radius: 999px;
+    .inner{padding:22px}
+    .hero{margin-top:16px; display:grid; grid-template-columns: 1.2fr .8fr; gap:14px}
+    @media (max-width:920px){ .hero{grid-template-columns:1fr} .brand{min-width:auto} }
+    h1{margin:0 0 10px 0; font-size: clamp(30px, 4vw, 54px); letter-spacing:-.02em; line-height:1.02}
+    .sub{margin:0 0 16px 0; color:var(--muted); line-height:1.6; font-size:15px; max-width:65ch}
+    .grid{display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:14px}
+    @media (max-width:920px){ .grid{grid-template-columns:1fr} }
+    .mini{
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
-      color: var(--muted);
-      font-size: 13px;
-      display:flex; align-items:center; gap:8px;
+      border-radius:18px;
+      padding:16px;
+      min-height:120px;
     }
-    .chip b{color:var(--text)}
-    .chip .miniDot{width:6px;height:6px;border-radius:999px;background:rgba(255,255,255,.45)}
+    .mini h3{margin:0 0 8px 0; font-size:15px}
+    .mini p{margin:0; color:var(--muted); font-size:13px; line-height:1.55}
 
-    /* Feature grid */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-top: 14px;
-    }
-    @media (max-width: 920px){
-      .grid{grid-template-columns: 1fr}
-    }
-    .mini{
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      border-radius: 18px;
-      padding: 16px;
-      min-height: 132px;
-      position:relative;
-      overflow:hidden;
-    }
-    .mini::before{
-      content:"";
-      position:absolute; inset:-60px;
-      background: radial-gradient(circle at 20% 20%, rgba(124,58,237,.22), transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(34,211,238,.16), transparent 50%);
-      filter: blur(14px);
-      opacity:.75;
-    }
-    .mini h3{margin:0 0 8px 0; font-size: 15px; position:relative}
-    .mini p{margin:0; color:var(--muted); font-size: 13px; line-height:1.55; position:relative}
-
-    /* Auth + Profile pages */
     .page{display:none}
     .page.active{display:block}
 
-    .formRow{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
-    @media (max-width: 920px){ .formRow{grid-template-columns:1fr} }
-
-    .field{
-      display:flex; flex-direction:column; gap:6px;
-      margin-top: 10px;
-    }
-    label{font-size: 12px; color: var(--muted2)}
-    input, select{
+    .field{display:flex; flex-direction:column; gap:6px; margin-top:10px}
+    label{font-size:12px; color:rgba(255,255,255,.65)}
+    [data-theme="light"] label{color:rgba(0,0,0,.55)}
+    input{
       width:100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--stroke);
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
-      color: var(--text);
+      color:var(--text);
       outline:none;
     }
     input::placeholder{color: rgba(255,255,255,.45)}
     [data-theme="light"] input::placeholder{color: rgba(0,0,0,.35)}
-    .hint{font-size: 12px; color: var(--muted2); margin-top: 8px}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width:920px){ .row{grid-template-columns:1fr} }
 
     .toast{
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--stroke);
+      margin-top:12px; padding:10px 12px;
+      border-radius:14px; border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
-      color: var(--muted);
-      font-size: 13px;
-      display:none;
+      color:var(--muted); font-size:13px; display:none;
     }
     .toast.show{display:block}
     .toast.ok{border-color: rgba(34,197,94,.35); color: rgba(34,197,94,.95)}
@@ -338,88 +146,57 @@ scale(1); filter: blur(0)}
     .toast.err{border-color: rgba(239,68,68,.35); color: rgba(239,68,68,.95)}
 
     footer{
-      margin-top: 18px;
-      padding: 18px 6px 0;
-      color: var(--muted2);
-      font-size: 12px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-top:18px; padding:18px 4px 0;
+      color:rgba(255,255,255,.55); font-size:12px;
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
     }
-    footer a{color: var(--muted); text-decoration:none}
+    [data-theme="light"] footer{color:rgba(0,0,0,.55)}
+    footer a{color:inherit; text-decoration:none}
     footer a:hover{text-decoration:underline}
-
-    /* Small top nav for logged-in state */
-    .statusBar{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
-      font-size: 13px;
-    }
   </style>
-
-  <!-- Supabase JS (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
   <div class="wrap">
-    <header class="enter">
+
+    <header>
       <div class="brand">
-        <div class="logoBox" aria-label="Pepsval logo">
-          <!-- ✅ Uses logo.webp -->
-          <img src="logo.webp" alt="Pepsval" />
-        </div>
-        <div class="brandText">
+        <div class="logo"><img src="logo.webp" alt="Pepsval"></div>
+        <div>
           <div class="name">PEPSVAL</div>
           <div class="tag">Where Shipping Trust Exists.</div>
         </div>
       </div>
 
       <div class="actions">
-        <div class="pill" title="Status">
-          <div class="dot"></div>
-          <span id="statusText">Launching soon • Early access open</span>
-        </div>
-
-        <button class="btn small ghost" id="themeBtn" type="button">🌙 Dark</button>
-
-        <!-- Landing shows Login button; once logged in we show Dashboard/Logout -->
-        <button class="btn small primary" id="loginNavBtn" type="button">Login</button>
-        <button class="btn small ghost" id="logoutNavBtn" type="button" style="display:none;">Logout</button>
+        <div class="pill"><span class="dot"></span><span id="statusText">Early access open</span></div>
+        <button class="btn small" id="themeBtn" type="button">🌙 Dark</button>
+        <button class="btn small primary" id="navLoginBtn" type="button">Login</button>
+        <button class="btn small" id="navLogoutBtn" type="button" style="display:none;">Logout</button>
       </div>
     </header>
 
-    <!-- =========================
-         PAGE 1: LANDING
-    ========================== -->
-    <section id="page-landing" class="page active">
+    <!-- PAGE: LANDING -->
+    <section id="landing" class="page active">
       <div class="hero">
-        <div class="card enter delay1">
+        <div class="card">
           <div class="inner">
-            <h1 class="bigTitle">A friendly trust layer for global shipping.</h1>
+            <h1>A friendly trust layer for global shipping.</h1>
             <p class="sub">
-              Pepsval is building a private-by-default profile that helps seafarers and companies work with clarity and confidence.
-              Your profile stays private until you choose to share it.
+              Pepsval helps seafarers and companies share verified details in a calm, respectful way.
+              Your profile stays private by default — you decide what to share and when.
             </p>
 
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <div style="display:flex;
+gap:10px; flex-wrap:wrap;">
               <button class="btn primary" id="landingLoginBtn" type="button">Login / Create account</button>
-              <button class="btn" id="learnBtn" type="button">What is Pepsval?</button>
-            </div>
-
-            <div class="chips">
-              <div class="chip"><span class="miniDot"></span> <b>Private by default</b> — you control sharing</div>
-              <div class="chip"><span class="miniDot"></span> <b>Built for sea & shore</b></div>
-              <div class="chip"><span class="miniDot"></span> <b>Simple steps</b> — one at a time</div>
+              <button class="btn" id="landingAboutBtn" type="button">How it works</button>
             </div>
 
             <div class="grid">
               <div class="mini">
                 <h3>For Seafarers</h3>
-                <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
+                <p>Build a trusted profile, keep your key details organized, and share only what you choose.</p>
               </div>
               <div class="mini">
                 <h3>For Companies</h3>
@@ -427,28 +204,27 @@ scale(1); filter: blur(0)}
               </div>
               <div class="mini">
                 <h3>For the Industry</h3>
-                <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
+                <p>A single place for trust, connections, and opportunities — built for sea & shore careers.</p>
               </div>
             </div>
 
-            <!-- Partnership section (kept like before, not at the end) -->
-            <div style="margin-top:16px;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)">
-              <div style="font-weight:800;margin-bottom:6px;">Partnerships</div>
+            <div style="margin-top:14px;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)">
+              <div style="font-weight:900;margin-bottom:6px;">Partnerships</div>
               <div style="color:var(--muted);font-size:13px;line-height:1.5">
-                We welcome training institutes, unions/associations, crewing agencies, and ship managers who want a calm, clear verification experience.
-                If you’d like to collaborate, email:
-                <a href="mailto:jithinilip@gmail.com" style="text-decoration:none;border-bottom:1px dotted currentColor">jithinilip@gmail.com</a>
+                Training institutes, crewing agencies, unions/associations, and ship managers are welcome to collaborate.
+                Email: <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card enter delay2">
+        <div class="card">
           <div class="inner">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-              <div style="font-weight:900; letter-spacing:.06em;">How verification will work</div>
-              <div style="font-size:12px;color:var(--muted2);">v1 roadmap</div>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+              <div style="font-weight:900;letter-spacing:.06em;">v1 foundations</div>
+              <div style="font-size:12px;color:var(--muted);">simple • clear</div>
             </div>
+
             <div style="height:10px"></div>
 
             <div class="mini" style="margin-bottom:12px;">
@@ -463,108 +239,84 @@ scale(1); filter: blur(0)}
               <h3>Peer Confirmed</h3>
               <p>Senior crew can confirm “served together” — optional but powerful.</p>
             </div>
-
-            <div class="hint">
-              Today we start with the foundation: <b>Login → Profile</b>.
-            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- =========================
-         PAGE 2: AUTH (NO POPUP)
-    ========================== -->
-    <section id="page-auth" class="page">
-      <div class="card enter delay1">
+    <!-- PAGE: AUTH -->
+    <section id="auth" class="page">
+      <div class="card" style="margin-top:16px;">
         <div class="inner">
           <h2 style="margin:0 0 6px 0;">Login</h2>
-          <p class="sub" style="margin-top:0">Use email + password. If you are new, create an account.</p>
+          <p class="sub" style="margin-top:0">Email + password. Create an account if you are new.</p>
 
-          <div class="formRow">
+          <div class="row">
             <div class="field">
-              <label for="authEmail">Email</label>
-              <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+              <label>Email</label>
+              <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
             </div>
             <div class="field">
-              <label for="authPass">Password</label>
-              <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+              <label>Password</label>
+              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
             </div>
           </div>
 
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-            <button class="btn primary" id="btnSignIn" type="button">Login</button>
-            <button class="btn" id="btnSignUp" type="button">Create account</button>
-            <button class="btn ghost" id="btnForgot" type="button">Forgot password</button>
-            <button class="btn ghost" id="btnBackLanding" type="button">← Back</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+            <button class="btn primary" id="btnLogin" type="button">Login</button>
+            <button class="btn" id="btnSignup" type="button">Create account</button>
+            <button class="btn" id="btnBack" type="button">← Back</button>
           </div>
 
           <div id="authToast" class="toast"></div>
 
-          <div class="hint">
-            If email confirmation is enabled, Supabase will send a confirmation email during sign up.
-            You can still build everything now — once confirmed, login works normally.
-          </div>
+          <p class="sub" style="margin-top:12px">
+            If email confirmation is enabled in Supabase, you must confirm from your inbox once after signup.
+          </p>
         </div>
       </div>
     </section>
 
-    <!-- =========================
-         PAGE 3: PROFILE (AFTER LOGIN)
-    ========================== -->
-    <section id="page-profile" class="page">
-      <div class="statusBar enter delay1">
-        <div>
-          Signed in as: <b id="whoami">—</b>
-        </div>
-        <div
-style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn small" id="btnGoHome" type="button">Home</button>
-          <button class="btn small ghost" id="btnLogout2" type="button">Logout</button>
-        </div>
-      </div>
-
-      <div class="card enter delay2" style="margin-top:12px;">
+    <!-- PAGE: ONBOARDING / PROFILE -->
+    <section id="profile" class="page">
+      <div class="card" style="margin-top:16px;">
         <div class="inner">
-          <h2 style="margin:0 0 6px 0;">Create your profile</h2>
-          <p class="sub" style="margin-top:0">
-            This is private by default. You can update it anytime.
-          </p>
-
-          <div class="formRow">
-            <div class="field">
-              <label for="fullName">Full name</label>
-              <input id="fullName" type="text" placeholder="Jithin Philip" />
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div>
+              Signed in as <b id="who">—</b>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px">Create your profile (private by default).</div>
             </div>
-            <div class="field">
-              <label for="nationality">Nationality</label>
-              <input id="nationality" type="text" placeholder="Indian" />
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn" id="btnHome" type="button">Home</button>
+              <button class="btn" id="btnLogout" type="button">Logout</button>
             </div>
           </div>
 
-          <div class="formRow">
+          <div class="row" style="margin-top:12px;">
             <div class="field">
-              <label for="rank">Rank</label>
-              <input id="rank" type="text" placeholder="Second Officer" />
+              <label>Full name</label>
+              <input id="full_name" type="text" placeholder="Jithin Philip">
             </div>
             <div class="field">
-              <label for="dob">Date of birth</label>
-              <input id="dob" type="date" />
+              <label>Nationality</label>
+              <input id="nationality" type="text" placeholder="Indian">
             </div>
           </div>
 
-          <!-- Optional avatar upload (works if you create a Storage bucket named 'avatars') -->
-          <div class="field">
-            <label for="avatarFile">Profile picture (optional)</label>
-            <input id="avatarFile" type="file" accept="image/*" />
-            <div class="hint">
-              If upload fails, create a Supabase Storage bucket named <b>avatars</b> later. You can still save profile without photo.
+          <div class="row">
+            <div class="field">
+              <label>Rank</label>
+              <input id="rank" type="text" placeholder="Second Officer">
+            </div>
+            <div class="field">
+              <label>Date of birth</label>
+              <input id="dob" type="date">
             </div>
           </div>
 
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-            <button class="btn primary" id="btnSaveProfile" type="button">Save profile</button>
-            <button class="btn" id="btnLoadProfile" type="button">Load my profile</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+            <button class="btn primary" id="btnSave" type="button">Save profile</button>
+            <button class="btn" id="btnLoad" type="button">Load my profile</button>
           </div>
 
           <div id="profileToast" class="toast"></div>
@@ -572,328 +324,171 @@ style="display:flex;gap:10px;flex-wrap:wrap;">
       </div>
     </section>
 
-    <footer class="enter delay3">
-      <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
+    <footer>
+      <div>© <span id="year"></span> Pepsval</div>
       <div>
         Founder
-        <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
-          JITHIN PHILIP
-        </a>
+        <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">JITHIN PHILIP</a>
       </div>
     </footer>
   </div>
 
   <script>
-    // =============================
-    // 1) SUPABASE CONFIG
-    // =============================
-    // ✅ Your Project URL
+    // --- Supabase ---
     const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
-
-    // ✅ Your Publishable (anon) key
-    // IMPORTANT: This is fine to use in browser IF your RLS policies are correct.
     const SUPABASE_ANON_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
-
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // =============================
-    // 2) UTILITIES
-    // =============================
+    // --- Helpers ---
     const $ = (id) => document.getElementById(id);
+    const pages = { landing: $("landing"), auth: $("auth"), profile: $("profile") };
 
-    function showToast(el, type, msg){
+    function showPage(name){
+      Object.values(pages).forEach(p => p.classList.remove("active"));
+      pages[name].classList.add("active");
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+    function toast(el, type, msg){
       el.className = "toast show " + (type || "");
       el.textContent = msg;
     }
-    function hideToast(el){
+    function clearToast(el){
       el.className = "toast";
       el.textContent = "";
     }
 
-    function setActivePage(name){
-      const pages = ["landing","auth","profile"];
-      pages.forEach(p => $("page-" + p).classList.remove("active"));
-      $("page-" + name).classList.add("active");
-
-      // keep URL hash simple (so refresh keeps page)
-      location.hash = "#/" + name;
-      window.scrollTo({top:0, behavior:"smooth"});
+    // --- Theme ---
+    function applyTheme(t){
+      document.documentElement.setAttribute("data-theme", t);
+      $("themeBtn").textContent = (t === "light") ? "☀️ Light" : "🌙 Dark";
+      localStorage.setItem("pepsval_theme", t);
     }
+    applyTheme(localStorage.getItem("pepsval_theme") || "dark");
+    $("themeBtn").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
 
-    function applyTheme(theme){
-      document.documentElement.setAttribute("data-theme", theme);
-      const isLight = theme === "light";
-      $("themeBtn").textContent = isLight ? "☀️ Light" : "🌙 Dark";
-      localStorage.setItem("pepsval_theme", theme);
-    }
+    $("year").textContent = new Date().getFullYear();
 
-    function getTheme(){
-      return localStorage.getItem("pepsval_theme") || "dark";
-    }
-
-    function setLoggedInUI(isIn){
-      $("loginNavBtn").style.display = isIn ? "none" : "inline-flex";
-      $("logoutNavBtn").style.display = isIn ? "inline-flex" : "none";
-    }
-
-    // =============================
-    // 3) ROUTING (NO POPUP)
-    // =============================
-    function routeFromHash(){
-      const h = (location.hash || "#/landing").replace("#/","");
-      if (h === "auth") setActivePage("auth");
-      else if (h === "profile") setActivePage("profile");
-      else setActivePage("landing");
-    }
-
-    window.addEventListener("hashchange", routeFromHash);
-
-    // =============================
-    // 4) AUTH HANDLERS
-    // =============================
-    async function refreshSessionUI(){
+    // --- Nav Buttons ---
+    $("landingLoginBtn").addEventListener("click", () => showPage("auth"));
+    $("navLoginBtn").addEventListener("click", async () => {
       const { data } = await supabase.auth.getSession();
-      const session = data.session;
+      showPage(data.session ? "profile" : "auth");
+    });
+    $("navLogoutBtn").addEventListener("click", logout);
+    $("btnBack").addEventListener("click", () => showPage("landing"));
+    $("btnHome").addEventListener("click", () => showPage("landing"));
 
-      setLoggedInUI(!!session);
+    $("landingAboutBtn").addEventListener("click", () => {
+      alert(
+        "Pepsval is building a private-by-default trust layer for seafarers and companies.\n\n" +
+        "Today we focus on:\n" +
+        "1) Login\n2) Profile creation\n\n" +
+        "Next we can add sea time, documents, and employer confirmations."
+      );
+    });
 
-      if (session){
-        $("whoami").textContent = session.user.email || session.user.id;
-      } else {
-        $("whoami").textContent = "—";
-      }
-      return session;
-    }
+    // --- Auth ---
+    $("btnSignup").addEventListener("click", signUp);
+    $("btnLogin").addEventListener("click", signIn);
+    $("btnLogout").addEventListener("click", logout);
 
     async function signUp(){
-      hideToast($("authToast"));
-      const email = $("authEmail").value.trim();
-      const password = $("authPass").value;
-
-      if (!email || !password){
-        return showToast($("authToast"), "warn", "Please enter email and password.");
-      }
+      clearToast($("authToast"));
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      if (!email || !password) return toast($("authToast"), "warn", "Enter email and password.");
 
       const { error } = await supabase.auth.signUp({ email, password });
+      if (error) return toast($("authToast"), "err", error.message);
 
-      if (error){
-        return showToast($("authToast"), "err", error.message);
-      }
-
-      showToast($("authToast"), "ok",
-        "Account created. If email confirmation is on, please confirm from your inbox, then login."
-      );
+      toast($("authToast"), "ok", "Account created. If confirmation email is enabled, confirm from inbox, then login.");
     }
 
     async function signIn(){
-      hideToast($("authToast"));
-      const email = $("authEmail").value.trim();
-      const password = $("authPass").value;
-
-      if (!email || !password){
-        return showToast($("authToast"), "warn", "Please enter email and password.");
-      }
+      clearToast($("authToast"));
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      if (!email || !password) return toast($("authToast"), "warn", "Enter email and password.");
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return toast($("authToast"), "err", error.message);
 
-      if (error){
-        return showToast($("authToast"), "err", error.message);
-      }
-
-      await refreshSessionUI();
-      showToast($("authToast"), "ok", "Logged in successfully.");
-      setTimeout(() => setActivePage("profile"), 250);
-    }
-
-    async function forgotPassword(){
-      hideToast($("authToast"));
-      const email = $("authEmail").value.trim();
-      if (!email){
-        return showToast($("authToast"), "warn", "Enter your email first.");
-      }
-
-      // NOTE: For password reset to work cleanly, you should set "Site URL" in Supabase Auth settings.
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-
-      if (error) return showToast($("authToast"), "err", error.message);
-      showToast($("authToast"), "ok", "Password reset email sent (if the email exists).");
+      await syncUI();
+      showPage("profile");
     }
 
     async function logout(){
       await supabase.auth.signOut();
-      await refreshSessionUI();
-      setActivePage("landing");
+      await syncUI();
+      showPage("landing");
     }
 
-    // =============================
-    // 5) PROFILE SAVE / LOAD
-    // =============================
-    async function uploadAvatarIfAny(userId){
-      const fileInput = $("avatarFile");
-      const file = fileInput.files && fileInput.files[0];
-      if (!file) return null;
-
-      // Create a fairly unique file path
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${userId}/${Date.now()}.${ext}`;
-
-      // Upload to Storage bucket "avatars"
-      const { error: upErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-
-      if (upErr) {
-        // Don’t block profile save if upload fails
-        console.warn("Avatar upload failed:", upErr.message);
-        return null;
-      }
-
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      return data.publicUrl || null;
-    }
+    // --- Profile ---
+    $("btnSave").addEventListener("click", saveProfile);
+    $("btnLoad").addEventListener("click", loadProfile);
 
     async function saveProfile(){
-      hideToast($("profileToast"));
-
+      clearToast($("profileToast"));
       const { data } = await supabase.auth.getSession();
       const session = data.session;
-
-      if (!session){
-        showToast($("profileToast"), "warn", "Please login first.");
-        return setActivePage("auth");
-      }
+      if (!session) return (showPage("auth"), toast($("authToast"), "warn", "Please login first."));
 
       const user = session.user;
-
-      // Optional avatar upload
-      const avatarUrl = await uploadAvatarIfAny(user.id);
-
       const payload = {
         id: user.id,
-        full_name: $("fullName").value.trim() || null,
+        full_name: $("full_name").value.trim() || null,
         nationality: $("nationality").value.trim() || null,
         rank: $("rank").value.trim() || null,
         dob: $("dob").value || null,
         updated_at: new Date().toISOString()
       };
 
-      // include avatar if uploaded
-      if (avatarUrl) payload.avatar_url = avatarUrl;
+      const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
+      if (error) return toast($("profileToast"), "err", "Save failed: " + error.message);
 
-      // Use UPSERT so it works whether row exists or not.
-      // ✅ Your RLS must allow:
-      // - SELECT where auth.uid() = id
-      // - UPDATE where auth.uid() = id
-      // - INSERT with check auth.uid() = id   (INSERT policy must NOT include USING)
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(payload, { onConflict: "id" });
-
-      if (error){
-        showToast($("profileToast"), "err",
-          "Save failed: " + error.message + " (This usually means RLS policy needs the INSERT rule.)"
-        );
-        return;
-      }
-
-      showToast($("profileToast"), "ok", "Profile saved.");
+      toast($("profileToast"), "ok", "Profile saved successfully.");
     }
 
     async function loadProfile(){
-      hideToast($("profileToast"));
-
+      clearToast($("profileToast"));
       const { data } = await supabase.auth.getSession();
       const session = data.session;
-
-      if (!session){
-        showToast($("profileToast"), "warn", "Please login first.");
-        return setActivePage("auth");
-      }
+      if (!session) return (showPage("auth"), toast($("authToast"), "warn", "Please login first."));
 
       const user = session.user;
-
       const { data: row, error } = await supabase
         .from("profiles")
         .select("full_name, nationality, rank, dob")
         .eq("id", user.id)
         .single();
 
-      if (error){
-        showToast($("profileToast"), "err",
-          "Load failed: " + error.message
-        );
-        return;
-      }
+      if (error) return toast($("profileToast"), "err", "Load failed: " + error.message);
 
-      $("fullName").value = row.full_name || "";
+      $("full_name").value = row.full_name || "";
       $("nationality").value = row.nationality || "";
       $("rank").value = row.rank || "";
       $("dob").value = row.dob || "";
 
-      showToast($("profileToast"), "ok", "Profile loaded.");
+      toast($("profileToast"), "ok", "Profile loaded.");
     }
 
-    // =============================
-    // 6) EVENTS
-    // =============================
-    $("year").textContent = new Date().getFullYear();
+    // --- UI sync ---
+    async function syncUI(){
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
 
-    // Theme
-    applyTheme(getTheme());
-    $("themeBtn").addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme") || "dark";
-      applyTheme(current === "dark" ? "light" : "dark");
-    });
+      $("navLoginBtn").style.display = session ? "none" : "inline-flex";
+      $("navLogoutBtn").style.display = session ? "inline-flex" : "none";
 
-    // Navigation
-    $("landingLoginBtn").addEventListener("click", () => setActivePage("auth"));
-    $("loginNavBtn").addEventListener("click", considerAuthOrProfile);
-    $("logoutNavBtn").addEventListener("click", logout);
-    $("btnBackLanding").addEventListener("click", () => setActivePage("landing"));
-
-    $("btnGoHome").addEventListener("click", () => setActivePage("landing"));
-    $("btnLogout2").addEventListener("click", logout);
-
-    // Auth buttons
-    $("btnSignUp").addEventListener("click", signUp);
-    $("btnSignIn").addEventListener("click", signIn);
-    $("btnForgot").addEventListener("click", forgotPassword);
-
-    // Profile buttons
-    $("btnSaveProfile").addEventListener("click", saveProfile);
-    $("btnLoadProfile").addEventListener("click", loadProfile);
-
-    // Learn button
-    $("learnBtn").addEventListener("click", () => {
-      alert(
-        "Pepsval is building a private-by-default trust layer for seafarers and companies.\n\n" +
-        "Today we start with the foundation:\n" +
-        "1) Login\n" +
-        "2) Profile creation\n\n" +
-        "Next we can add:\n" +
-        "• Document storage\n• Sea time entries\n• Employer confirmations\n• Appraisals\n"
-      );
-    });
-
-    async function considerAuthOrProfile(){
-      const session = await refreshSessionUI();
-      if (session) setActivePage("profile");
-      else setActivePage("auth");
+      $("who").textContent = session ? (session.user.email || session.user.id) : "—";
+      $("statusText").textContent = session ? "Signed in" : "Early access open";
     }
 
-    // Keep UI synced with auth state
-    supabase.auth.onAuthStateChange(async () => {
-      await refreshSessionUI();
-    });
-
-    // Start
-    (async function init(){
-      await refreshSessionUI();
-      routeFromHash();
-
-      // If already logged in and user opens landing, keep landing (as you wanted),
-      // but the nav button will take them to Profile.
-    })();
+    supabase.auth.onAuthStateChange(() => syncUI());
+    syncUI();
   </script>
 </body>
 </html>
