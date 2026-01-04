@@ -608,4 +608,140 @@
           <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
           <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
           <li><strong>Request confirmations</strong> when you choose.</li>
-          <li>Earn clear labels — never confusing claim
+          <li>Earn clear labels — never confusing claims.</li>
+        </ol>
+
+        <div class="mini">
+          We keep the language simple so nobody feels accused: it’s about clarity, not suspicion.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="kicker"><span class="kicon">2</span> Verification labels (v1)</div>
+
+        <div class="levels">
+          <div class="level">
+            <strong>Self-declared</strong>
+            <div>Info entered by the seafarer. Visible with clear labeling.</div>
+          </div>
+          <div class="level">
+            <strong>Document Verified</strong>
+            <div>Admin/partner checks document validity signals and expiry (format + consistency).</div>
+          </div>
+          <div class="level">
+            <strong>Employment Confirmed</strong>
+            <div>Employer confirms key details with a simple “Yes/No” flow (dates / vessel / rank).</div>
+          </div>
+          <div class="level">
+            <strong>Peer Confirmed</strong>
+            <div>A senior officer confirms “served together” — optional, but powerful.</div>
+          </div>
+        </div>
+
+        <div class="mini">
+          These are practical and globally realistic — built for the real world where not every company replies.
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
+        <!-- Partnership contact -->
+        <a class="partnerPill" href="mailto:jithinilip@gmail.com">
+          <span class="mailDot" aria-hidden="true"></span>
+          Partnerships: <span style="font-weight:950;">jithinilip@gmail.com</span>
+        </a>
+
+        <!-- Founder LinkedIn -->
+        <a class="footA" href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
+          <span class="miniIcon">in</span>
+          Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
+        </a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Set year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Theme: auto -> system preference, with toggle override
+    const root = document.documentElement;
+    const btn = document.getElementById("themeToggle");
+
+    function systemPrefersDark(){
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+
+    function applyTheme(theme){
+      root.setAttribute("data-theme", theme);
+      localStorage.setItem("pepsval_theme", theme);
+      btn.textContent = (theme === "dark") ? "☀️ Light" : "🌙 Dark";
+    }
+
+    const saved = localStorage.getItem("pepsval_theme");
+    if(saved === "light" || saved === "dark"){
+      applyTheme(saved);
+    }else{
+      applyTheme(systemPrefersDark() ? "dark" : "light");
+    }
+
+    btn.addEventListener("click", () => {
+      const current = root.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
+    // Apple-style reveal on load (and when returning from bfcache)
+    function revealBrand(){
+      const el = document.getElementById("brandReveal");
+      if(!el) return;
+      requestAnimationFrame(() => el.classList.add("in"));
+    }
+    revealBrand();
+    window.addEventListener("pageshow", revealBrand);
+
+    // Formspree AJAX submit (nice UX, no redirect)
+    const form = document.getElementById("waitlistForm");
+    const statusEl = document.getElementById("formStatus");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      const oldText = submitBtn.textContent;
+      submitBtn.textContent = "Submitting…";
+      statusEl.className = "status";
+      statusEl.textContent = "Sending securely…";
+
+      try{
+        const formData = new FormData(form);
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+          headers: { "Accept": "application/json" }
+        });
+
+        if(res.ok){
+          form.reset();
+          statusEl.className = "status ok";
+          statusEl.textContent = "✅ You’re on the waitlist. We’ll email you when early access opens.";
+          submitBtn.textContent = "Joined!";
+        }else{
+          statusEl.className = "status bad";
+          statusEl.textContent = "⚠️ Could not submit right now. Please try again in a minute.";
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText;
+        }
+      }catch(err){
+        statusEl.className = "status bad";
+        statusEl.textContent = "⚠️ Network error. Please check your connection and try again.";
+        submitBtn.disabled = false;
+        submitBtn.textContent = oldText;
+      }
+    });
+  </script>
+</body>
+</html>
