@@ -4,287 +4,318 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Where Shipping Trust Exists.</title>
-  <meta name="description" content="Pepsval is a Seafarers’ e-Passport of trust & quality — verified identity, verified sea time, and reputation in one profile. Launching soon." />
+  <meta name="description" content="Pepsval is a welcoming trust layer for the global shipping industry — a Seafarers’ e-Passport that brings verified sea time and reputation into one profile. Launching soon." />
 
   <meta property="og:title" content="Pepsval — Where Shipping Trust Exists." />
-  <meta property="og:description" content="A Seafarers’ e-Passport of trust & quality — verified identity, sea time, and reputation in one profile. Launching soon." />
+  <meta property="og:description" content="A Seafarers’ e-Passport that brings verified sea time and reputation into one profile." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pepsval.com" />
 
   <style>
     :root{
-      --r-xl: 24px; --r-lg: 18px; --r-md: 14px;
+      --radius-xl: 22px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+
       --shadow: 0 18px 60px rgba(0,0,0,.18);
       --shadow2: 0 14px 35px rgba(0,0,0,.14);
-      --grad: linear-gradient(135deg, #7c3aed, #2563eb);
+
+      --grad1: linear-gradient(135deg, #a855f7, #3b82f6);
+      --grad2: linear-gradient(135deg, rgba(168,85,247,.18), rgba(59,130,246,.14));
     }
 
+    /* Light theme */
     :root[data-theme="light"]{
-      --bg:#f7f8ff; --bg2:#ffffff;
+      --bg: #f7f8ff;
+      --bg2:#ffffff;
       --text:#0b1020;
-      --muted:rgba(11,16,32,.72);
-      --muted2:rgba(11,16,32,.55);
-      --card:rgba(255,255,255,.82);
-      --border:rgba(11,16,32,.10);
-      --chip:rgba(11,16,32,.06);
-      --link:#0ea5e9;
+      --muted: rgba(11,16,32,.72);
+      --muted2: rgba(11,16,32,.55);
+      --card: rgba(255,255,255,.78);
+      --border: rgba(11,16,32,.10);
+      --chip: rgba(11,16,32,.06);
+      --link: #0ea5e9;
       --btnText:#07101b;
-      --ghostBg:rgba(11,16,32,.06);
-      --ghostBr:rgba(11,16,32,.12);
-      --ok:#16a34a; --warn:#f59e0b;
-      --inputBg:rgba(11,16,32,.04);
+      --btnGhostBg: rgba(11,16,32,.06);
+      --btnGhostBorder: rgba(11,16,32,.12);
+      --ok:#16a34a;
+      --warn:#f59e0b;
     }
 
+    /* Dark theme */
     :root[data-theme="dark"]{
-      --bg:#070b17; --bg2:#0b1220;
+      --bg: #070b17;
+      --bg2:#0b1220;
       --text:#eaf0ff;
-      --muted:rgba(234,240,255,.78);
-      --muted2:rgba(234,240,255,.58);
-      --card:rgba(255,255,255,.06);
-      --border:rgba(255,255,255,.12);
-      --chip:rgba(255,255,255,.06);
-      --link:#8be9ff;
+      --muted: rgba(234,240,255,.78);
+      --muted2: rgba(234,240,255,.58);
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --chip: rgba(255,255,255,.06);
+      --link: #8be9ff;
       --btnText:#06101b;
-      --ghostBg:rgba(255,255,255,.06);
-      --ghostBr:rgba(255,255,255,.14);
-      --ok:#22c55e; --warn:#f59e0b;
-      --inputBg:rgba(255,255,255,.06);
+      --btnGhostBg: rgba(255,255,255,.06);
+      --btnGhostBorder: rgba(255,255,255,.14);
+      --ok:#22c55e;
+      --warn:#f59e0b;
     }
 
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color: var(--text);
       background:
-        radial-gradient(1000px 600px at 12% -5%, rgba(124,58,237,.26), transparent 55%),
-        radial-gradient(900px 580px at 92% 8%, rgba(37,99,235,.22), transparent 55%),
+        radial-gradient(1100px 650px at 15% -5%, rgba(168,85,247,.28), transparent 55%),
+        radial-gradient(900px 580px at 92% 10%, rgba(59,130,246,.22), transparent 55%),
         linear-gradient(180deg, var(--bg), var(--bg2));
       min-height:100vh;
     }
     a{color:var(--link);text-decoration:none}
     a:hover{text-decoration:underline}
-    .wrap{max-width:1120px;margin:0 auto;padding:20px 16px 64px}
+    .wrap{max-width:1120px;margin:0 auto;padding:26px 18px 64px}
 
     /* Top bar */
     .topbar{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
-      padding:12px 14px;
+      padding:14px 16px;
       border:1px solid var(--border);
-      border-radius:var(--r-lg);
-      background:var(--card);
+      border-radius: var(--radius-xl);
+      background: var(--card);
       backdrop-filter: blur(10px);
-      box-shadow:var(--shadow2);
-    }
-    .brand{display:flex;align-items:center;gap:14px}
-    .brandText{display:flex;flex-direction:column;line-height:1.1}
-    .brandName{font-weight:900;letter-spacing:.6px}
-    .brandTag{font-size:12px;color:var(--muted2);margin-top:4px}
-
-    /* Logo (blended, no box) */
-    .logoImg{
-      height:52px;width:auto;
-      filter: drop-shadow(0 14px 22px rgba(0,0,0,.22));
-    }
-    @media (max-width: 420px){
-      .logoImg{height:44px}
+      box-shadow: var(--shadow2);
     }
 
-    /* Small “launching” — not big */
-    .miniPill{
+    .topRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
       display:inline-flex;align-items:center;gap:8px;
-      padding:8px 12px;border-radius:999px;
+      padding:9px 14px;border-radius:999px;
       border:1px solid var(--border);
-      background:var(--chip);
-      color:var(--muted);
+      background: var(--chip);
+      color: var(--muted);
       font-size:13px;
-      white-space:nowrap;
+      font-weight:700;
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
     .toggle{
       display:inline-flex;align-items:center;gap:8px;
       padding:10px 12px;border-radius:999px;
       border:1px solid var(--border);
-      background:var(--ghostBg);
+      background: var(--btnGhostBg);
       cursor:pointer;
-      color:var(--text);
+      color: var(--text);
       font-weight:800;
       user-select:none;
-      white-space:nowrap;
     }
-    .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 
-    /* Hero */
+    /* ✅ BIG BRANDING (blended, not boxed) */
+    .brandBig{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      min-width:260px;
+    }
+    .heroLogo{
+      height:72px;
+      width:auto;
+      filter: drop-shadow(0 25px 40px rgba(168,85,247,.30));
+      border-radius:0;
+    }
+    .brandBigText{display:flex;flex-direction:column}
+    .brandTitle{
+      font-size:34px;
+      font-weight:1000;
+      letter-spacing:1.4px;
+      line-height:1.05;
+      background: linear-gradient(135deg,#a855f7,#3b82f6);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .brandSubtitle{
+      font-size:13px;
+      color:var(--muted);
+      margin-top:6px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    @media (max-width:600px){
+      .heroLogo{ height:56px; }
+      .brandTitle{ font-size:26px; }
+      .pill{display:none;} /* keep clean on mobile */
+    }
+
+    /* Hero layout */
     .hero{
-      margin-top:16px;
+      margin-top:18px;
       display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap:14px;
+      grid-template-columns: 1.25fr .75fr;
+      gap:16px;
       align-items:stretch;
     }
     @media (max-width: 920px){ .hero{grid-template-columns:1fr} }
 
     .card{
       border:1px solid var(--border);
-      border-radius:var(--r-xl);
-      background:var(--card);
-      box-shadow:var(--shadow);
-      padding:22px;
+      border-radius: var(--radius-xl);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding:26px;
     }
 
-    /* Key: make it NOT look like blog */
-    .productTitle{
+    .headline{
       margin:0;
-      font-size:36px;
+      font-size:44px;
+      line-height:1.06;
       letter-spacing:.2px;
-      line-height:1.08;
     }
-    @media (max-width: 480px){ .productTitle{font-size:30px} }
+    @media (max-width: 480px){ .headline{font-size:36px} }
 
-    /* Small highlight line (your “before” style) */
-    .highlight{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:var(--r-lg);
-      border:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(124,58,237,.14), rgba(37,99,235,.10));
-      color:var(--muted);
-      line-height:1.55;
-      font-size:14px;
+    .tagline{
+      margin-top:10px;
+      font-size:18px;
+      color: var(--muted);
+      line-height:1.65;
     }
-    .highlight strong{color:var(--text)}
 
     .sub{
-      margin-top:14px;
-      color:var(--muted);
+      margin:14px 0 0;
+      color: var(--muted);
+      font-size:17px;
       line-height:1.7;
-      font-size:15px;
     }
 
-    .chips{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
+    .chips{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px}
     .chip{
       padding:8px 10px;border-radius:999px;
       border:1px solid var(--border);
-      background:var(--chip);
-      color:var(--muted);
+      background: var(--chip);
+      color: var(--muted);
       font-size:13px;
+      font-weight:700;
     }
 
-    .cta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .cta{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .btn{
       appearance:none;border:0;cursor:pointer;
-      padding:12px 14px;border-radius:var(--r-md);
+      padding:12px 14px;border-radius: var(--radius-md);
       font-weight:900;
       letter-spacing:.1px;
-      display:inline-flex;align-items:center;justify-content:center;
       text-decoration:none;
-      white-space:nowrap;
+      display:inline-flex;align-items:center;justify-content:center;
     }
     .btn.primary{
-      background:var(--grad);
-      color:var(--btnText);
-      box-shadow:0 18px 45px rgba(0,0,0,.20);
+      background: var(--grad1);
+      color: var(--btnText);
+      box-shadow: 0 18px 45px rgba(0,0,0,.20);
     }
     .btn.ghost{
-      background:var(--ghostBg);
-      border:1px solid var(--ghostBr);
-      color:var(--text);
+      background: var(--btnGhostBg);
+      border:1px solid var(--btnGhostBorder);
+      color: var(--text);
     }
 
-    /* Feature blocks – product style */
-    .tiles{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:10px;
+    .mini{
+      margin-top:12px;
+      color: var(--muted2);
+      font-size:13px;
+      line-height:1.55;
     }
-    @media (max-width: 920px){ .tiles{grid-template-columns:1fr} }
-    .tile{
-      padding:16px;
-      border-radius:var(--r-lg);
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.03);
-    }
-    :root[data-theme="dark"] .tile{background:rgba(255,255,255,.05)}
-    .tile h4{margin:0 0 8px;font-size:15px}
-    .tile p{margin:0;color:var(--muted);line-height:1.6;font-size:14px}
 
     /* Right column form */
-    .kicker{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+    .kicker{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin-bottom:10px;font-weight:800}
     .kicon{
       width:22px;height:22px;border-radius:8px;
       border:1px solid var(--border);
-      background:var(--chip);
+      background: var(--chip);
       display:grid;place-items:center;
-      font-weight:900;color:var(--muted);
+      font-weight:900;
+      color: var(--muted);
     }
     .form{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
     input{
       flex:1;min-width:240px;
-      padding:12px 14px;border-radius:var(--r-md);
+      padding:12px 14px;border-radius: var(--radius-md);
       border:1px solid var(--border);
-      background:var(--inputBg);
-      color:var(--text);
+      background: rgba(0,0,0,.06);
+      color: var(--text);
       outline:none;
     }
-    input::placeholder{color:var(--muted2)}
-    .status{margin-top:10px;font-size:13px;color:var(--muted2)}
-    .status.ok{color:var(--ok)}
-    .status.bad{color:var(--warn)}
+    :root[data-theme="dark"] input{background: rgba(255,255,255,.06)}
+    input::placeholder{color: var(--muted2)}
+    .status{margin-top:12px;font-size:13px;color: var(--muted2)}
+    .status.ok{color: var(--ok)}
+    .status.bad{color: var(--warn)}
 
-    .stack{display:grid;gap:10px;margin-top:14px}
-    .box{
-      padding:12px 12px;
-      border-radius:var(--r-lg);
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.03);
-    }
-    :root[data-theme="dark"] .box{background:rgba(0,0,0,.18)}
-    .box strong{display:block;margin-bottom:4px;font-size:14px}
-    .box div{color:var(--muted);line-height:1.6;font-size:13.5px}
-
-    /* Lower two columns */
-    .section2{
-      margin-top:14px;
+    /* Sections */
+    .grid3{
+      margin-top:16px;
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 920px){ .grid3{grid-template-columns:1fr} }
+
+    .tile{
+      padding:18px;border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.04);
+    }
+    :root[data-theme="dark"] .tile{background: rgba(255,255,255,.05)}
+    .tile h4{margin:0 0 8px;font-size:16px}
+    .tile p{margin:0;color: var(--muted);line-height:1.65}
+
+    .section2{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
       gap:12px;
     }
     @media (max-width: 920px){ .section2{grid-template-columns:1fr} }
 
+    .levels{display:grid;gap:10px;margin-top:10px}
+    .level{
+      padding:12px 12px;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.03);
+    }
+    :root[data-theme="dark"] .level{background: rgba(0,0,0,.18)}
+    .level strong{display:block;margin-bottom:4px}
+    .level div{color:var(--muted);line-height:1.6}
+
     footer{
-      margin-top:18px;
+      margin-top:20px;
       padding:18px 6px;
       display:flex;flex-wrap:wrap;gap:12px;
       justify-content:space-between;align-items:center;
-      color:var(--muted2);
+      color: var(--muted2);
     }
     .footA{
       display:inline-flex;align-items:center;gap:10px;
       padding:10px 12px;border-radius:999px;
       border:1px solid var(--border);
-      background:var(--chip);
-      color:var(--text);
+      background: var(--chip);
+      color: var(--text);
       font-weight:900;
     }
     .footA:hover{text-decoration:none;filter:brightness(1.03)}
-    .miniIcon{
-      width:22px;height:22px;border-radius:8px;background:var(--grad);
+    .footA .miniIcon{
+      width:22px;height:22px;border-radius:8px;background: var(--grad1);
       display:grid;place-items:center;color:#fff;font-weight:900;
     }
 
-    /* Partnership strip */
-    .partnership{
+    /* Partnership box */
+    .partnerBox{
       margin-top:14px;
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
-      padding:14px 16px;
-      border-radius:var(--r-xl);
+      padding:14px;
+      border-radius: var(--radius-lg);
       border:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(124,58,237,.10), rgba(37,99,235,.08));
+      background: rgba(0,0,0,.03);
     }
-    .partnership b{letter-spacing:.2px}
-    .partnership span{color:var(--muted)}
+    :root[data-theme="dark"] .partnerBox{background: rgba(0,0,0,.18)}
+    .partnerBox strong{display:block;margin-bottom:6px}
+    .partnerBox a{font-weight:900}
   </style>
 </head>
 
@@ -292,37 +323,36 @@
   <div class="wrap">
 
     <div class="topbar">
-      <div class="brand">
-        <!-- Upload your logo as logo.png in the same folder -->
-        <img class="logoImg" src="logo.png" alt="Pepsval logo" />
-        <div class="brandText">
-          <div class="brandName">PEPSVAL</div>
-          <div class="brandTag">Where Shipping Trust Exists.</div>
+      <!-- ✅ BIG BRAND AREA -->
+      <div class="brandBig">
+        <!-- Put your logo file in the repo as: logo.png -->
+        <img src="logo.png" class="heroLogo" alt="Pepsval logo">
+        <div class="brandBigText">
+          <div class="brandTitle">PEPSVAL</div>
+          <div class="brandSubtitle">Where Shipping Trust Exists.</div>
         </div>
       </div>
 
-      <div class="right">
-        <div class="miniPill"><span class="dot"></span> Launching soon</div>
-        <button class="toggle" id="themeToggle" type="button" aria-label="Toggle dark and light mode">🌙 Dark</button>
+      <div class="topRight">
+        <div class="pill"><span class="dot"></span> Launching soon • Early access open</div>
+        <button class="toggle" id="themeToggle" type="button" aria-label="Toggle dark and light mode">🌙 / ☀️</button>
       </div>
     </div>
 
     <div class="hero">
-
-      <!-- LEFT: product hero -->
       <div class="card">
-        <h1 class="productTitle">Trust. Sea Time. Reputation.<br/>In one profile.</h1>
+        <h1 class="headline">A Seafarers’ e-Passport that brings trust into one profile.</h1>
 
-        <!-- KEEP THIS SMALL (your request) -->
-        <div class="highlight">
-          <strong>Pepsval</strong> is a <strong>Seafarers’ e-Passport of trust & quality</strong> — bringing
-          <strong>verified sea time</strong> and <strong>reputation</strong> into one profile, in a welcoming way.
+        <div class="tagline">
+          Verified identity • verified sea time • verified reputation — built to help seafarers and shipping companies connect with confidence.
         </div>
 
-        <div class="sub">
-          Built to help seafarers and companies connect with confidence — clear labels, respectful verification,
-          and full control over what you share.
-        </div>
+        <p class="sub">
+          Pepsval is being built to help seafarers and companies connect with confidence — welcoming, respectful,
+          and always clear about what is verified and what is self-declared.
+          <br/><br/>
+          This is not about suspicion — it’s about clarity and quality. You stay in control of your profile and what you share.
+        </p>
 
         <div class="chips">
           <span class="chip">Verified Identity</span>
@@ -338,28 +368,31 @@
           <a class="btn ghost" href="#how">How it works</a>
         </div>
 
-        <div class="tiles">
+        <div class="grid3">
           <div class="tile">
             <h4>For Seafarers</h4>
-            <p>Your trusted profile + documents + sea time history, ready when you need it.</p>
+            <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
           </div>
           <div class="tile">
             <h4>For Companies</h4>
-            <p>Simple confirmations and appraisals—clear signals, faster shortlists.</p>
+            <p>Confirm sea time and leave appraisals respectfully, with clear labels and consent-based visibility.</p>
           </div>
           <div class="tile">
             <h4>For the Industry</h4>
-            <p>One place for trust, community, and global maritime opportunities.</p>
+            <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
           </div>
+        </div>
+
+        <div class="mini">
+          Note: Pepsval supports trust and transparency — it does not replace official flag-state or compliance processes.
         </div>
       </div>
 
-      <!-- RIGHT: form / early access -->
       <div class="card" id="early-access">
         <div class="kicker"><span class="kicon">✦</span> Early access</div>
-        <h2 style="margin:10px 0 8px;font-size:22px;">Get invited first</h2>
-        <p style="margin:0;color:var(--muted);line-height:1.65;font-size:14.5px;">
-          Join the waitlist. We’ll invite early users first: seafarers, masters, crewing teams and employers.
+        <h2 style="margin:0 0 8px;font-size:22px;">Get invited first</h2>
+        <p style="margin:0;color:var(--muted);line-height:1.65;">
+          Join the waitlist for launch updates. We’ll invite early users first: seafarers, masters, crewing teams and employers.
         </p>
 
         <form class="form" id="waitlistForm" action="https://formspree.io/f/mwvpwrdp" method="POST">
@@ -369,81 +402,84 @@
 
         <div class="status" id="formStatus">No spam. You can unsubscribe anytime.</div>
 
-        <div class="stack">
-          <div class="box">
+        <div class="levels" style="margin-top:16px;">
+          <div class="level">
             <strong>Employer appraisal (after each contract)</strong>
             <div>
-              Optional and respectful. Your employer can leave an appraisal after a contract.
-              You control visibility: private, share-on-request, or public.
+              Optional and respectful: your employer can leave an appraisal after a contract.
+              You control visibility — private, share-on-request, or public (your choice).
             </div>
           </div>
 
-          <div class="box">
+          <div class="level">
             <strong>Social + Community</strong>
             <div>
-              Post updates, photos and videos, connect with seafarers worldwide — built only for shipping.
+              Post updates, photos and videos, connect with seafarers worldwide — a platform built only for shipping.
             </div>
           </div>
 
-          <div class="box">
+          <div class="level">
             <strong>Worldwide jobs (Sea & Shore)</strong>
             <div>
-              Discover maritime opportunities across vessel roles and shore-based careers.
+              A global board for maritime opportunities — vessel roles and shore-based roles.
             </div>
           </div>
         </div>
-      </div>
 
-    </div>
+        <!-- ✅ Partnership contact -->
+        <div class="partnerBox">
+          <strong>Partnerships / Company onboarding</strong>
+          <div style="color:var(--muted);line-height:1.6;">
+            Want to partner, onboard your company, or pilot confirmations/appraisals?
+            Email: <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
+          </div>
+        </div>
 
-    <!-- Partnership / contact (requested) -->
-    <div class="partnership" id="partnership">
-      <div>
-        <b>Partnerships & companies:</b>
-        <span>Interested in collaborating, hiring, or integrating verification?</span>
+        <div class="mini">
+          Tip: share pepsval.com with friends onboard — your early users become your early network.
+        </div>
       </div>
-      <a class="btn ghost" href="mailto:jithinilip@gmail.com">Contact: jithinilip@gmail.com</a>
     </div>
 
     <div class="section2" id="how">
       <div class="card">
         <div class="kicker"><span class="kicon">1</span> How it works (practical)</div>
-        <ol style="margin:10px 0 0;padding-left:18px;color:var(--muted);line-height:1.75;font-size:14.5px;">
+        <ol style="margin:0;padding-left:18px;color:var(--muted);line-height:1.75;">
           <li><strong>Create your profile</strong> (your “Seafarer Passport”).</li>
           <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
           <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
           <li><strong>Request confirmations</strong> when you choose.</li>
-          <li>Get clear labels — never confusing claims.</li>
+          <li>Earn clear labels — never confusing claims.</li>
         </ol>
-        <div class="status" style="margin-top:10px;">
-          This is not about suspicion — it’s about clarity and quality. You stay in control of your profile and what you share.
+        <div class="mini">
+          We keep the language simple so nobody feels accused: it’s about clarity, not suspicion.
         </div>
       </div>
 
       <div class="card">
         <div class="kicker"><span class="kicon">2</span> Verification labels (v1)</div>
 
-        <div class="stack" style="margin-top:10px;">
-          <div class="box">
+        <div class="levels">
+          <div class="level">
             <strong>Self-declared</strong>
-            <div>Info entered by the seafarer. Always shown with clear labeling.</div>
+            <div>Info entered by the seafarer. Visible with clear labeling.</div>
           </div>
-          <div class="box">
+          <div class="level">
             <strong>Document Verified</strong>
             <div>Admin/partner checks document validity signals and expiry (format + consistency).</div>
           </div>
-          <div class="box">
+          <div class="level">
             <strong>Employment Confirmed</strong>
             <div>Employer confirms key details with a simple “Yes/No” flow (dates / vessel / rank).</div>
           </div>
-          <div class="box">
+          <div class="level">
             <strong>Peer Confirmed</strong>
             <div>A senior officer confirms “served together” — optional, but powerful.</div>
           </div>
         </div>
 
-        <div class="status" style="margin-top:10px;">
-          Practical and realistic globally — built for the real world where not every company replies.
+        <div class="mini">
+          Practical, globally realistic — built for the real world where not every company replies.
         </div>
       </div>
     </div>
@@ -460,8 +496,10 @@
   </div>
 
   <script>
+    // Set year
     document.getElementById("year").textContent = new Date().getFullYear();
 
+    // Theme: system default with toggle override
     const root = document.documentElement;
     const btn = document.getElementById("themeToggle");
 
@@ -487,7 +525,7 @@
       applyTheme(current === "dark" ? "light" : "dark");
     });
 
-    // Formspree AJAX submit (no redirect)
+    // Formspree AJAX submit (nice UX, no redirect)
     const form = document.getElementById("waitlistForm");
     const statusEl = document.getElementById("formStatus");
     const submitBtn = document.getElementById("submitBtn");
