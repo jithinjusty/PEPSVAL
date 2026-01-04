@@ -7,7 +7,7 @@
   <meta name="description" content="Pepsval is a welcoming trust layer for the global shipping industry — verified identity, verified sea time, and employer appraisals. Launching soon." />
 
   <meta property="og:title" content="Pepsval — Where Shipping Trust Exists." />
-  <meta property="og:description" content="Seafarers’ e-Passport that brings trust, verified sea time, and reputation into one profile." />
+  <meta property="og:description" content="Seafarers’ e-Passport: trust • verified sea time • reputation — in one profile." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pepsval.com" />
 
@@ -40,6 +40,7 @@
       --btnGhostBorder: rgba(11,16,32,.12);
       --ok:#16a34a;
       --warn:#f59e0b;
+      --danger:#ef4444;
     }
 
     /* Dark theme */
@@ -58,9 +59,11 @@
       --btnGhostBorder: rgba(255,255,255,.14);
       --ok:#22c55e;
       --warn:#f59e0b;
+      --danger:#fb7185;
     }
 
     *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
     body{
       margin:0;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
@@ -210,7 +213,7 @@
     input::placeholder{color: var(--muted2)}
     .status{margin-top:12px;font-size:13px;color: var(--muted2)}
     .status.ok{color: var(--ok)}
-    .status.bad{color: var(--warn)}
+    .status.bad{color: var(--danger);font-weight:800}
 
     /* Tiles */
     .grid3{
@@ -236,7 +239,7 @@
       grid-template-columns: 1fr 1fr;
       gap:12px;
     }
-    @media (max-width: 920px){ .section2{grid-template-columns:1fr} }
+@media (max-width: 920px){ .section2{grid-template-columns:1fr} }
 
     .levels{display:grid;gap:10px;margin-top:10px}
     .level{
@@ -270,24 +273,21 @@
       display:grid;place-items:center;color:#fff;font-weight:900;
     }
 
-    /* Partner contact pill */
-    .partnerPill{
-      display:inline-flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:999px;
+    /* Partnership block (inside Early Access card) */
+    .partnerBox{
+      margin-top:14px;
+      padding:14px;
+      border-radius: var(--radius-lg);
       border:1px solid var(--border);
-      background: var(--chip);
-      color: var(--text);
-      font-weight:800;
+      background: rgba(0,0,0,.03);
     }
-    .partnerPill:hover{ text-decoration:none; filter:brightness(1.03); }
-    .partnerPill .mailDot{
-      width:10px;height:10px;border-radius:999px;background:rgba(59,130,246,.9);
-      box-shadow: 0 10px 30px rgba(59,130,246,.25);
-    }
+    :root[data-theme="dark"] .partnerBox{background: rgba(0,0,0,.18)}
+    .partnerBox strong{display:block;margin-bottom:6px}
+    .partnerBox a{font-weight:900}
 
     /* ---------- Premium Brand FX (Apple-style) ---------- */
 
-    .brandBig{ min-width: 520px; }
+    .brandBig{ min-width: 560px; }
     @media (max-width: 920px){ .brandBig{ min-width: unset; } }
 
     .brandWrap{
@@ -314,61 +314,57 @@
     /* Logo container (blended, no box look) */
     .logoFX{
       position:relative;
-      width:132px;
-      height:132px;
+      width:150px;
+      height:150px;
       display:grid;
       place-items:center;
-      border-radius: 28px; /* not visible - controls shine mask */
+      border-radius: 32px; /* not visible - helps shine mask */
       overflow: visible;
     }
 
-    /* The actual image */
+    /* Logo image */
     .heroLogo{
-      width:132px;
+      width:150px;
       height:auto;
       display:block;
-      filter: drop-shadow(0 35px 80px rgba(168,85,247,.35));
+      filter: drop-shadow(0 40px 95px rgba(124,58,237,.38));
       mix-blend-mode: screen;
       animation: logoFloat 6s ease-in-out infinite, logoBreathe 4.5s ease-in-out infinite;
       will-change: transform, filter;
     }
 
-    /* Subtle floating movement */
     @keyframes logoFloat{
       0%,100%{ transform: translateY(0); }
-      50%{ transform: translateY(-6px); }
+      50%{ transform: translateY(-7px); }
     }
 
-    /* Gentle “breathing” */
     @keyframes logoBreathe{
-      0%,100%{ filter: drop-shadow(0 35px 80px rgba(168,85,247,.35)); }
-      50%{ filter: drop-shadow(0 45px 95px rgba(59,130,246,.38)); }
+      0%,100%{ filter: drop-shadow(0 40px 95px rgba(124,58,237,.38)); }
+      50%{ filter: drop-shadow(0 52px 115px rgba(37,99,235,.40)); }
     }
 
-    /* Glow halo behind logo */
     .logoGlow{
       position:absolute;
-      inset:-18px;
-      border-radius: 42px;
-      background: radial-gradient(circle at 30% 30%, rgba(168,85,247,.35), transparent 55%),
-                  radial-gradient(circle at 70% 60%, rgba(59,130,246,.30), transparent 58%);
-      filter: blur(18px);
-      opacity:.78;
+      inset:-22px;
+      border-radius: 48px;
+      background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.35), transparent 55%),
+                  radial-gradient(circle at 70% 60%, rgba(37,99,235,.30), transparent 58%);
+      filter: blur(20px);
+      opacity:.80;
       z-index:-1;
       animation: glowDrift 7s ease-in-out infinite;
     }
 
     @keyframes glowDrift{
-      0%,100%{ transform: translateY(0) scale(1); opacity:.70; }
-      50%{ transform: translateY(-8px) scale(1.06); opacity:.90; }
+      0%,100%{ transform: translateY(0) scale(1); opacity:.72; }
+      50%{ transform: translateY(-9px) scale(1.06); opacity:.92; }
     }
 
-    /* Light sweep shimmer */
     .logoShine{
       position:absolute;
-      width:132px;
-      height:132px;
-      border-radius: 28px;
+      width:150px;
+      height:150px;
+      border-radius: 32px;
       overflow:hidden;
       pointer-events:none;
       mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
@@ -395,17 +391,16 @@
       100%{ transform: translateX(90%) rotate(10deg); opacity:0; }
     }
 
-    /* Glass reflection effect below logo */
     .logoReflect{
       position:absolute;
-      top:108px;
+      top:122px;
       left:50%;
-      width:98px;
-      height:36px;
+      width:112px;
+      height:40px;
       transform: translateX(-50%);
       border-radius: 999px;
       background: linear-gradient(180deg, rgba(255,255,255,.22), transparent);
-      filter: blur(10px);
+      filter: blur(11px);
       opacity:.36;
       pointer-events:none;
       animation: reflectPulse 5.2s ease-in-out infinite;
@@ -416,28 +411,19 @@
       50%{ opacity:.46; transform: translateX(-50%) scaleX(1.12); }
     }
 
-    /* Premium title styling */
     .brandTitle{
-      font-size: 38px;
+      font-size: 54px;
       font-weight: 1000;
-      letter-spacing: 2px;
-      line-height: 1.05;
+      letter-spacing: 2.2px;
+      line-height: 1.02;
       background: linear-gradient(135deg,#a855f7,#3b82f6);
       -webkit-background-clip:text;
       -webkit-text-fill-color:transparent;
-      text-shadow: 0 18px 55px rgba(168,85,247,.25);
+      text-shadow: 0 18px 55px rgba(124,58,237,.22);
     }
-    @media (max-width: 520px){
-      .logoFX{ width:110px; height:110px; }
-      .heroLogo{ width:110px; }
-      .logoShine{ width:110px; height:110px; }
-      .logoReflect{ top:92px; width:86px; }
-      .brandTitle{ font-size: 30px; }
-    }
-
     .brandSubtitle{
-      margin-top: 6px;
-      font-size: 12px;
+      margin-top: 8px;
+      font-size: 13px;
       font-weight: 850;
       letter-spacing: .9px;
       text-transform: uppercase;
@@ -457,11 +443,22 @@
       font-size:12px;
       font-weight:800;
       letter-spacing:.2px;
+      max-width: 560px;
     }
     .brandMicro .spark{
       width:8px;height:8px;border-radius:999px;
-      background: rgba(168,85,247,.95);
-      box-shadow: 0 10px 30px rgba(168,85,247,.25);
+      background: rgba(124,58,237,.95);
+      box-shadow: 0 10px 30px rgba(124,58,237,.25);
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 520px){
+      .brandTitle{ font-size: 40px; }
+      .logoFX{ width:118px; height:118px; }
+      .heroLogo{ width:118px; }
+      .logoShine{ width:118px; height:118px; }
+      .logoReflect{ top:98px; width:92px; }
+      .brandMicro{ display:none; } /* keep header clean on small screens */
     }
 
     /* Reduce motion accessibility */
@@ -476,12 +473,11 @@
   <div class="wrap">
 
     <div class="topbar">
-      <!-- BIG BRANDING (blended logo, no box look) -->
       <div class="brandBig">
         <div class="brandWrap reveal" id="brandReveal">
-          <!-- IMPORTANT: upload your logo into the repo root and name it: pepsval-logo.png -->
+          <!-- ✅ Uses your actual uploaded file: logo.png -->
           <div class="logoFX">
-            <img src="pepsval-logo.png" class="heroLogo" alt="Pepsval logo">
+            <img src="logo.png" class="heroLogo" alt="Pepsval logo">
             <div class="logoGlow" aria-hidden="true"></div>
             <div class="logoShine" aria-hidden="true"></div>
             <div class="logoReflect" aria-hidden="true"></div>
@@ -491,7 +487,6 @@
             <div class="brandTitle">PEPSVAL</div>
             <div class="brandSubtitle">Where Shipping Trust Exists.</div>
 
-            <!-- Small highlight line (NOT a big news blog headline) -->
             <div class="brandMicro">
               <span class="spark"></span>
               Seafarers’ e-Passport: trust • verified sea time • reputation — in one profile
@@ -562,7 +557,6 @@
           Join the waitlist for launch updates. We’ll invite early users first: seafarers, masters, crewing teams and employers.
         </p>
 
-        <!-- Formspree -->
         <form class="form" id="waitlistForm" action="https://formspree.io/f/mwvpwrdp" method="POST">
           <input type="email" name="email" placeholder="Enter your email" required />
           <button class="btn primary" id="submitBtn" type="submit">Join waitlist</button>
@@ -594,6 +588,15 @@
           </div>
         </div>
 
+        <!-- ✅ Partnership block back here (not footer) -->
+        <div class="partnerBox">
+          <strong>Partnerships / Company onboarding</strong>
+          <div style="color:var(--muted);line-height:1.6;">
+            Want to partner, onboard your company, or pilot confirmations/appraisals?<br/>
+            Email: <a href="mailto:jithinilip@gmail.com">jithinilip@gmail.com</a>
+          </div>
+        </div>
+
         <div class="mini">
           Tip: share pepsval.com with friends onboard — your early users become your early network.
         </div>
@@ -603,7 +606,8 @@
     <div class="section2" id="how">
       <div class="card">
         <div class="kicker"><span class="kicon">1</span> How it works (practical)</div>
-        <ol style="margin:0;padding-left:18px;color:var(--muted);line-height:1.75;">
+        <ol
+style="margin:0;padding-left:18px;color:var(--muted);line-height:1.75;">
           <li><strong>Create your profile</strong> (your “Seafarer Passport”).</li>
           <li><strong>Add documents</strong> (CoC, passport, medical, visas, etc.).</li>
           <li><strong>Log sea time</strong> by contract (vessel, rank, dates).</li>
@@ -647,19 +651,10 @@
     <footer>
       <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
-        <!-- Partnership contact -->
-        <a class="partnerPill" href="mailto:jithinilip@gmail.com">
-          <span class="mailDot" aria-hidden="true"></span>
-          Partnerships: <span style="font-weight:950;">jithinilip@gmail.com</span>
-        </a>
-
-        <!-- Founder LinkedIn -->
-        <a class="footA" href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
-          <span class="miniIcon">in</span>
-          Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
-        </a>
-      </div>
+      <a class="footA" href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener">
+        <span class="miniIcon">in</span>
+        Founder — <span style="letter-spacing:.2px;">JITHIN PHILIP</span>
+      </a>
     </footer>
 
   </div>
@@ -703,7 +698,7 @@
     revealBrand();
     window.addEventListener("pageshow", revealBrand);
 
-    // Formspree AJAX submit (nice UX, no redirect)
+    // Formspree AJAX submit (no redirect)
     const form = document.getElementById("waitlistForm");
     const statusEl = document.getElementById("formStatus");
     const submitBtn = document.getElementById("submitBtn");
