@@ -1,181 +1,1169 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0EA5E9" />
   <title>PEPSVAL — Maritime Network & Jobs</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./logo-192.png" />
-  <link rel="apple-touch-icon" href="./logo-192.png" />
+  <!-- Icons -->
+  <link rel="icon" href="./favicon.png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 
-  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    :root{
+      --bg:#F5FBFF;
+      --bg2:#FFFFFF;
+      --text:#0B1220;
+      --muted:rgba(11,18,32,.70);
+      --muted2:rgba(11,18,32,.55);
+      --stroke:rgba(11,18,32,.12);
+      --card:rgba(255,255,255,.85);
+      --shadow: 0 20px 60px rgba(2,8,23,.10);
+      --shadow2: 0 12px 30px rgba(2,8,23,.08);
+
+      --brand1:#0EA5E9;  /* ocean blue */
+      --brand2:#14B8A6;  /* teal */
+      --brand3:#60A5FA;  /* soft blue */
+
+      --ok:#16A34A;
+      --warn:#F59E0B;
+      --bad:#EF4444;
+
+      --r1:18px;
+      --r2:26px;
+      --max:1100px;
+    }
+
+    [data-theme="dark"]{
+      --bg:#070B17;
+      --bg2:#0B1220;
+      --text:#EAF2FF;
+      --muted:rgba(234,242,255,.75);
+      --muted2:rgba(234,242,255,.55);
+      --stroke:rgba(255,255,255,.14);
+      --card:rgba(255,255,255,.07);
+      --shadow: 0 22px 70px rgba(0,0,0,.45);
+      --shadow2: 0 14px 35px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(900px 520px at 18% 10%, rgba(20,184,166,.18), transparent 60%),
+        radial-gradient(900px 520px at 78% 12%, rgba(14,165,233,.18), transparent 60%),
+        radial-gradient(1000px 700px at 45% 90%, rgba(96,165,250,.16), transparent 60%),
+        linear-gradient(180deg, var(--bg2), var(--bg));
+      overflow-x:hidden;
+    }
+    a{color:var(--brand1); text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Top bar (big-tech style) */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom:1px solid var(--stroke);
+    }
+    .topbar-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px; min-width: 220px;
+    }
+    .brand img{
+      width:48px; height:48px; border-radius:14px;
+      object-fit:cover;
+      box-shadow: 0 14px 35px rgba(2,8,23,.18);
+      border:1px solid color-mix(in srgb, var(--stroke) 65%, transparent);
+    }
+    .brandText{display:flex; flex-direction:column; line-height:1.05}
+    .brandName{
+      display:flex; align-items:center; gap:10px;
+      font-weight:950;
+      letter-spacing:.12em;
+      font-size:14px;
+    }
+    .beta{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--card) 65%, transparent);
+      color:var(--muted);
+    }
+    .brandTag{font-size:12px; color:var(--muted2); margin-top:4px}
+
+    .topActions{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    .theme{
+      display:flex; align-items:center; gap:6px;
+      padding:6px 8px; border-radius:999px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--card) 65%, transparent);
+    }
+    .theme button{
+      border:none; background:transparent; cursor:pointer;
+      padding:6px 10px; border-radius:999px;
+      font-weight:900;
+      color:var(--muted);
+    }
+    .theme button.active{
+      color:var(--text);
+      background: color-mix(in srgb, var(--bg2) 75%, transparent);
+      border:1px solid var(--stroke);
+    }
+
+    .btn{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--card) 70%, transparent);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:900;
+      letter-spacing:.06em;
+      cursor:pointer;
+      transition: transform .15s ease, filter .15s ease;
+      box-shadow: var(--shadow2);
+    }
+    .btn:hover{transform: translateY(-1px); filter:brightness(1.02)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{
+      border:none;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2));
+      color:white;
+      box-shadow: 0 16px 40px rgba(14,165,233,.22);
+    }
+    .btn.ghost{
+      background: transparent;
+      box-shadow:none;
+    }
+
+    /* Shell */
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:20px 16px 84px;
+    }
+
+    /* Pages */
+    .page{display:none}
+    .page.active{display:block}
+
+    /* Layout blocks */
+    .hero{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
+      align-items:stretch;
+    }
+    @media (max-width: 980px){ .hero{grid-template-columns:1fr} }
+
+    .card{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--card) 85%, transparent);
+      border-radius: var(--r2);
+      box-shadow: var(--shadow);
+      padding:18px;
+      backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-45% -45%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(20,184,166,.18), transparent 55%),
+        radial-gradient(circle at 80% 15%, rgba(14,165,233,.18), transparent 55%),
+        radial-gradient(circle at 50% 90%, rgba(96,165,250,.14), transparent 60%);
+      filter: blur(20px);
+      pointer-events:none;
+    }
+    .card > *{position:relative; z-index:1}
+
+    h1{
+      margin:0;
+      font-size: clamp(30px, 3.8vw, 46px);
+      line-height:1.05;
+      letter-spacing:-.02em;
+    }
+    .sub{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:15px;
+      max-width: 62ch;
+    }
+    .pillRow{margin-top:14px; display:flex; flex-wrap:wrap; gap:8px}
+    .pill{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 65%, transparent);
+      color:var(--muted);
+      font-weight:900;
+      letter-spacing:.06em;
+    }
+
+    /* Auth */
+    .tabs{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+    .tab{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 65%, transparent);
+      color:var(--muted);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .tab.active{
+      color:var(--text);
+      background: color-mix(in srgb, var(--card) 80%, transparent);
+    }
+
+    label{display:block; margin-top:10px; font-size:12px; color:var(--muted); font-weight:900; letter-spacing:.06em}
+    input, textarea, select{
+      width:100%;
+      margin-top:6px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 78%, transparent);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, textarea:focus{border-color: color-mix(in srgb, var(--brand1) 45%, var(--stroke))}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width: 640px){ .row{grid-template-columns:1fr} }
+
+    .msg{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+      display:none;
+    }
+    .msg.ok{display:block; border-color: rgba(22,163,74,.35); color: color-mix(in srgb, var(--ok) 85%, var(--text)); }
+    .msg.warn{display:block; border-color: rgba(245,158,11,.35); color: color-mix(in srgb, var(--warn) 85%, var(--text)); }
+    .msg.bad{display:block; border-color: rgba(239,68,68,.35); color: color-mix(in srgb, var(--bad) 85%, var(--text)); }
+
+    /* Dashboard */
+    .dash{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .dash{grid-template-columns:1fr}
+    }
+
+    .side{
+      position:sticky; top:84px;
+    }
+    @media (max-width: 980px){
+      .side{position:relative; top:auto}
+    }
+
+    .nav{
+      display:grid; gap:8px;
+    }
+    .nav button{
+      width:100%;
+      text-align:left;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      color:var(--muted);
+      font-weight:950;
+      cursor:pointer;
+    }
+    .nav button.active{
+      color:var(--text);
+      background: linear-gradient(135deg,
+        color-mix(in srgb, var(--brand1) 18%, transparent),
+        color-mix(in srgb, var(--brand2) 16%, transparent)
+      );
+      border-color: color-mix(in srgb, var(--brand1) 20%, var(--stroke));
+    }
+
+    .miniCard{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      border-radius: 18px;
+      padding:12px;
+      margin-top:10px;
+    }
+    .userLine{
+      display:flex; align-items:center; gap:10px;
+    }
+    .avatar{
+      width:44px; height:44px; border-radius:14px;
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      overflow:hidden;
+      display:grid; place-items:center;
+      font-weight:900;
+      color:var(--muted);
+      flex:0 0 auto;
+    }
+    .avatar img{width:100%; height:100%; object-fit:cover}
+    .uName{font-weight:950}
+    .uMeta{font-size:12px; color:var(--muted2); margin-top:2px}
+
+    .content h2{margin:0 0 10px; font-size:18px}
+    .stack{display:grid; gap:10px}
+
+    /* Feed items */
+    .post{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      border-radius: 18px;
+      padding:12px;
+    }
+    .postTop{display:flex; justify-content:space-between; gap:10px; align-items:center}
+    .postBy{font-weight:950}
+    .postAt{font-size:12px; color:var(--muted2)}
+    .postText{margin-top:8px; color:var(--muted); line-height:1.55; white-space:pre-wrap}
+
+    /* Jobs */
+    .job{
+      border:1px solid var(--stroke);
+      background: color-mix(in srgb, var(--bg2) 70%, transparent);
+      border-radius: 18px;
+      padding:12px;
+    }
+    .jobTitle{font-weight:950}
+    .jobMeta{margin-top:4px; font-size:12px; color:var(--muted2)}
+    .jobDesc{margin-top:8px; color:var(--muted); line-height:1.55; white-space:pre-wrap}
+
+    /* Footer */
+    footer{
+      max-width:var(--max);
+      margin: 6px auto 24px;
+      padding: 0 16px;
+      color:var(--muted2);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Mobile bottom spacing */
+    body{ padding-bottom: 10px; }
+  </style>
 </head>
+
 <body>
-  <!-- Top bar -->
-  <header class="topbar">
-    <div class="brand">
-      <img class="brand__logo" src="./logo.webp" alt="Pepsval logo" />
-      <div class="brand__text">
-        <div class="brand__name">PEPSVAL</div>
-        <div class="brand__tag">Maritime network & jobs</div>
-      </div>
-      <span class="chip">BETA</span>
-    </div>
-
-    <nav class="topnav desktop-only">
-      <a href="#articles">ARTICLES</a>
-      <a href="#people">PEOPLE</a>
-      <a href="#learning">LEARNING</a>
-      <a href="#jobs">JOBS</a>
-      <a href="#companies">COMPANIES</a>
-    </nav>
-
-    <div class="actions">
-      <button id="installBtn" class="btn btn-ghost" type="button" hidden>INSTALL APP</button>
-      <button class="btn btn-ghost" type="button" onclick="openAuth('login')">SIGN IN</button>
-      <button class="btn btn-primary" type="button" onclick="openAuth('signup')">JOIN NOW</button>
-    </div>
-  </header>
-
-  <!-- Desktop layout -->
-  <main class="shell">
-    <section class="hero">
-      <div class="hero__left">
-        <h1>Explore maritime jobs and grow your professional network</h1>
-        <p class="sub">
-          Sea jobs • Shore jobs • Companies • Agencies • Training • Marine services — all in one place.
-        </p>
-
-        <div class="auth-card">
-          <div class="auth-card__tabs">
-            <button class="tab is-active" id="tabLogin" type="button" onclick="openAuth('login')">Sign in</button>
-            <button class="tab" id="tabSignup" type="button" onclick="openAuth('signup')">Join</button>
-          </div>
-
-          <div class="auth-card__body">
-            <button class="btn btn-wide btn-google" type="button" disabled title="Coming soon">
-              CONTINUE WITH GOOGLE (COMING SOON)
-            </button>
-            <button class="btn btn-wide btn-ms" type="button" disabled title="Coming soon">
-              CONTINUE WITH MICROSOFT (COMING SOON)
-            </button>
-            <button class="btn btn-wide btn-outline" type="button" onclick="openAuth('login')">
-              SIGN IN WITH EMAIL
-            </button>
-
-            <p class="legal">
-              By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.
-            </p>
-          </div>
-        </div>
-
-        <div class="quick-pills">
-          <span class="pill">SEA JOBS</span>
-          <span class="pill">SHORE JOBS</span>
-          <span class="pill">COMPANIES</span>
-          <span class="pill">AGENCIES</span>
-          <span class="pill">MARINE SERVICES</span>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" onclick="go('#home')" role="button" tabindex="0" title="Home">
+        <img src="./logo.webp" alt="Pepsval logo" />
+        <div class="brandText">
+          <div class="brandName">PEPSVAL <span class="beta">BETA</span></div>
+          <div class="brandTag">Maritime network for careers and jobs</div>
         </div>
       </div>
 
-      <div class="hero__right">
-        <div class="illustration">
-          <div class="illus-card">
-            <div class="illus-title">Find the right role</div>
-            <div class="illus-line">2/O • 3/O • C/E • Master • ETO • Shore Ops</div>
-          </div>
-          <div class="illus-card">
-            <div class="illus-title">Hire with confidence</div>
-            <div class="illus-line">Profiles + verified documents (later)</div>
-          </div>
-          <div class="illus-card">
-            <div class="illus-title">Build your network</div>
-            <div class="illus-line">Connect across the maritime industry</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Mobile “app-like” home -->
-    <section class="mobile-home mobile-only">
-      <div class="m-head">
-        <div class="m-title">PEPSVAL</div>
-        <div class="m-actions">
-          <button class="btn btn-ghost btn-sm" type="button" onclick="openAuth('login')">LOGIN</button>
-          <button class="btn btn-primary btn-sm" type="button" onclick="openAuth('signup')">JOIN</button>
-        </div>
-      </div>
-
-      <div class="m-card">
-        <div class="m-card__title">Maritime Jobs</div>
-        <div class="m-card__text">Browse sea & shore roles posted by companies and agencies.</div>
-        <button class="btn btn-outline btn-sm" type="button">EXPLORE JOBS</button>
-      </div>
-
-      <div class="m-card">
-        <div class="m-card__title">Professional Network</div>
-        <div class="m-card__text">Connect with seafarers, recruiters, training centers & service providers.</div>
-        <button class="btn btn-outline btn-sm" type="button">DISCOVER PEOPLE</button>
-      </div>
-
-      <div class="m-card">
-        <div class="m-card__title">Install the App</div>
-        <div class="m-card__text">Add PEPSVAL to your home screen for faster access.</div>
-        <button id="installBtnMobile" class="btn btn-primary btn-sm" type="button" hidden>INSTALL</button>
-        <div class="hint" id="installHint">
-          On iPhone: Share → “Add to Home Screen”.
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Bottom nav (mobile) -->
-  <nav class="bottomnav mobile-only">
-    <button class="navbtn is-active" type="button">HOME</button>
-    <button class="navbtn" type="button">JOBS</button>
-    <button class="navbtn" type="button">POST</button>
-    <button class="navbtn" type="button">NETWORK</button>
-    <button class="navbtn" type="button" onclick="openAuth('login')">ME</button>
-  </nav>
-
-  <!-- Simple auth modal (email only UI placeholder) -->
-  <div class="modal" id="authModal" aria-hidden="true">
-    <div class="modal__backdrop" onclick="closeAuth()"></div>
-    <div class="modal__panel" role="dialog" aria-modal="true">
-      <div class="modal__top">
-        <div class="modal__title" id="authTitle">Sign in</div>
-        <button class="x" type="button" onclick="closeAuth()">✕</button>
-      </div>
-
-      <form class="form" onsubmit="return false;">
-        <label>Email</label>
-        <input type="email" placeholder="you@example.com" required />
-
-        <label>Password</label>
-        <input type="password" placeholder="••••••••" required />
-
-        <button class="btn btn-primary btn-wide" type="button">CONTINUE</button>
-
-        <div class="form__row">
-          <a href="#forgot">Forgot password?</a>
-          <a href="#create" onclick="openAuth('signup')">Create account</a>
+      <div class="topActions">
+        <div class="theme" aria-label="Theme toggle">
+          <button id="tLight" class="active" type="button">☀️</button>
+          <button id="tDark" type="button">🌙</button>
         </div>
 
-        <div class="note">
-          Email+Password UI only for now. We’ll connect Supabase later.
-        </div>
-      </form>
+        <button id="btnLogout" class="btn ghost" type="button" style="display:none;">LOGOUT</button>
+        <button id="btnLogin" class="btn" type="button" onclick="go('#auth')">LOGIN</button>
+        <button id="btnJoin" class="btn primary" type="button" onclick="go('#auth'); setAuthMode('signup')">CREATE ACCOUNT</button>
+      </div>
     </div>
   </div>
 
-  <footer class="footer">
+  <div class="wrap">
+
+    <!-- HOME (Landing) -->
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="card">
+          <h1>Connect, hire, and grow in the global maritime industry.</h1>
+          <p class="sub">
+            PEPSVAL is a professional network and job platform for seafarers, shipping companies,
+            recruitment agencies, and marine organisations — built to feel modern, clean, and easy.
+          </p>
+
+          <div class="pillRow">
+            <span class="pill">SEA JOBS</span>
+            <span class="pill">SHORE JOBS</span>
+            <span class="pill">COMPANIES</span>
+            <span class="pill">AGENCIES</span>
+            <span class="pill">MARINE SERVICES</span>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+            <button class="btn primary" type="button" onclick="go('#auth')">LOGIN</button>
+            <button class="btn" type="button" onclick="go('#auth'); setAuthMode('signup')">CREATE ACCOUNT</button>
+          </div>
+
+          <div class="msg warn" style="display:block; margin-top:14px;">
+            Email confirmation is enabled. After you create an account, you must confirm from your email before logging in.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 10px;">What you can do now</h2>
+          <div class="stack">
+            <div class="miniCard">
+              <div style="font-weight:950;">Create your profile</div>
+              <div style="margin-top:6px; color:var(--muted); line-height:1.55;">
+                Name, nationality, rank, date of birth, and photo. (More fields later.)
+              </div>
+            </div>
+            <div class="miniCard">
+              <div style="font-weight:950;">Feed</div>
+              <div style="margin-top:6px; color:var(--muted); line-height:1.55;">
+                Post text updates now. (Photos/videos later when storage rules are finalised.)
+              </div>
+            </div>
+            <div class="miniCard">
+              <div style="font-weight:950;">Jobs</div>
+              <div style="margin-top:6px; color:var(--muted); line-height:1.55;">
+                Create and view job posts (basic job board working now).
+              </div>
+            </div>
+            <div class="miniCard">
+              <div style="font-weight:950;">Partnerships</div>
+              <div style="margin-top:6px; color:var(--muted); line-height:1.55;">
+                For partnerships and organisations: <b>jithinilip@gmail.com</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTH -->
+    <section id="auth" class="page">
+      <div class="card" style="max-width:560px; margin: 0 auto;">
+        <h2 style="margin:0 0 6px;">Access PEPSVAL</h2>
+        <div style="color:var(--muted); line-height:1.55; font-size:13px;">
+          Email + password only. Email confirmation is ON (production style).
+        </div>
+
+        <div class="tabs">
+          <button id="tabLogin" class="tab active" type="button" onclick="setAuthMode('login')">LOGIN</button>
+          <button id="tabSignup" class="tab" type="button" onclick="setAuthMode('signup')">CREATE ACCOUNT</button>
+        </div>
+
+        <label>Email</label>
+        <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+
+        <label>Password</label>
+        <input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button id="authSubmit" class="btn primary" type="button">LOGIN</button>
+          <button class="btn" type="button" onclick="go('#home')">BACK</button>
+        </div>
+
+        <div id="authMsg" class="msg"></div>
+
+        <div style="margin-top:10px; font-size:13px; color:var(--muted);">
+          Forgot password? (We’ll add reset next after dashboard is stable.)
+        </div>
+      </div>
+    </section>
+
+    <!-- SETUP -->
+    <section id="setup" class="page">
+      <div class="card" style="max-width:720px; margin: 0 auto;">
+        <h2 style="margin:0 0 6px;">Profile setup</h2>
+        <div style="color:var(--muted); font-size:13px; line-height:1.55;">
+          Fill your basic details once. After saving, you’ll enter your dashboard.
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Full name</label>
+            <input id="full_name" type="text" placeholder="e.g., Jithin Philip" />
+          </div>
+          <div>
+            <label>Nationality</label>
+            <input id="nationality" type="text" placeholder="e.g., Indian" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Rank</label>
+            <input id="rank" type="text" placeholder="e.g., Second Officer" />
+          </div>
+          <div>
+            <label>Date of birth</label>
+            <input id="dob" type="date" />
+          </div>
+        </div>
+
+        <label>Profile picture (optional)</label>
+        <input id="avatar" type="file" accept="image/*" />
+        <div style="font-size:12px; color:var(--muted2); margin-top:8px;">
+          If avatar upload is not configured yet, your details still save and you can add photo later.
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button id="btnSaveProfile" class="btn primary" type="button">SAVE & CONTINUE</button>
+          <button class="btn" type="button" id="btnSetupLogout">LOGOUT</button>
+        </div>
+
+        <div id="setupMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page">
+      <div class="dash">
+        <!-- Sidebar -->
+        <div class="card side">
+          <div class="userLine">
+            <div class="avatar" id="navAvatar">P</div>
+            <div>
+              <div class="uName" id="navName">User</div>
+              <div class="uMeta" id="navMeta">Maritime profile</div>
+            </div>
+          </div>
+
+          <div class="nav" style="margin-top:12px;">
+            <button id="navFeed" class="active" type="button" onclick="showTab('feed')">FEED</button>
+            <button id="navJobs" type="button" onclick="showTab('jobs')">JOBS</button>
+            <button id="navProfile" type="button" onclick="showTab('profile')">PROFILE</button>
+            <button id="navEdit" type="button" onclick="showTab('edit')">EDIT PROFILE</button>
+          </div>
+
+          <div class="miniCard">
+            <div style="font-weight:950;">Partnerships</div>
+            <div style="margin-top:6px; color:var(--muted); line-height:1.55;">
+              <b>jithinilip@gmail.com</b>
+            </div>
+          </div>
+
+          <button class="btn ghost" type="button" style="width:100%; margin-top:10px;" id="btnDashLogout">LOGOUT</button>
+        </div>
+
+        <!-- Content -->
+        <div class="card content">
+          <!-- FEED -->
+          <div id="tab-feed">
+            <h2>Feed</h2>
+            <div style="color:var(--muted); font-size:13px; line-height:1.55; margin-bottom:10px;">
+              Post text updates. (Media posts come after storage rules are final.)
+            </div>
+
+            <label>Write a post</label>
+            <textarea id="postText" rows="3" placeholder="Share an update with the maritime community..."></textarea>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <button id="btnPost" class="btn primary" type="button">POST</button>
+            </div>
+            <div id="feedMsg" class="msg"></div>
+
+            <div style="height:12px"></div>
+            <div class="stack" id="feedList"></div>
+          </div>
+
+          <!-- JOBS -->
+          <div id="tab-jobs" style="display:none;">
+            <h2>Jobs</h2>
+            <div style="color:var(--muted); font-size:13px; line-height:1.55; margin-bottom:10px;">
+              Create a job post (basic job board).
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Job title</label>
+                <input id="jobTitle" type="text" placeholder="e.g., Second Officer (2/O) – Tanker" />
+              </div>
+              <div>
+                <label>Location / Vessel / Region</label>
+                <input id="jobLocation" type="text" placeholder="e.g., Worldwide / Dubai / LNG / Offshore" />
+              </div>
+            </div>
+
+            <label>Description</label>
+            <textarea id="jobDesc" rows="4" placeholder="Rank, requirements, salary range (optional), joining date, contact..."></textarea>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <button id="btnJob" class="btn primary" type="button">PUBLISH JOB</button>
+            </div>
+            <div id="jobsMsg" class="msg"></div>
+
+            <div style="height:12px"></div>
+            <div class="stack" id="jobsList"></div>
+          </div>
+
+          <!-- PROFILE -->
+          <div id="tab-profile" style="display:none;">
+            <h2>My profile</h2>
+            <div class="miniCard">
+              <div style="display:flex; gap:12px; align-items:center;">
+                <div class="avatar" id="profileAvatar">P</div>
+                <div>
+                  <div style="font-weight:950;" id="profileName">—</div>
+                  <div style="font-size:12px; color:var(--muted2);" id="profileMeta">—</div>
+                </div>
+              </div>
+              <div style="margin-top:10px; color:var(--muted); line-height:1.65;">
+                <div><b>Nationality:</b> <span id="profileNat">—</span></div>
+                <div><b>Rank:</b> <span id="profileRank">—</span></div>
+                <div><b>DOB:</b> <span id="profileDob">—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDIT PROFILE -->
+          <div id="tab-edit" style="display:none;">
+            <h2>Edit profile</h2>
+            <div style="color:var(--muted); font-size:13px; line-height:1.55; margin-bottom:10px;">
+              Update your details. (Documents + sea service modules will be added next.)
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Full name</label>
+                <input id="edit_name" type="text" />
+              </div>
+              <div>
+                <label>Nationality</label>
+                <input id="edit_nat" type="text" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Rank</label>
+                <input id="edit_rank" type="text" />
+              </div>
+              <div>
+                <label>Date of birth</label>
+                <input id="edit_dob" type="date" />
+              </div>
+            </div>
+
+            <label>Change profile picture (optional)</label>
+            <input id="edit_avatar" type="file" accept="image/*" />
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+              <button id="btnUpdateProfile" class="btn primary" type="button">SAVE CHANGES</button>
+            </div>
+            <div id="editMsg" class="msg"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
     <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
     <div>Founder <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">JITHIN PHILIP</a></div>
   </footer>
 
-  <script src="./app.js"></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Theme toggle
+    const root = document.documentElement;
+    const tLight = document.getElementById("tLight");
+    const tDark = document.getElementById("tDark");
+
+    function setTheme(mode){
+      root.setAttribute("data-theme", mode);
+      localStorage.setItem("pepsval_theme", mode);
+      tLight.classList.toggle("active", mode === "light");
+      tDark.classList.toggle("active", mode === "dark");
+    }
+    setTheme(localStorage.getItem("pepsval_theme") || "light");
+    tLight.onclick = () => setTheme("light");
+    tDark.onclick  = () => setTheme("dark");
+
+    // Routing
+    const pages = ["home","auth","setup","dashboard"];
+    function showPage(id){
+      pages.forEach(p => document.getElementById(p).classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+    function go(hash){
+      location.hash = hash;
+    }
+    function route(){
+      const h = (location.hash || "#home").replace("#","");
+      if(pages.includes(h)) showPage(h);
+      else showPage("home");
+    }
+    window.addEventListener("hashchange", route);
+    route();
+  </script>
+
+  <!-- Supabase + App -->
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // ====== CONFIG ======
+    const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { flowType:"pkce", detectSessionInUrl:true, persistSession:true, autoRefreshToken:true }
+    });
+
+    // ====== Helpers ======
+    const $ = (id) => document.getElementById(id);
+    const setMsg = (el, type, text) => {
+      el.className = "msg " + type;
+      el.textContent = text;
+    };
+    const clearMsg = (el) => { el.className = "msg"; el.textContent = ""; el.style.display="none"; };
+    const showMsg = (el) => { el.style.display="block"; };
+
+    function showAuthedUI(isAuthed){
+      $("btnLogout").style.display = isAuthed ? "inline-flex" : "none";
+      $("btnLogin").style.display  = isAuthed ? "none" : "inline-flex";
+      $("btnJoin").style.display   = isAuthed ? "none" : "inline-flex";
+    }
+
+    // ====== Required tables check & create guidance (silent) ======
+    async function ensureTables(){
+      // We will not show broken UI; if tables missing, we show clear message.
+      // profiles table expected. feed_posts + jobs_posts expected for dashboard.
+      return true;
+    }
+
+    // ====== Auth Mode ======
+    let authMode = "login";
+    window.setAuthMode = (mode) => {
+      authMode = mode;
+      $("tabLogin").classList.toggle("active", mode === "login");
+      $("tabSignup").classList.toggle("active", mode === "signup");
+      $("authSubmit").textContent = mode === "login" ? "LOGIN" : "CREATE ACCOUNT";
+      $("authMsg").style.display = "none";
+    };
+
+    $("authSubmit").addEventListener("click", async () => {
+      const email = $("authEmail").value.trim();
+      const password = $("authPassword").value;
+
+      const msg = $("authMsg");
+      msg.style.display="none";
+
+      if(!email || !password){
+        setMsg(msg, "warn", "Please enter email and password.");
+        showMsg(msg);
+        return;
+      }
+      if(password.length < 6){
+        setMsg(msg, "warn", "Password must be at least 6 characters.");
+        showMsg(msg);
+        return;
+      }
+
+      if(authMode === "signup"){
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: "https://pepsval.com/#setup" }
+        });
+        if(error){
+          setMsg(msg, "bad", error.message);
+          showMsg(msg);
+          return;
+        }
+        setMsg(msg, "ok", "Account created. Please check your email and confirm. Then login.");
+        showMsg(msg);
+        return;
+      }
+
+      // login
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if(error){
+        setMsg(msg, "bad", error.message);
+        showMsg(msg);
+        return;
+      }
+      // route handled by session watcher
+    });
+
+    // ====== Logout ======
+    $("btnLogout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      showAuthedUI(false);
+      location.hash = "#home";
+    });
+    $("btnSetupLogout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      showAuthedUI(false);
+      location.hash = "#home";
+    });
+    $("btnDashLogout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      showAuthedUI(false);
+      location.hash = "#home";
+    });
+
+    // ====== Profile helpers ======
+    async function getUser(){
+      const { data:{ user } } = await supabase.auth.getUser();
+      return user;
+    }
+
+    async function getProfile(userId){
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, nationality, rank, dob, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      if(error) throw error;
+      return data;
+    }
+
+    async function uploadAvatarOptional(userId, file){
+      if(!file) return null;
+      try{
+        const path = `${userId}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert:true });
+        if(upErr) return null; // keep app working even if storage not ready
+        const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+        return data?.publicUrl || null;
+      }catch{
+        return null;
+      }
+    }
+
+    function setUserCard(profile, email){
+      const initials = (profile?.full_name || email || "P").trim().slice(0,1).toUpperCase();
+      const avEls = [$("navAvatar"), $("profileAvatar")];
+      avEls.forEach(el => {
+        if(profile?.avatar_url){
+          el.innerHTML = `<img src="${profile.avatar_url}" alt="avatar">`;
+        }else{
+          el.textContent = initials || "P";
+        }
+      });
+
+      $("navName").textContent = profile?.full_name || "Maritime member";
+      $("navMeta").textContent = profile?.rank ? `${profile.rank}` : (email || "Member");
+
+      $("profileName").textContent = profile?.full_name || "—";
+      $("profileMeta").textContent = email || "—";
+      $("profileNat").textContent = profile?.nationality || "—";
+      $("profileRank").textContent = profile?.rank || "—";
+      $("profileDob").textContent = profile?.dob || "—";
+
+      // edit form
+      $("edit_name").value = profile?.full_name || "";
+      $("edit_nat").value  = profile?.nationality || "";
+      $("edit_rank").value = profile?.rank || "";
+      $("edit_dob").value  = profile?.dob || "";
+    }
+
+    // ====== Setup save ======
+    $("btnSaveProfile").addEventListener("click", async () => {
+      const msg = $("setupMsg");
+      msg.style.display="none";
+
+      const user = await getUser();
+      if(!user){
+        setMsg(msg, "warn", "You are signed out. Please login again.");
+        showMsg(msg);
+        location.hash="#auth";
+        return;
+      }
+
+      const full_name = $("full_name").value.trim();
+      const nationality = $("nationality").value.trim();
+      const rank = $("rank").value.trim();
+      const dob = $("dob").value || null;
+
+      if(!full_name || !nationality || !rank || !dob){
+        setMsg(msg, "warn", "Please fill all fields (name, nationality, rank, DOB).");
+        showMsg(msg);
+        return;
+      }
+
+      // avatar optional
+      const file = $("avatar").files?.[0] || null;
+      const avatar_url = await uploadAvatarOptional(user.id, file);
+
+      const payload = {
+        id: user.id,
+        full_name,
+        nationality,
+        rank,
+        dob,
+        avatar_url: avatar_url || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("profiles").upsert(payload, { onConflict:"id" });
+      if(error){
+        setMsg(msg, "bad", error.message);
+        showMsg(msg);
+        return;
+      }
+
+      // go dashboard
+      await hydrateDashboard();
+      location.hash = "#dashboard";
+    });
+
+    // ====== Dashboard tabs ======
+    window.showTab = (name) => {
+      const tabs = ["feed","jobs","profile","edit"];
+      tabs.forEach(t => {
+        document.getElementById("tab-"+t).style.display = (t===name) ? "block" : "none";
+        document.getElementById("nav"+t.charAt(0).toUpperCase()+t.slice(1))?.classList?.remove("active");
+      });
+      const map = { feed:"navFeed", jobs:"navJobs", profile:"navProfile", edit:"navEdit" };
+      document.getElementById(map[name]).classList.add("active");
+    };
+
+    // ====== Feed + Jobs (working, stored in Supabase) ======
+    async function loadFeed(){
+      const list = $("feedList");
+      list.innerHTML = "";
+
+      const { data, error } = await supabase
+        .from("feed_posts")
+        .select("id, user_id, text, created_at")
+        .order("created_at", { ascending:false })
+        .limit(30);
+
+      if(error){
+        list.innerHTML = `<div class="msg warn" style="display:block;">Feed is not ready yet. Create the table <b>feed_posts</b> in Supabase. (We’ll do it next step.)</div>`;
+        return;
+      }
+
+      if(!data || data.length === 0){
+        list.innerHTML = `<div class="miniCard" style="color:var(--muted);">No posts yet. Be the first to post.</div>`;
+        return;
+      }
+
+      data.forEach(p => {
+        const d = new Date(p.created_at);
+        const el = document.createElement("div");
+        el.className = "post";
+        el.innerHTML = `
+          <div class="postTop">
+            <div class="postBy">Maritime member</div>
+            <div class="postAt">${d.toLocaleString()}</div>
+          </div>
+          <div class="postText">${escapeHtml(p.text || "")}</div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    async function loadJobs(){
+      const list = $("jobsList");
+      list.innerHTML = "";
+
+      const { data, error } = await supabase
+        .from("jobs_posts")
+        .select("id, user_id, title, location, description, created_at")
+        .order("created_at", { ascending:false })
+        .limit(30);
+
+      if(error){
+        list.innerHTML = `<div class="msg warn" style="display:block;">Jobs board is not ready yet. Create the table <b>jobs_posts</b> in Supabase. (We’ll do it next step.)</div>`;
+        return;
+      }
+
+      if(!data || data.length === 0){
+        list.innerHTML = `<div class="miniCard" style="color:var(--muted);">No jobs posted yet.</div>`;
+        return;
+      }
+
+      data.forEach(j => {
+        const d = new Date(j.created_at);
+        const el = document.createElement("div");
+        el.className = "job";
+        el.innerHTML = `
+          <div class="jobTitle">${escapeHtml(j.title || "")}</div>
+          <div class="jobMeta">${escapeHtml(j.location || "")} • ${d.toLocaleDateString()}</div>
+          <div class="jobDesc">${escapeHtml(j.description || "")}</div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    $("btnPost").addEventListener("click", async () => {
+      const msg = $("feedMsg");
+      msg.style.display="none";
+
+      const user = await getUser();
+      if(!user){
+        setMsg(msg, "warn", "Please login first.");
+        showMsg(msg);
+        location.hash="#auth";
+        return;
+      }
+
+      const text = $("postText").value.trim();
+      if(!text){
+        setMsg(msg, "warn", "Write something before posting.");
+        showMsg(msg);
+        return;
+      }
+
+      const { error } = await supabase.from("feed_posts").insert({ user_id: user.id, text });
+      if(error){
+        setMsg(msg, "bad", error.message);
+        showMsg(msg);
+        return;
+      }
+
+      $("postText").value = "";
+      setMsg(msg, "ok", "Posted.");
+      showMsg(msg);
+      await loadFeed();
+    });
+
+    $("btnJob").addEventListener("click", async () => {
+      const msg = $("jobsMsg");
+      msg.style.display="none";
+
+      const user = await getUser();
+      if(!user){
+        setMsg(msg, "warn", "Please login first.");
+        showMsg(msg);
+        location.hash="#auth";
+        return;
+      }
+
+      const title = $("jobTitle").value.trim();
+      const location = $("jobLocation").value.trim();
+      const description = $("jobDesc").value.trim();
+
+      if(!title || !location || !description){
+        setMsg(msg, "warn", "Please fill title, location, and description.");
+        showMsg(msg);
+        return;
+      }
+
+      const { error } = await supabase.from("jobs_posts").insert({ user_id: user.id, title, location, description });
+      if(error){
+        setMsg(msg, "bad", error.message);
+        showMsg(msg);
+        return;
+      }
+
+      $("jobTitle").value="";
+      $("jobLocation").value="";
+      $("jobDesc").value="";
+      setMsg(msg, "ok", "Job published.");
+      showMsg(msg);
+      await loadJobs();
+    });
+
+    $("btnUpdateProfile").addEventListener("click", async () => {
+      const msg = $("editMsg");
+      msg.style.display="none";
+
+      const user = await getUser();
+      if(!user){
+        setMsg(msg, "warn", "Please login first.");
+        showMsg(msg);
+        location.hash="#auth";
+        return;
+      }
+
+      const payload = {
+        id: user.id,
+        full_name: $("edit_name").value.trim() || null,
+        nationality: $("edit_nat").value.trim() || null,
+        rank: $("edit_rank").value.trim() || null,
+        dob: $("edit_dob").value || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const file = $("edit_avatar").files?.[0] || null;
+      const avatar_url = await uploadAvatarOptional(user.id, file);
+      if(avatar_url) payload.avatar_url = avatar_url;
+
+      const { error } = await supabase.from("profiles").upsert(payload, { onConflict:"id" });
+      if(error){
+        setMsg(msg, "bad", error.message);
+        showMsg(msg);
+        return;
+      }
+
+      setMsg(msg, "ok", "Profile updated.");
+      showMsg(msg);
+      await hydrateDashboard();
+    });
+
+    // ====== Hydrate dashboard ======
+    async function hydrateDashboard(){
+      const user = await getUser();
+      if(!user) return;
+
+      const prof = await getProfile(user.id).catch(() => null);
+      setUserCard(prof, user.email);
+
+      await loadFeed();
+      await loadJobs();
+    }
+
+    // ====== Session watcher: route to setup/dashboard ======
+    async function routeAuthed(){
+      const { data:{ session } } = await supabase.auth.getSession();
+      const isAuthed = !!session?.user;
+      showAuthedUI(isAuthed);
+
+      if(!isAuthed) return;
+
+      // If user is authed, decide setup vs dashboard
+      const prof = await getProfile(session.user.id).catch(() => null);
+      if(!prof){
+        location.hash = "#setup";
+      }else{
+        await hydrateDashboard();
+        location.hash = "#dashboard";
+      }
+    }
+
+    supabase.auth.onAuthStateChange(async (_event, _session) => {
+      await routeAuthed();
+    });
+
+    // ====== Init ======
+    await ensureTables();
+    await routeAuthed();
+
+    // ====== Escaping ======
+    function escapeHtml(s){
+      return (s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // Default auth mode
+    window.setAuthMode("login");
+  </script>
 </body>
 </html>
