@@ -2,986 +2,180 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0B1020" />
-  <title>Pepsval — Where Shipping Trust Exists.</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0ea5e9" />
+  <title>PEPSVAL — Maritime Network & Jobs</title>
 
-  <!-- Favicon / bookmark icon -->
-  <!-- Note: some browsers don't show .webp favicons reliably. This still helps; later you can add favicon.ico -->
-  <link rel="icon" type="image/webp" href="logo.webp" />
-  <link rel="apple-touch-icon" href="logo.webp" />
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./logo-192.png" />
+  <link rel="apple-touch-icon" href="./logo-192.png" />
 
-  <style>
-    :root{
-      --bg0:#070A12;
-      --bg1:#0B1020;
-      --card: rgba(255,255,255,.08);
-      --card2: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.14);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.70);
-      --muted2: rgba(255,255,255,.55);
-      --shadow: 0 20px 60px rgba(0,0,0,.55);
-      --shadow2: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 18px;
-      --radius2: 26px;
-
-      --a1:#7C3AED;  /* purple */
-      --a2:#22D3EE;  /* cyan */
-      --a3:#3B82F6;  /* blue */
-      --ok:#34D399;
-      --warn:#FBBF24;
-      --bad:#FB7185;
-
-      --btn: rgba(255,255,255,.10);
-      --btnH: rgba(255,255,255,.14);
-      --input: rgba(255,255,255,.10);
-      --inputH: rgba(255,255,255,.14);
-
-      --grid: rgba(255,255,255,.06);
-    }
-
-    [data-theme="light"]{
-      --bg0:#F6F7FB;
-      --bg1:#EEF1FA;
-      --card: rgba(255,255,255,.65);
-      --card2: rgba(255,255,255,.55);
-      --stroke: rgba(10,20,40,.12);
-      --text: rgba(10,20,40,.92);
-      --muted: rgba(10,20,40,.70);
-      --muted2: rgba(10,20,40,.55);
-      --shadow: 0 20px 60px rgba(10,20,40,.12);
-      --shadow2: 0 10px 30px rgba(10,20,40,.10);
-      --btn: rgba(10,20,40,.08);
-      --btnH: rgba(10,20,40,.12);
-      --input: rgba(10,20,40,.08);
-      --inputH: rgba(10,20,40,.12);
-      --grid: rgba(10,20,40,.08);
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background: radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.25), transparent 60%),
-                  radial-gradient(900px 700px at 85% 10%, rgba(34,211,238,.18), transparent 55%),
-                  radial-gradient(1000px 900px at 60% 90%, rgba(59,130,246,.20), transparent 60%),
-                  linear-gradient(180deg, var(--bg0), var(--bg1));
-      overflow-x:hidden;
-    }
-
-    /* subtle grid */
-    .grid{
-      position:fixed; inset:0; pointer-events:none; opacity:.55;
-      background-image:
-        linear-gradient(to right, var(--grid) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-      background-size: 64px 64px;
-      mask-image: radial-gradient(circle at 40% 20%, rgba(0,0,0,1), rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 78%);
-    }
-
-    /* floating glow blobs */
-    .blob{
-      position:fixed; width:520px; height:520px; border-radius:999px; filter: blur(40px);
-      opacity:.30; pointer-events:none;
-      animation: float 10s ease-in-out infinite;
-      transform: translate3d(0,0,0);
-    }
-    .b1{ left:-220px; top:-120px; background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.9), transparent 60%); }
-    .b2{ right:-240px; top:-140px; background: radial-gradient(circle at 30% 30%, rgba(34,211,238,.8), transparent 60%); animation-duration: 12s; }
-    .b3{ left:30%; bottom:-260px; background: radial-gradient(circle at 30% 30%, rgba(59,130,246,.85), transparent 60%); animation-duration: 14s; }
-    @keyframes float{
-      0%,100%{ transform: translate3d(0,0,0); }
-      50%{ transform: translate3d(0,-18px,0); }
-    }
-
-    .wrap{ max-width:1100px; margin:0 auto;
-padding:22px 18px 56px; }
-
-    /* top nav */
-    .nav{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:14px; padding:12px 12px;
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      backdrop-filter: blur(14px);
-      border-radius: 999px;
-      box-shadow: var(--shadow2);
-      position:sticky; top:14px; z-index:40;
-    }
-    .brand{
-      display:flex; align-items:center; gap:12px; min-width:0;
-    }
-    .brand img{
-      width:38px; height:38px; border-radius:12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    }
-    .brand .t{
-      display:flex; flex-direction:column; line-height:1.1; min-width:0;
-    }
-    .brand .name{
-      font-weight:800; letter-spacing:.6px;
-      display:flex; align-items:center; gap:8px;
-    }
-    .badge{
-      font-size:12px; padding:4px 10px; border-radius:999px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
-    }
-    .brand .tag{ font-size:12px; color:var(--muted2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-    .nav-actions{ display:flex; align-items:center; gap:10px; }
-    .btn{
-      appearance:none; border:1px solid var(--stroke);
-      background: var(--btn);
-      color:var(--text);
-      padding:10px 14px;
-      border-radius: 999px;
-      cursor:pointer;
-      transition: transform .15s ease, background .15s ease, border-color .15s ease;
-      font-weight:700;
-    }
-    .btn:hover{ background: var(--btnH); transform: translateY(-1px); }
-    .btn:active{ transform: translateY(0px); }
-    .btn.primary{
-      border-color: rgba(124,58,237,.35);
-      background: linear-gradient(135deg, rgba(124,58,237,.85), rgba(59,130,246,.75));
-      box-shadow: 0 16px 40px rgba(124,58,237,.25);
-    }
-    .btn.primary:hover{ filter: brightness(1.05); }
-
-    .toggle{
-      display:flex; align-items:center; gap:8px;
-      border:1px solid var(--stroke);
-      background: var(--btn);
-      border-radius:999px;
-      padding:6px 10px;
-    }
-    .toggle span{ font-size:12px; color:var(--muted); font-weight:700; }
-    .toggle button{
-      border:none; background:transparent; color:var(--text);
-      cursor:pointer; font-weight:800; padding:6px 10px; border-radius:999px;
-    }
-    .toggle button.active{
-      background: rgba(255,255,255,.10);
-      border:1px solid var(--stroke);
-    }
-
-    /* pages */
-    .page{ display:none; }
-    .page.active{ display:block; }
-
-    /* hero */
-    .hero{
-      margin-top:18px;
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      backdrop-filter: blur(16px);
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      position:relative;
-    }
-
-    /* glass reflection strip */
-    .hero::before{
-      content:"";
-      position:absolute; inset:-30% -40%;
-      background: linear-gradient(120deg, rgba(255,255,255,.0), rgba(255,255,255,.18), rgba(255,255,255,0));
-      transform: rotate(12deg);
-      animation: sheen 8s ease-in-out infinite;
-      pointer-events:none;
-    }
-    @keyframes sheen{
-      0%{ transform: translateX(-35%) rotate(12deg); opacity:.0; }
-      12%{ opacity:.20; }
-      35%{ opacity:.10; }
-      55%{ transform: translateX(35%) rotate(12deg); opacity:.0; }
-      100%{ transform: translateX(35%) rotate(12deg); opacity:.0; }
-    }
-
-    .hero-inner{
-      padding:26px 18px;
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:18px;
-      align-items:center;
-    }
-    @media (max-width: 860px){
-      .hero-inner{ grid-template-columns: 1fr; padding:22px 16px; }
-    }
-
-    .bigbrand{
-      display:flex; gap:16px; align-items:center;
-      animation: enter .7s cubic-bezier(.2,.9,.2,1) both;
-    }
-    @keyframes enter{
-      from{ opacity:0; transform:
-translateY(10px); filter: blur(6px); }
-      to{ opacity:1; transform: translateY(0); filter: blur(0); }
-    }
-
-    .logo-wrap{
-      width:92px; height:92px; border-radius: 22px;
-      display:grid; place-items:center;
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.16);
-      box-shadow: 0 18px 50px rgba(0,0,0,.35);
-      position:relative;
-      overflow:hidden;
-    }
-    .logo-wrap::after{
-      content:"";
-      position:absolute; inset:-30% -30%;
-      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 45%);
-      filter: blur(10px);
-      opacity:.8;
-      pointer-events:none;
-    }
-    .logo-wrap img{
-      width:78px; height:auto;
-      animation: logoPop .85s cubic-bezier(.2,.9,.2,1) both;
-      transform-origin: 50% 70%;
-      filter: drop-shadow(0 16px 26px rgba(0,0,0,.35));
-    }
-    @keyframes logoPop{
-      0%{ transform: translateY(10px) scale(.88); opacity:0; }
-      55%{ opacity:1; }
-      100%{ transform: translateY(0) scale(1); opacity:1; }
-    }
-
-    .h-title{
-      font-size: clamp(28px, 4vw, 44px);
-      font-weight: 900;
-      letter-spacing: -.6px;
-      margin:0;
-    }
-    .h-sub{
-      margin:10px 0 0;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.6;
-      max-width: 52ch;
-    }
-    .cta{
-      margin-top:16px;
-      display:flex; gap:10px; flex-wrap:wrap;
-    }
-
-    /* stats cards */
-    .cards{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:12px;
-    }
-    @media (max-width: 860px){
-      .cards{ grid-template-columns: 1fr; }
-    }
-
-    .card{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      border-radius: var(--radius);
-      padding:14px 14px 12px;
-      box-shadow: var(--shadow2);
-      position:relative;
-      overflow:hidden;
-    }
-    .card::before{
-      content:"";
-      position:absolute; inset:-40% -40%;
-      background: radial-gradient(circle at 20% 10%, rgba(124,58,237,.25), transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(34,211,238,.18), transparent 55%);
-      filter: blur(18px);
-      opacity:.8;
-      pointer-events:none;
-    }
-    .card h3{ margin:0 0 8px; font-size:14px; letter-spacing:.2px; }
-    .card p{ margin:0; color: var(--muted); font-size:13px; line-height:1.55; }
-
-    /* section */
-    .section{
-      margin-top:18px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.04);
-      border-radius: var(--radius2);
-      padding:18px;
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(10px);
-    }
-    .section h2{
-      margin:0 0 10px;
-      font-size:18px;
-      letter-spacing:.2px;
-    }
-    .cols{
-      display:grid; gap:12px;
-      grid-template-columns: repeat(3, 1fr);
-    }
-    @media (max-width: 900px){
-      .cols{ grid-template-columns: 1fr; }
-    }
-    .pill{
-      display:inline-flex; gap:8px; align-items:center;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      padding:8px 10px;
-      border-radius:999px;
-      color:var(--muted);
-      font-size:12px; font-weight:800;
-    }
-    .dot{ width:8px; height:8px; border-radius:99px; background: var(--a2); box-shadow: 0 0 0 4px rgba(34,211,238,.12); }
-
-    /* forms */
-    .auth{
-      max-width: 520px;
-      margin: 22px auto 0;
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      padding: 18px;
-      backdrop-filter: blur(16px);
-      position:relative;
-      overflow:hidden;
-    }
-    .auth::before{
-      content:"";
-      position:absolute; inset:-50% -40%;
-      background: radial-gradient(circle at 30% 30%, rgba(124,58,237,.18), transparent 50%),
-                  radial-gradient(circle at 70% 20%, rgba(34,211,238,.14), transparent 55%);
-      filter: blur(24px);
-      pointer-events:none;
-    }
-    .auth > *{ position:relative; z-index:1; }
-
-    .tabs{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
-    .tab{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      padding:10px 12px;
-      border-radius:999px;
-      font-weight:900;
-      cursor:pointer;
-      color:var(--muted);
-    }
-    .tab.active{
-      color:var(--text);
-      background: rgba(255,255,255,.10);
-    }
-    .field{ margin-top:10px; }
-    label{ display:block; font-size:12px; color:var(--muted); font-weight:800; margin-bottom:6px; }
-    input, select{
-      width:100%;
-      border:1px solid var(--stroke);
-      background: var(--input);
-      color:var(--text);
-      padding: 12px 12px;
-      border-radius: 14px;
-      outline:none;
-      transition: background .15s ease, border-color .15s ease;
-    }
-    input:focus, select:focus{
-      background: var(--inputH);
-      border-color: rgba(124,58,237,.45);
-    }
-    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    @media (max-width: 520px){ .row{ grid-template-columns: 1fr; } }
-
-    .help{
-      margin-top:10px;
-      font-size:13px;
-      color: var(--muted);
-      line-height:1.55;
-    }
-    .msg{
-      margin-top:10px;
-      font-size:13px;
-      padding:10px 12px;
-      border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
-    }
-    .msg.ok{ border-color: rgba(52,211,153,.35); color: rgba(52,211,153,.95); }
-    .msg.bad{ border-color: rgba(251,113,133,.35); color: rgba(251,113,133,.95); }
-    .msg.warn{ border-color: rgba(251,191,36,.40); color: rgba(251,191,36,.95); }
-
-    .actions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
-    .link{
-      border:none;
-      background:transparent;
-      color: rgba(34,211,238,.95);
-      font-weight:900;
-      cursor:pointer;
-      padding:10px 0;
-    }
-
-    /* profile */
-    .profile-head{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      margin-bottom:10px;
-    }
-    .user-pill{
-      display:flex; align-items:center; gap:10px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      padding: 10px 12px;
-      border-radius: 999px;
-      color: var(--muted);
-      font-weight:800;
-      max-width: 100%;
-      overflow:hidden;
-    }
-    .avatar{
-      width:34px; height:34px; border-radius: 12px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      display:grid; place-items:center;
-      overflow:hidden;
-      flex: 0 0 auto;
-    }
-    .avatar img{ width:100%; height:100%; object-fit:cover; }
-    .email-clip{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 240px; }
-    @media (max-width: 420px){ .email-clip{ max-width: 180px; } }
-
-    footer{
-      margin-top:24px;
-      color: var(--muted2);
-      font-size: 12px;
-      display:flex;
-      justify-content: space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      opacity:.9;
-    }
-    footer a{ color: rgba(34,211,238,.95); font-weight:900; text-decoration:none; }
-    footer a:hover{ text-decoration:underline; }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
-  <div class="grid"></div>
-  <div class="blob b1"></div>
-  <div class="blob b2"></div>
-  <div class="blob b3"></div>
-
-  <div class="wrap">
-    <!-- NAV -->
-    <div class="nav">
-      <div class="brand" role="button" tabindex="0" onclick="go('home')" title="Go to home">
-        <img src="logo.webp" alt="Pepsval logo">
-        <div class="t">
-          <div class="name">PEPSVAL <span class="badge">Private beta</span></div>
-          <div class="tag">Where Shipping Trust Exists.</div>
-        </div>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand__logo" src="./logo.webp" alt="Pepsval logo" />
+      <div class="brand__text">
+        <div class="brand__name">PEPSVAL</div>
+        <div class="brand__tag">Maritime network & jobs</div>
       </div>
-
-      <div class="nav-actions">
-        <div class="toggle" aria-label="Theme toggle">
-          <span id="themeLabel">Dark</span>
-          <button id="darkBtn" class="active" onclick="setTheme('dark')">🌙</button>
-          <button id="lightBtn" onclick="setTheme('light')">☀️</button>
-        </div>
-        <button class="btn" onclick="go('login')">Login</button>
-        <button class="btn primary" onclick="go('login'); setAuthTab('signup')">Create account</button>
-      </div>
+      <span class="chip">BETA</span>
     </div>
 
-    <!-- HOME PAGE -->
-    <section id="page-home" class="page active">
-      <div class="hero">
-        <div class="hero-inner">
-          <div>
-            <div class="bigbrand">
-              <div class="logo-wrap" aria-hidden="true">
-                <img src="logo.webp" alt="">
-              </div>
-              <div>
-                <h1 class="h-title">A friendly trust layer for global shipping.</h1>
-                <p class="h-sub">
-                  Pepsval is a private,
-login-only platform that brings <b>verified identity</b>, <b>verified sea time</b>,
-                  and <b>professional reputation</b> into one profile — built to be welcoming, clear, and respectful.
-                </p>
-                <div class="cta">
-                  <button class="btn primary" onclick="go('login')">Login</button>
-                  <button class="btn" onclick="go('login'); setAuthTab('signup')">Create account</button>
-                </div>
-              </div>
-            </div>
+    <nav class="topnav desktop-only">
+      <a href="#articles">ARTICLES</a>
+      <a href="#people">PEOPLE</a>
+      <a href="#learning">LEARNING</a>
+      <a href="#jobs">JOBS</a>
+      <a href="#companies">COMPANIES</a>
+    </nav>
 
-            <div class="section" style="margin-top:16px;">
-              <span class="pill"><span class="dot"></span> Profiles are private by default — you choose what to share.</span>
-              <div style="height:10px"></div>
-              <div class="cols">
-                <div class="card">
-                  <h3>For Seafarers</h3>
-                  <p>Build a trusted profile, store documents, track sea time, and grow your professional network.</p>
-                </div>
-                <div class="card">
-                  <h3>For Companies</h3>
-                  <p>Request confirmations and appraisals respectfully, and shortlist faster with clearer signals.</p>
-                </div>
-                <div class="card">
-                  <h3>For the Industry</h3>
-                  <p>A single place for trust, connections, and opportunities — built for sea and shore careers.</p>
-                </div>
-              </div>
-            </div>
+    <div class="actions">
+      <button id="installBtn" class="btn btn-ghost" type="button" hidden>INSTALL APP</button>
+      <button class="btn btn-ghost" type="button" onclick="openAuth('login')">SIGN IN</button>
+      <button class="btn btn-primary" type="button" onclick="openAuth('signup')">JOIN NOW</button>
+    </div>
+  </header>
+
+  <!-- Desktop layout -->
+  <main class="shell">
+    <section class="hero">
+      <div class="hero__left">
+        <h1>Explore maritime jobs and grow your professional network</h1>
+        <p class="sub">
+          Sea jobs • Shore jobs • Companies • Agencies • Training • Marine services — all in one place.
+        </p>
+
+        <div class="auth-card">
+          <div class="auth-card__tabs">
+            <button class="tab is-active" id="tabLogin" type="button" onclick="openAuth('login')">Sign in</button>
+            <button class="tab" id="tabSignup" type="button" onclick="openAuth('signup')">Join</button>
           </div>
 
-          <div class="cards">
-            <div class="card">
-              <h3>Seafarer e-Passport</h3>
-              <p>One profile that combines identity, sea time, and reputation — designed to be simple and professional.</p>
-            </div>
-            <div class="card">
-              <h3>Employer appraisal</h3>
-              <p>After each contract, employers can add a short appraisal — respectful, structured, and useful.</p>
-            </div>
-            <div class="card">
-              <h3>Connections & posts</h3>
-              <p>Social features (posts/photos/videos) built for the maritime community — not noise.</p>
-            </div>
-            <div class="card">
-              <h3>Sea & shore jobs</h3>
-              <p>Worldwide job listings (future) for both sea and shore roles — one place to explore.</p>
-            </div>
+          <div class="auth-card__body">
+            <button class="btn btn-wide btn-google" type="button" disabled title="Coming soon">
+              CONTINUE WITH GOOGLE (COMING SOON)
+            </button>
+            <button class="btn btn-wide btn-ms" type="button" disabled title="Coming soon">
+              CONTINUE WITH MICROSOFT (COMING SOON)
+            </button>
+            <button class="btn btn-wide btn-outline" type="button" onclick="openAuth('login')">
+              SIGN IN WITH EMAIL
+            </button>
+
+            <p class="legal">
+              By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.
+            </p>
           </div>
+        </div>
+
+        <div class="quick-pills">
+          <span class="pill">SEA JOBS</span>
+          <span class="pill">SHORE JOBS</span>
+          <span class="pill">COMPANIES</span>
+          <span class="pill">AGENCIES</span>
+          <span class="pill">MARINE SERVICES</span>
         </div>
       </div>
 
-      <div class="section">
-        <h2>Verification levels (v1)</h2>
-        <div class="cols">
-          <div class="card">
-            <h3>Document Verified</h3>
-            <p>Admin/partner checks document authenticity format + expiry, then marks it verified.</p>
+      <div class="hero__right">
+        <div class="illustration">
+          <div class="illus-card">
+            <div class="illus-title">Find the right role</div>
+            <div class="illus-line">2/O • 3/O • C/E • Master • ETO • Shore Ops</div>
           </div>
-          <div class="card">
-            <h3>Employment Confirmed</h3>
-            <p>Company confirms dates/vessel via a simple Yes/No workflow.</p>
+          <div class="illus-card">
+            <div class="illus-title">Hire with confidence</div>
+            <div class="illus-line">Profiles + verified documents (later)</div>
           </div>
-          <div class="card">
-            <h3>Peer Confirmed</h3>
-            <p>A senior officer you served with can confirm “served together” (optional, but powerful).</p>
+          <div class="illus-card">
+            <div class="illus-title">Build your network</div>
+            <div class="illus-line">Connect across the maritime industry</div>
           </div>
-        </div>
-
-        <div style="height:10px"></div>
-        <div class="card">
-          <h3>Partnerships</h3>
-          <p>
-            We’re open to partnerships with manning agencies, shipping companies, maritime institutes, unions, and port-state stakeholders.
-            If you want to collaborate, email: <b>jithinilip@gmail.com</b>
-          </p>
         </div>
       </div>
     </section>
 
-    <!-- LOGIN PAGE -->
-    <section id="page-login" class="page">
-      <div class="auth">
-        <h2 style="margin:0 0 6px; font-size:18px;">Login to Pepsval</h2>
-        <div class="help">Email + password only. After login, you’ll be taken to the Profile Setup page.</div>
-
-        <div class="tabs" style="margin-top:12px;">
-          <button id="tab-login" class="tab active" onclick="setAuthTab('login')">Login</button>
-          <button id="tab-signup" class="tab" onclick="setAuthTab('signup')">Create account</button>
-          <button id="tab-reset" class="tab" onclick="setAuthTab('reset')">Forgot password</button>
+    <!-- Mobile “app-like” home -->
+    <section class="mobile-home mobile-only">
+      <div class="m-head">
+        <div class="m-title">PEPSVAL</div>
+        <div class="m-actions">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="openAuth('login')">LOGIN</button>
+          <button class="btn btn-primary btn-sm" type="button" onclick="openAuth('signup')">JOIN</button>
         </div>
+      </div>
 
-        <div class="field">
-          <label>Email</label>
-          <input id="email" type="email" autocomplete="email" placeholder="name@example.com" />
-        </div>
+      <div class="m-card">
+        <div class="m-card__title">Maritime Jobs</div>
+        <div class="m-card__text">Browse sea & shore roles posted by companies and agencies.</div>
+        <button class="btn btn-outline btn-sm" type="button">EXPLORE JOBS</button>
+      </div>
 
-        <div class="field" id="pwWrap">
-          <label>Password</label>
-          <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
-        </div>
+      <div class="m-card">
+        <div class="m-card__title">Professional Network</div>
+        <div class="m-card__text">Connect with seafarers, recruiters, training centers & service providers.</div>
+        <button class="btn btn-outline btn-sm" type="button">DISCOVER PEOPLE</button>
+      </div>
 
-        <div class="actions">
-          <button id="authBtn" class="btn primary" onclick="handleAuth()">Login</button>
-          <button class="btn" onclick="go('home')">Back</button>
-        </div>
-
-        <div id="msg" class="msg" style="display:none;"></div>
-
-        <div class="actions" style="justify-content:space-between;">
-          <button class="link" onclick="setAuthTab('reset')">Forgot password?</button>
-          <button class="link" onclick="setAuthTab('signup')">Create an account</button>
-        </div>
-
-        <div class="help" style="margin-top:8px;">
-          If “Confirm email” is ON in Supabase, you must confirm from your email before logging in.
-          You can also resend confirmation from the message prompt if needed.
+      <div class="m-card">
+        <div class="m-card__title">Install the App</div>
+        <div class="m-card__text">Add PEPSVAL to your home screen for faster access.</div>
+        <button id="installBtnMobile" class="btn btn-primary btn-sm" type="button" hidden>INSTALL</button>
+        <div class="hint" id="installHint">
+          On iPhone: Share → “Add to Home Screen”.
         </div>
       </div>
     </section>
+  </main>
 
-    <!-- PROFILE PAGE -->
-    <section id="page-profile" class="page">
-      <div class="auth" style="max-width:720px;">
-        <div class="profile-head">
-          <h2 style="margin:0; font-size:18px;">Profile setup</h2>
-          <div class="user-pill">
-            <div class="avatar" id="avatarBox">👤</div>
-            <div class="email-clip" id="userEmail">Signed in</div>
-          </div>
-        </div>
+  <!-- Bottom nav (mobile) -->
+  <nav class="bottomnav mobile-only">
+    <button class="navbtn is-active" type="button">HOME</button>
+    <button class="navbtn" type="button">JOBS</button>
+    <button class="navbtn" type="button">POST</button>
+    <button class="navbtn" type="button">NETWORK</button>
+    <button class="navbtn" type="button" onclick="openAuth('login')">ME</button>
+  </nav>
 
-        <div class="help" style="margin-bottom:10px;">
-          Add your basic details now. You can improve your profile later.
-        </div>
-
-        <div class="field">
-          <label>Profile picture (optional)</label>
-          <input id="avatarFile" type="file" accept="image/*" />
-          <div class="help">Tip: For best results use a square photo. (Upload uses a Supabase Storage bucket named <b>avatars</b>.)</div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Full name</label>
-            <input id="full_name" type="text" placeholder="e.g., Jithin Philip" />
-          </div>
-          <div class="field">
-            <label>Nationality</label>
-            <input id="nationality" type="text" placeholder="e.g., Indian" />
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Rank</label>
-            <input id="rank" type="text"
-placeholder="e.g., Second Officer" />
-          </div>
-          <div class="field">
-            <label>Date of birth</label>
-            <input id="dob" type="date" />
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn primary" onclick="saveProfile()">Save profile</button>
-          <button class="btn" onclick="loadProfile()">Reload</button>
-          <button class="btn" onclick="logout()">Logout</button>
-        </div>
-
-        <div id="pmsg" class="msg" style="display:none;"></div>
+  <!-- Simple auth modal (email only UI placeholder) -->
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal__backdrop" onclick="closeAuth()"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true">
+      <div class="modal__top">
+        <div class="modal__title" id="authTitle">Sign in</div>
+        <button class="x" type="button" onclick="closeAuth()">✕</button>
       </div>
-    </section>
 
-    <footer>
-      <div>© <span id="yr"></span> Pepsval. All rights reserved.</div>
-      <div>Founder <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">JITHIN PHILIP</a></div>
-    </footer>
+      <form class="form" onsubmit="return false;">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com" required />
+
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" required />
+
+        <button class="btn btn-primary btn-wide" type="button">CONTINUE</button>
+
+        <div class="form__row">
+          <a href="#forgot">Forgot password?</a>
+          <a href="#create" onclick="openAuth('signup')">Create account</a>
+        </div>
+
+        <div class="note">
+          Email+Password UI only for now. We’ll connect Supabase later.
+        </div>
+      </form>
+    </div>
   </div>
 
-  <!-- Supabase JS (UMD) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <footer class="footer">
+    <div>© <span id="year"></span> Pepsval. All rights reserved.</div>
+    <div>Founder <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">JITHIN PHILIP</a></div>
+  </footer>
 
-  <script>
-    // =========================
-    // 1) CONFIG — your keys
-    // =========================
-    const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_GgqSqLPMHV7YK0F2ck07sg_2jLMPzeV";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // =========================
-    // 2) Routing / Pages
-    // =========================
-    const pages = ["home", "login", "profile"];
-    function go(name){
-      pages.forEach(p => document.getElementById("page-"+p).classList.remove("active"));
-      document.getElementById("page-"+name).classList.add("active");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    // =========================
-    // 3) Theme
-    // =========================
-    function setTheme(mode){
-      document.documentElement.setAttribute("data-theme", mode === "light" ? "light" : "dark");
-      localStorage.setItem("pepsval_theme", mode);
-
-      document.getElementById("themeLabel").textContent = mode === "light" ? "Light" : "Dark";
-      document.getElementById("darkBtn").classList.toggle("active", mode !== "light");
-      document.getElementById("lightBtn").classList.toggle("active", mode === "light");
-    }
-    (function initTheme(){
-      const saved = localStorage.getItem("pepsval_theme") || "dark";
-      setTheme(saved);
-    })();
-
-    document.getElementById("yr").textContent = new Date().getFullYear();
-
-    // =========================
-    // 4) Auth UI
-    // =========================
-    let authMode = "login"; // login | signup | reset
-    function setAuthTab(mode){
-      authMode = mode;
-      document.getElementById("tab-login").classList.toggle("active", mode === "login");
-      document.getElementById("tab-signup").classList.toggle("active", mode === "signup");
-      document.getElementById("tab-reset").classList.toggle("active", mode === "reset");
-
-      document.getElementById("pwWrap").style.display = (mode === "reset") ? "none" : "block";
-      document.getElementById("authBtn").textContent =
-        mode === "login" ? "Login" : (mode === "signup" ? "Create account" : "Send reset link");
-
-      hideMsg();
-    }
-
-    function showMsg(text, type=""){
-      const el = document.getElementById("msg");
-      el.style.display = "block";
-      el.className = "msg" + (type ? " " + type : "");
-      el.innerHTML = text;
-    }
-    function hideMsg(){ document.getElementById("msg").style.display = "none"; }
-
-    async function handleAuth(){
-      const email = (document.getElementById("email").value || "").trim();
-      const password = document.getElementById("password").value || "";
-
-      if(!email) return showMsg("Please enter your email.", "warn");
-      if(authMode !== "reset" && password.length < 6) return showMsg("Password must be at least 6 characters.", "warn");
-
-      try{
-        if(authMode === "login"){
-          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-          if(error){
-            // Friendly guidance for email confirmation
-            if((error.message || "").toLowerCase().includes("email not confirmed")){
-              return showMsg(
-                `Your email is not confirmed yet. Please check your inbox.<br><br>
-                 <button class="btn" style="padding:8px 12px;" onclick="resendConfirm('${email}')">Resend confirmation</button>`,
-                "warn"
-              );
-            }
-            return showMsg(error.message, "bad");
-          }
-          await onSignedIn(data.user);
-        }
-
-        if(authMode === "signup"){
-          const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-              // IMPORTANT: set this to your live domain so confirm/reset links come back correctly
-              emailRedirectTo: window.location.origin + window.location.pathname
-            }
-          });
-          if(error) return showMsg(error.message, "bad");
-
-          // If confirm email is ON, user must verify.
-          showMsg("Account created. Please check your email to confirm, then login.", "ok");
-        }
-
-        if(authMode === "reset"){
-          const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + window.location.pathname
-          });
-          if(error) return showMsg(error.message, "bad");
-          showMsg("Password reset link sent. Please check your email.", "ok");
-        }
-      }catch(e){
-        showMsg("Something went wrong. Please try again.", "bad");
-      }
-    }
-
-    async function resendConfirm(email){
-      try{
-        const { error } = await supabaseClient.auth.resend({
-          type: "signup",
-          email,
-          options: { emailRedirectTo: window.location.origin + window.location.pathname }
-        });
-        if(error) return showMsg(error.message, "bad");
-        showMsg("Confirmation email resent. Please check inbox/spam.", "ok");
-      }catch(e){
-        showMsg("Could not resend. Please try again.", "bad");
-      }
-    }
-
-    // =========================
-    // 5) After login → Profile page
-    // =========================
-    let currentUser = null;
-
-    async function onSignedIn(user){
-      currentUser = user;
-      document.getElementById("userEmail").textContent = user.email || "Signed in";
-
-      // Load existing profile if present
-      await loadProfile();
-
-      go("profile");
-    }
-
-    async function logout(){
-      await supabaseClient.auth.signOut();
-      currentUser = null;
-      go("home");
-    }
-
-    // =========================
-    // 6) Profile save/load
-    // =========================
-    function showPMsg(text, type=""){
-      const el = document.getElementById("pmsg");
-      el.style.display = "block";
-      el.className = "msg" + (type ? " " + type : "");
-      el.textContent = text;
-    }
-
-    async function loadProfile(){
-      showPMsg("Loading profile…", "");
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if(!user){
-        showPMsg("You are signed out. Please login again.", "warn");
-        go("login");
-        return;
-      }
-      currentUser = user;
-      document.getElementById("userEmail").textContent = user.email || "Signed in";
-
-      const { data, error } = await supabaseClient
-        .from("profiles")
-        .select("id, full_name, nationality, rank, dob, avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if(error){
-        showPMsg(error.message, "bad");
-        return;
-      }
-
-      if(data){
-        document.getElementById("full_name").value = data.full_name || "";
-        document.getElementById("nationality").value = data.nationality || "";
-        document.getElementById("rank").value
-= data.rank || "";
-        document.getElementById("dob").value = data.dob || "";
-
-        if(data.avatar_url){
-          document.getElementById("avatarBox").innerHTML = `<img src="${data.avatar_url}" alt="avatar">`;
-        }else{
-          document.getElementById("avatarBox").textContent = "👤";
-        }
-
-        showPMsg("Profile loaded.", "ok");
-      }else{
-        showPMsg("No profile yet. Fill details and save.", "warn");
-      }
-    }
-
-    async function uploadAvatarIfAny(userId){
-      const fileInput = document.getElementById("avatarFile");
-      const file = fileInput.files && fileInput.files[0];
-      if(!file) return null;
-
-      // Upload to Supabase Storage bucket named "avatars"
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${userId}/${Date.now()}.${ext}`;
-
-      const { error: upErr } = await supabaseClient
-        .storage
-        .from("avatars")
-        .upload(path, file, { upsert: true });
-
-      if(upErr){
-        throw new Error("Avatar upload failed. Please create a Storage bucket named 'avatars' and allow uploads for authenticated users.");
-      }
-
-      const { data: pub } = supabaseClient.storage.from("avatars").getPublicUrl(path);
-      return pub?.publicUrl || null;
-    }
-
-    async function saveProfile(){
-      showPMsg("Saving…", "");
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if(!user){
-        showPMsg("You are signed out. Please login again.", "warn");
-        go("login");
-        return;
-      }
-
-      const full_name = (document.getElementById("full_name").value || "").trim();
-      const nationality = (document.getElementById("nationality").value || "").trim();
-      const rank = (document.getElementById("rank").value || "").trim();
-      const dob = document.getElementById("dob").value || null;
-
-      try{
-        let avatar_url = null;
-        try{
-          avatar_url = await uploadAvatarIfAny(user.id);
-        }catch(uploadErr){
-          // Don't block saving details if upload bucket isn't ready
-          showPMsg(uploadErr.message + " (Details can still be saved.)", "warn");
-        }
-
-        const payload = {
-          id: user.id,
-          full_name,
-          nationality,
-          rank,
-          dob,
-          updated_at: new Date().toISOString(),
-        };
-        if(avatar_url) payload.avatar_url = avatar_url;
-
-        // Upsert creates row if missing, updates if exists
-        const { error } = await supabaseClient
-          .from("profiles")
-          .upsert(payload, { onConflict: "id" });
-
-        if(error){
-          // This is the exact issue you saw: RLS insert not allowed
-          showPMsg(error.message, "bad");
-          return;
-        }
-
-        if(avatar_url){
-          document.getElementById("avatarBox").innerHTML = `<img src="${avatar_url}" alt="avatar">`;
-          document.getElementById("avatarFile").value = "";
-        }
-
-        showPMsg("Saved successfully.", "ok");
-      }catch(e){
-        showPMsg(e.message || "Save failed. Please try again.", "bad");
-      }
-    }
-
-    // =========================
-    // 7) Session restore
-    // =========================
-    (async function init(){
-      // If user is already logged in, go to profile
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if(session?.user){
-        await onSignedIn(session.user);
-      }else{
-        go("home");
-      }
-
-      // react to auth changes
-      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        if(session?.user){
-          await onSignedIn(session.user);
-        }
-      });
-    })();
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
