@@ -7,7 +7,8 @@
 
 /* 1) CONFIG — set these */
 const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bG1lZWhjeHJzbGdmdnFqZnNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzU0NjgsImV4cCI6MjA4MzExMTQ2OH0.vHeIA2n6tm3F3IEoOPBsrIXQ1JXRlhe6bU4VP9b2lek";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bG1lZWhjeHJzbGdmdnFqZnNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzU0NjgsImV4cCI6MjA4MzExMTQ2OH0.vHeIA2n6tm3F3IEoOPBsrIXQ1JXRlhe6bU4VP9b2lek";
 
 /* 2) OPTIONAL: bucket name for profile pics */
 const AVATAR_BUCKET = "avatars";
@@ -131,7 +132,6 @@ async function upsertMyProfile(payload) {
 
 async function tryUploadAvatar(file, userId) {
   if (!file) return null;
-  // Make a stable path per user
   const ext = (file.name.split(".").pop() || "png").toLowerCase();
   const path = `${userId}/avatar.${ext}`;
 
@@ -140,13 +140,125 @@ async function tryUploadAvatar(file, userId) {
     .upload(path, file, { upsert: true, cacheControl: "3600" });
 
   if (upErr) {
-    // If bucket not configured, ignore (don’t block)
     console.warn("Avatar upload skipped:", upErr.message);
     return null;
   }
 
   const { data } = sb.storage.from(AVATAR_BUCKET).getPublicUrl(path);
   return data?.publicUrl || null;
+}
+
+/* =========================
+   FEED (REAL) — feed_posts
+   Expected columns:
+     id uuid (default gen_random_uuid())
+     user_id uuid
+     content text
+     created_at timestamptz (default now())
+   ========================= */
+
+async function fetchFeedPosts(limit = 30) {
+  const { data, error } = await sb
+    .from("feed_posts")
+    .select("id, user_id, content, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchProfilesByIds(ids) {
+  if (!ids?.length) return [];
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id, full_name, avatar_url, rank, nationality")
+    .in("id", ids);
+
+  if (error) throw error;
+  return data || [];
+}
+
+function renderFeedItem(post, author) {
+  const name = author?.full_name || "PEPSVAL Member";
+  const avatar = author?.avatar_url
+    ? `<img src="${esc(author.avatar_url)}" alt="avatar" />`
+    : `<div class="fi-avatar">${esc((name || "P")[0] || "P")}</div>`;
+
+  const sub = [
+    author?.rank ? esc(author.rank) : "",
+    author?.nationality ? esc(author.nationality) : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  const when = post?.created_at ? new Date(post.created_at).toLocaleString() : "";
+
+  return `
+    <div class="feed-item">
+      <div class="fi-top">
+        <div class="fi-avatar-wrap">${avatar}</div>
+        <div>
+          <div class="fi-title">${esc(name)}</div>
+          <div class="fi-sub">${sub ? `${sub} • ` : ""}${esc(when)}</div>
+        </div>
+      </div>
+      <div class="fi-body">${esc(post.content || "")}</div>
+      <div class="fi-actions">
+        <button class="btn btn-ghost" disabled>Like</button>
+        <button class="btn btn-ghost" disabled>Comment</button>
+        <button class="btn btn-ghost" disabled>Share</button>
+      </div>
+    </div>
+  `;
+}
+
+async function loadAndRenderFeed({ targetSel = "#feedList", limit = 30 } = {}) {
+  const host = $(targetSel);
+  if (!host) return;
+
+  host.innerHTML = `<div class="muted small">Loading feed…</div>`;
+
+  try {
+    const posts = await fetchFeedPosts(limit);
+    const ids = [...new Set(posts.map((p) => p.user_id).filter(Boolean))];
+    const profs = await fetchProfilesByIds(ids);
+    const map = new Map(profs.map((p) => [p.id, p]));
+
+    if (!posts.length) {
+      host.innerHTML = `<div class="muted small">No posts yet. Be the first to post ✨</div>`;
+      return;
+    }
+
+    host.innerHTML = posts.map((p) => renderFeedItem(p, map.get(p.user_id))).join("");
+  } catch (e) {
+    console.error("loadAndRenderFeed error:", e);
+
+    // Friendly, direct error for RLS / schema mismatch
+    const msg = e?.message || "Could not load feed.";
+    host.innerHTML = `
+      <div class="status error" style="display:block;">
+        Feed not loading: ${esc(msg)}
+        <div class="muted small" style="margin-top:8px;">
+          If you enabled RLS, make sure authenticated users can SELECT/INSERT on feed_posts.
+          Also confirm columns: user_id, content, created_at.
+        </div>
+      </div>
+    `;
+  }
+}
+
+async function createFeedPost(content) {
+  const text = (content || "").trim();
+  if (!text) throw new Error("Write something before posting.");
+  if (!state.user) throw new Error("Not logged in.");
+
+  const { error } = await sb.from("feed_posts").insert({
+    user_id: state.user.id,
+    content: text,
+  });
+
+  if (error) throw error;
 }
 
 /* Auth */
@@ -166,7 +278,6 @@ async function signUpEmail(email, password) {
   });
   if (error) throw error;
 
-  // If email confirmation ON, session may be null until confirmed
   if (!data.session) {
     toast("Account created. Please check your email to confirm, then login.", "success");
   } else {
@@ -207,7 +318,6 @@ function goto(hash) {
 
 /* Layout */
 function mountBase() {
-  // One-time base shell
   const root = $("#app");
   if (!root) return;
   root.innerHTML = `
@@ -254,7 +364,12 @@ function mountBase() {
 
     <footer class="footer">
       <div>© ${new Date().getFullYear()} Pepsval. All rights reserved.</div>
-      <div class="footer-right">Founder <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">JITHIN PHILIP</a></div>
+      <div class="footer-right">
+        Founder
+        <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">
+          JITHIN PHILIP
+        </a>
+      </div>
     </footer>
   `;
 
@@ -278,8 +393,8 @@ function renderAuthButtons() {
       <button class="btn btn-ghost" id="btnLogin">Sign in</button>
       <button class="btn btn-primary" id="btnJoin">Join</button>
     `;
-    $("#btnLogin")?.addEventListener("click", () => goto("#auth&mode=login"));
-    $("#btnJoin")?.addEventListener("click", () => goto("#auth&mode=signup"));
+    $("#btnLogin")?.addEventListener("click", () => goto("#auth?mode=login"));
+    $("#btnJoin")?.addEventListener("click", () => goto("#auth?mode=signup"));
   } else {
     host.innerHTML = `
       <button class="btn btn-ghost" id="btnLogout">Logout</button>
@@ -363,13 +478,13 @@ function renderLanding() {
         <div class="below-card">
           <div class="below-title">Maritime Jobs</div>
           <div class="below-sub">Browse sea & shore roles posted by companies and agencies.</div>
-          <button class="btn btn-ghost" onclick="location.hash='#auth&mode=login'">Explore jobs</button>
+          <button class="btn btn-ghost" onclick="location.hash='#auth?mode=login'">Explore jobs</button>
         </div>
 
         <div class="below-card">
           <div class="below-title">Professional Network</div>
           <div class="below-sub">Connect with seafarers, recruiters, training centers & service providers.</div>
-          <button class="btn btn-ghost" onclick="location.hash='#auth&mode=signup'">Discover people</button>
+          <button class="btn btn-ghost" onclick="location.hash='#auth?mode=signup'">Discover people</button>
         </div>
 
         <div class="below-card">
@@ -381,10 +496,9 @@ function renderLanding() {
     </section>
   `;
 
-  $("#goEmail")?.addEventListener("click", () => goto("#auth&mode=login"));
-  $("#goJoin")?.addEventListener("click", () => goto("#auth&mode=signup"));
+  $("#goEmail")?.addEventListener("click", () => goto("#auth?mode=login"));
+  $("#goJoin")?.addEventListener("click", () => goto("#auth?mode=signup"));
 
-  // If install prompt already captured
   showInstallCTA(Boolean(deferredInstallPrompt));
 }
 
@@ -435,7 +549,7 @@ function renderAuth() {
 
   $("#btnBack")?.addEventListener("click", () => goto("#home"));
   $("#switchMode")?.addEventListener("click", () =>
-    goto(mode === "signup" ? "#auth&mode=login" : "#auth&mode=signup")
+    goto(mode === "signup" ? "#auth?mode=login" : "#auth?mode=signup")
   );
 
   $("#btnSubmit")?.addEventListener("click", async () => {
@@ -456,7 +570,6 @@ function renderAuth() {
         setStatus("Signing in…", "info");
         await signInEmail(email, password);
 
-        // after login, decide route
         state.profile = await fetchMyProfile();
         if (profileIsComplete(state.profile)) {
           goto("#dashboard");
@@ -552,7 +665,6 @@ function renderSetup() {
 
       setStatus("Saving…", "info");
 
-      // Upload avatar if possible
       const file = $("#avatar")?.files?.[0] || null;
       let avatar_url = p.avatar_url || null;
       const uploadedUrl = await tryUploadAvatar(file, state.user.id);
@@ -573,7 +685,6 @@ function renderSetup() {
 
       setStatus("Saved successfully.", "success");
 
-      // ✅ IMPORTANT: redirect to dashboard
       window.location.hash = "#dashboard";
       state.activeTab = "home";
       renderApp();
@@ -589,7 +700,6 @@ function renderDashboard() {
   const p = state.profile || {};
   const tab = state.activeTab || "home";
 
-  // show mobile nav only for dashboard
   $("#mobileNav").style.display = "flex";
   highlightMobileTab(tab);
 
@@ -658,7 +768,44 @@ function renderDashboard() {
     });
   });
 
+  // Hook feed UI for tabs that need it
+  hookDashTab(tab);
+
   showInstallCTA(Boolean(deferredInstallPrompt));
+}
+
+function hookDashTab(tab) {
+  // Home feed: load posts
+  if (tab === "home") {
+    loadAndRenderFeed({ targetSel: "#feedList", limit: 30 });
+  }
+
+  // Post tab: enable posting + refresh feed preview
+  if (tab === "post") {
+    const btn = $("#postSend");
+    const ta = $("#postText");
+
+    loadAndRenderFeed({ targetSel: "#feedPreview", limit: 8 });
+
+    btn?.addEventListener("click", async () => {
+      try {
+        btn.disabled = true;
+        const text = ta?.value || "";
+        await createFeedPost(text);
+        if (ta) ta.value = "";
+        toast("Posted ✅", "success");
+
+        // After posting, switch to Home feed
+        state.activeTab = "home";
+        renderApp();
+      } catch (e) {
+        console.error(e);
+        toast(e?.message || "Post failed.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
 }
 
 function renderDashTab(tab, p) {
@@ -667,14 +814,10 @@ function renderDashTab(tab, p) {
       <div class="panel-lite">
         <h2>Home feed</h2>
         <p class="muted">
-          This is a clean feed layout. Next step will be real posts (photos/videos) saved to database.
+          Real posts from the community. Text posts now — media comes after storage rules.
         </p>
 
-        <div class="feed">
-          ${fakePost("Maritime life", "Share moments from sea & shore.")}
-          ${fakePost("New opportunities", "Companies and agencies will post jobs here.")}
-          ${fakePost("Connections", "Build your professional maritime network.")}
-        </div>
+        <div id="feedList" class="feed"></div>
       </div>
     `;
   }
@@ -697,19 +840,18 @@ function renderDashTab(tab, p) {
     return `
       <div class="panel-lite">
         <h2>Create a post</h2>
-        <p class="muted">Posting will be enabled after we add the posts table + storage bucket.</p>
+        <p class="muted">Share a text update. (Media posts come after storage rules are finalized.)</p>
 
         <div class="post-box">
-          <textarea placeholder="Share an update…" disabled></textarea>
+          <textarea id="postText" placeholder="Share an update…"></textarea>
           <div class="row">
-            <button class="btn btn-muted" disabled>Add photo/video</button>
-            <button class="btn btn-muted" disabled>Post</button>
+            <button class="btn btn-muted" disabled>Add photo/video (coming next)</button>
+            <button class="btn btn-primary" id="postSend">Post</button>
           </div>
         </div>
 
-        <div class="muted small">
-          We will not show non-working features in the final version. We’ll enable this only when database is ready.
-        </div>
+        <div class="muted small" style="margin-top:10px;">Recent posts</div>
+        <div id="feedPreview" class="feed" style="margin-top:8px;"></div>
       </div>
     `;
   }
@@ -750,25 +892,6 @@ function renderDashTab(tab, p) {
 }
 
 /* fake UI blocks */
-function fakePost(title, body) {
-  return `
-    <div class="feed-item">
-      <div class="fi-top">
-        <div class="fi-avatar">P</div>
-        <div>
-          <div class="fi-title">${esc(title)}</div>
-          <div class="fi-sub">PEPSVAL • just now</div>
-        </div>
-      </div>
-      <div class="fi-body">${esc(body)}</div>
-      <div class="fi-actions">
-        <button class="btn btn-ghost" disabled>Like</button>
-        <button class="btn btn-ghost" disabled>Comment</button>
-        <button class="btn btn-ghost" disabled>Share</button>
-      </div>
-    </div>
-  `;
-}
 function fakeJob(role, meta) {
   return `
     <div class="job-item">
@@ -800,15 +923,12 @@ function highlightMobileTab(tab) {
 async function renderApp() {
   renderAuthButtons();
 
-  // Theme
   setTheme(getTheme());
 
   const { path } = getRoute();
 
-  // If not on dashboard, hide mobile nav
   if (path !== "dashboard") $("#mobileNav").style.display = "none";
 
-  // Public routes
   if (path === "home" || path === "terms" || path === "privacy") {
     if (path === "home") return renderLanding();
     const view = $("#view");
@@ -824,18 +944,15 @@ async function renderApp() {
     return;
   }
 
-  // Auth route
-  if (path.startsWith("auth")) {
+  if (path === "auth") {
     return renderAuth();
   }
 
-  // Protected routes
   if (!state.user) {
     goto("#home");
     return renderLanding();
   }
 
-  // Load profile once (or refresh if missing)
   if (!state.profile) {
     state.profile = await fetchMyProfile();
   }
@@ -845,7 +962,6 @@ async function renderApp() {
   }
 
   if (path === "dashboard") {
-    // If profile not complete, force setup
     if (!profileIsComplete(state.profile)) {
       goto("#setup");
       return renderSetup();
@@ -853,7 +969,6 @@ async function renderApp() {
     return renderDashboard();
   }
 
-  // Default protected: redirect
   if (profileIsComplete(state.profile)) {
     goto("#dashboard");
     return renderDashboard();
@@ -871,13 +986,11 @@ async function init() {
   await loadSession();
   state.profile = state.user ? await fetchMyProfile() : null;
 
-  // Auth state changes
   sb.auth.onAuthStateChange(async (_event, session) => {
     state.session = session;
     state.user = session?.user || null;
     state.profile = state.user ? await fetchMyProfile() : null;
 
-    // If user just logged in from email confirm redirect, decide route
     if (state.user) {
       if (profileIsComplete(state.profile)) {
         goto("#dashboard");
