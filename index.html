@@ -136,6 +136,15 @@ setTimeout(() => {
   },400);
 },3000);   // 3 SECONDS
 </script>
-
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+      try {
+        const reg = await navigator.serviceWorker.register("./sw.js");
+        reg.update();
+      } catch (e) {}
+    });
+  }
+</script>
 </body>
 </html>
