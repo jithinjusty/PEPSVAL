@@ -12,14 +12,12 @@
 
     <!-- Supabase MUST load BEFORE app.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- app.js loads after HTML is ready -->
     <script defer src="app.js"></script>
   </head>
 
   <body>
-    <!-- SPLASH (3 seconds) -->
-    <div id="splash" class="splash">
+    <!-- Splash -->
+    <div id="splash" class="splash" aria-label="Loading PEPSVAL">
       <div class="splash-water"></div>
       <div class="splash-caustics"></div>
       <div class="splash-rays"></div>
@@ -34,19 +32,13 @@
       </div>
     </div>
 
-    <!-- APP -->
+    <!-- App root -->
     <div id="app"></div>
 
-    <!-- If service worker is ON, force updates -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", async () => {
-          try {
-            const reg = await navigator.serviceWorker.register("./sw.js");
-            reg.update();
-          } catch (e) {}
-        });
-      }
-    </script>
+    <noscript>
+      <div style="padding:16px;color:#fff;background:#111;">
+        Please enable JavaScript to use PEPSVAL.
+      </div>
+    </noscript>
   </body>
 </html>
