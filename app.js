@@ -1,17 +1,23 @@
 /* =========================
    PEPSVAL — app.js (SPA)
-   Works on GitHub Pages (hash routing)
-   Requires supabase-js loaded in index.html:
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-   ========================= */
+   - GitHub Pages friendly (hash routing)
+   - Supabase Auth (email + password)
+   - Profiles (with unique username)
+   - Feed posts (text + photo + video)
+   - Storage bucket: post_media
+   =========================
 
-/* 1) CONFIG — set these */
+   REQUIREMENT in index.html:
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <script defer src="app.js"></script>
+*/
+
 const SUPABASE_URL = "https://czlmeehcxrslgfvqjfsb.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bG1lZWhjeHJzbGdmdnFqZnNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzU0NjgsImV4cCI6MjA4MzExMTQ2OH0.vHeIA2n6tm3F3IEoOPBsrIXQ1JXRlhe6bU4VP9b2lek";
 
-/* 2) OPTIONAL: bucket name for profile pics */
-const AVATAR_BUCKET = "avatars";
+const TAGLINE = "connect, hire and grow";
+const POST_MEDIA_BUCKET = "post_media"; // ✅ your bucket
 
 /* ------------------------------------------ */
 
@@ -20,9 +26,12 @@ if (!window.supabase) {
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* UI helpers */
+/* -------------------------
+   Helpers
+------------------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
 const esc = (s) =>
   String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -31,136 +40,307 @@ const esc = (s) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-function setStatus(msg = "", type = "info") {
-  const el = $("#status");
-  if (!el) return;
-  el.textContent = msg;
-  el.className = `status ${type}`;
-  el.style.display = msg ? "block" : "none";
+function setHash(hash) {
+  window.location.hash = hash;
+}
+
+function getRoute() {
+  const raw = (window.location.hash || "#splash").slice(1);
+  const [path, qs] = raw.split("?");
+  const params = new URLSearchParams(qs || "");
+  return { path: path || "splash", params };
+}
+
+function nowISO() {
+  return new Date().toISOString();
 }
 
 function toast(msg, type = "info") {
   const host = $("#toastHost");
   if (!host) return;
   const t = document.createElement("div");
-  t.className = `toast ${type}`;
+  t.className = `pv-toast ${type}`;
   t.textContent = msg;
   host.appendChild(t);
-  setTimeout(() => t.classList.add("show"), 10);
+  requestAnimationFrame(() => t.classList.add("show"));
   setTimeout(() => {
     t.classList.remove("show");
     setTimeout(() => t.remove(), 250);
-  }, 2800);
+  }, 2600);
 }
 
-/* Theme */
-function getTheme() {
-  return localStorage.getItem("pepsval_theme") || "light";
-}
-function setTheme(theme) {
-  localStorage.setItem("pepsval_theme", theme);
-  document.documentElement.dataset.theme = theme;
-  const btn = $("#themeToggle");
-  if (btn) btn.textContent = theme === "dark" ? "Light" : "Dark";
-}
-function toggleTheme() {
-  setTheme(getTheme() === "dark" ? "light" : "dark");
+function statusMsg(msg = "", type = "info") {
+  const el = $("#pvStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `pv-status ${type}`;
+  el.style.display = msg ? "block" : "none";
 }
 
-/* PWA install */
-let deferredInstallPrompt = null;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  showInstallCTA(true);
-});
-function showInstallCTA(show) {
-  const btn = $("#installBtn");
-  if (btn) btn.style.display = show ? "inline-flex" : "none";
-}
-async function handleInstall() {
-  if (!deferredInstallPrompt) {
-    toast("Install prompt not available on this device/browser.", "info");
-    return;
-  }
-  deferredInstallPrompt.prompt();
-  const res = await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  showInstallCTA(false);
-  if (res?.outcome === "accepted") toast("Installed!", "success");
-}
-
-/* App state */
+/* -------------------------
+   App State
+------------------------- */
 const state = {
   session: null,
   user: null,
   profile: null,
-  activeTab: "home", // dashboard tab
+  tab: "feed", // feed | post | network | jobs | profile | messages
 };
 
-/* Profile logic */
+/* -------------------------
+   Minimal styles (so it looks clean even if CSS is empty)
+------------------------- */
+function injectBaseStyles() {
+  const css = `
+  :root{
+    --pv-bg:#0b1220;
+    --pv-card:#0f1a2f;
+    --pv-line:rgba(255,255,255,.08);
+    --pv-text:#eaf1ff;
+    --pv-muted:rgba(234,241,255,.65);
+    --pv-accent:#1F6F86;
+    --pv-accent2:#2aa8c6;
+    --pv-danger:#ff5a67;
+    --pv-ok:#35d08a;
+    --pv-warn:#ffcc66;
+    --pv-radius:18px;
+    --pv-shadow: 0 12px 30px rgba(0,0,0,.35);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+  body{ margin:0; background:var(--pv-bg); color:var(--pv-text); }
+  a{ color:var(--pv-accent2); text-decoration:none; }
+  .pv-wrap{ min-height:100vh; display:flex; flex-direction:column; }
+  .pv-topbar{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 14px; border-bottom:1px solid var(--pv-line);
+    background:rgba(11,18,32,.85); backdrop-filter: blur(12px);
+  }
+  .pv-brand{ display:flex; gap:12px; align-items:center; }
+  .pv-logo{ width:38px; height:38px; border-radius:12px; overflow:hidden; background:rgba(255,255,255,.06); display:grid; place-items:center; }
+  .pv-logo img{ width:100%; height:100%; object-fit:cover; }
+  .pv-brand h1{ font-size:14px; margin:0; letter-spacing:.14em; }
+  .pv-brand .sub{ font-size:12px; color:var(--pv-muted); margin-top:2px; }
+  .pv-actions{ display:flex; gap:10px; align-items:center; }
+  .pv-btn{
+    border:1px solid var(--pv-line);
+    background:rgba(255,255,255,.04);
+    color:var(--pv-text);
+    padding:10px 12px;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .pv-btn.primary{
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--pv-accent), var(--pv-accent2));
+  }
+  .pv-btn.danger{ border-color: rgba(255,90,103,.35); color:#ffd2d6; }
+  .pv-view{ flex:1; padding:16px; max-width:980px; width:100%; margin:0 auto; }
+  .pv-card{
+    background:var(--pv-card);
+    border:1px solid var(--pv-line);
+    border-radius:var(--pv-radius);
+    box-shadow:var(--pv-shadow);
+    padding:16px;
+  }
+  .pv-center{ min-height:70vh; display:grid; place-items:center; }
+  .pv-title{ margin:0 0 10px; font-size:20px; }
+  .pv-muted{ color:var(--pv-muted); font-size:13px; line-height:1.5; }
+  .pv-field{ display:flex; flex-direction:column; gap:6px; margin:12px 0; }
+  .pv-field label{ font-size:12px; color:var(--pv-muted); }
+  .pv-input, .pv-select, .pv-textarea{
+    border:1px solid var(--pv-line);
+    background:rgba(255,255,255,.03);
+    color:var(--pv-text);
+    padding:12px 12px;
+    border-radius:14px;
+    outline:none;
+  }
+  .pv-textarea{ min-height:110px; resize:vertical; }
+  .pv-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pv-status{
+    display:none; margin:10px 0; padding:10px 12px; border-radius:14px;
+    border:1px solid var(--pv-line);
+    background:rgba(255,255,255,.04);
+    font-size:13px;
+  }
+  .pv-status.error{ border-color: rgba(255,90,103,.45); }
+  .pv-status.success{ border-color: rgba(53,208,138,.45); }
+  .pv-status.warn{ border-color: rgba(255,204,102,.45); }
+  .pv-splash{
+    min-height:100vh; display:grid; place-items:center;
+    background: radial-gradient(circle at 30% 10%, rgba(31,111,134,.28), transparent 55%),
+                radial-gradient(circle at 70% 40%, rgba(42,168,198,.18), transparent 60%),
+                var(--pv-bg);
+  }
+  .pv-splash-inner{ text-align:center; padding:20px; }
+  .pv-splash-logo{
+    width:84px; height:84px; border-radius:26px;
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--pv-line);
+    margin:0 auto 14px;
+    display:grid; place-items:center;
+    overflow:hidden;
+  }
+  .pv-splash-logo img{ width:100%; height:100%; object-fit:cover; }
+  .pv-splash-name{ font-weight:800; letter-spacing:.22em; font-size:14px; }
+  .pv-splash-tag{ margin-top:10px; color:var(--pv-muted); font-size:13px; }
+  .pv-splash-bottom{ margin-top:24px; color:rgba(234,241,255,.45); font-size:12px; }
+  .pv-tabs{
+    position:sticky; bottom:0; z-index:5;
+    display:flex; justify-content:space-between;
+    padding:10px 10px;
+    border-top:1px solid var(--pv-line);
+    background:rgba(11,18,32,.9); backdrop-filter: blur(12px);
+    max-width:980px; margin:0 auto;
+  }
+  .pv-tab{
+    flex:1; text-align:center;
+    padding:10px 6px; border-radius:14px; cursor:pointer;
+    color:var(--pv-muted);
+    font-weight:700; font-size:12px;
+  }
+  .pv-tab.active{ color:var(--pv-text); background:rgba(255,255,255,.05); }
+  .pv-feed{ display:flex; flex-direction:column; gap:12px; }
+  .pv-post{
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--pv-line);
+    border-radius:var(--pv-radius);
+    padding:14px;
+  }
+  .pv-post-top{ display:flex; gap:10px; align-items:center; }
+  .pv-avatar{
+    width:38px; height:38px; border-radius:14px;
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--pv-line);
+    overflow:hidden;
+    display:grid; place-items:center;
+    font-weight:900;
+  }
+  .pv-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .pv-post-name{ font-weight:900; font-size:14px; }
+  .pv-post-sub{ font-size:12px; color:var(--pv-muted); margin-top:2px; }
+  .pv-post-body{ margin-top:10px; white-space:pre-wrap; line-height:1.5; }
+  .pv-media{
+    margin-top:10px;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid var(--pv-line);
+    background:#000;
+  }
+  .pv-media img, .pv-media video{ width:100%; height:auto; display:block; }
+  .pv-toast-host{
+    position:fixed; z-index:99;
+    left:50%; transform:translateX(-50%);
+    bottom:76px;
+    display:flex; flex-direction:column; gap:10px;
+    width:min(520px, 92vw);
+    pointer-events:none;
+  }
+  .pv-toast{
+    pointer-events:none;
+    opacity:0; transform: translateY(10px);
+    transition:.22s ease;
+    padding:12px 14px;
+    border-radius:16px;
+    border:1px solid var(--pv-line);
+    background: rgba(15,26,47,.92);
+    box-shadow: var(--pv-shadow);
+    font-weight:700;
+  }
+  .pv-toast.show{ opacity:1; transform: translateY(0); }
+  .pv-toast.success{ border-color: rgba(53,208,138,.45); }
+  .pv-toast.error{ border-color: rgba(255,90,103,.45); }
+  @media (min-width: 900px){
+    .pv-tabs{ display:none; }
+    .pv-toast-host{ bottom:20px; }
+  }
+  `;
+  const style = document.createElement("style");
+  style.id = "pv-style";
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+/* -------------------------
+   Profile & Username
+------------------------- */
 function profileIsComplete(p) {
   if (!p) return false;
-  return Boolean(p.full_name && p.nationality && p.rank && p.dob);
+  // username required + basic identity
+  return Boolean(p.username && p.full_name && p.nationality && p.rank && p.dob);
 }
 
 async function fetchMyProfile() {
   if (!state.user) return null;
   const { data, error } = await sb
     .from("profiles")
-    .select("id, full_name, nationality, rank, dob, avatar_url, updated_at, created_at")
+    .select("id, username, full_name, nationality, rank, dob, avatar_url, created_at, updated_at")
     .eq("id", state.user.id)
     .maybeSingle();
-
   if (error) {
-    console.error("fetchMyProfile error:", error);
+    console.error("fetchMyProfile:", error);
     return null;
   }
   return data || null;
 }
 
 async function upsertMyProfile(payload) {
-  // payload MUST include id = auth.uid()
   const { data, error } = await sb
     .from("profiles")
     .upsert(payload, { onConflict: "id" })
-    .select()
+    .select("id, username, full_name, nationality, rank, dob, avatar_url, created_at, updated_at")
     .maybeSingle();
   if (error) throw error;
   return data;
 }
 
+async function usernameAvailable(username) {
+  const u = (username || "").trim().toLowerCase();
+  if (!u) return false;
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id")
+    .eq("username", u)
+    .limit(1);
+  if (error) throw error;
+  // available if not used OR used by me
+  if (!data || data.length === 0) return true;
+  return data[0].id === state.user?.id;
+}
+
+function validUsername(u) {
+  // same rule you were using in SQL:
+  // starts with a-z, then a-z0-9._, length 3..20
+  return /^[a-z][a-z0-9._]{2,19}$/.test(String(u || "").trim().toLowerCase());
+}
+
 async function tryUploadAvatar(file, userId) {
   if (!file) return null;
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `${userId}/avatar.${ext}`;
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${userId}/avatar_${Date.now()}.${ext}`;
 
   const { error: upErr } = await sb.storage
-    .from(AVATAR_BUCKET)
+    .from(POST_MEDIA_BUCKET)
     .upload(path, file, { upsert: true, cacheControl: "3600" });
 
   if (upErr) {
-    console.warn("Avatar upload skipped:", upErr.message);
+    console.warn("Avatar upload error:", upErr.message);
     return null;
   }
 
-  const { data } = sb.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+  const { data } = sb.storage.from(POST_MEDIA_BUCKET).getPublicUrl(path);
   return data?.publicUrl || null;
 }
 
-/* =========================
-   FEED (REAL) — feed_posts
-   Expected columns:
-     id uuid (default gen_random_uuid())
-     user_id uuid
-     content text
-     created_at timestamptz (default now())
-   ========================= */
-
+/* -------------------------
+   Feed (text + photo/video)
+------------------------- */
 async function fetchFeedPosts(limit = 30) {
   const { data, error } = await sb
     .from("feed_posts")
-    .select("id, user_id, content, created_at")
+    .select("id, user_id, content, created_at, media_url, media_type")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -172,96 +352,122 @@ async function fetchProfilesByIds(ids) {
   if (!ids?.length) return [];
   const { data, error } = await sb
     .from("profiles")
-    .select("id, full_name, avatar_url, rank, nationality")
+    .select("id, username, full_name, avatar_url, rank, nationality")
     .in("id", ids);
 
   if (error) throw error;
   return data || [];
 }
 
-function renderFeedItem(post, author) {
-  const name = author?.full_name || "PEPSVAL Member";
+function renderPostItem(post, author) {
+  const name = author?.full_name || author?.username || "PEPSVAL Member";
   const avatar = author?.avatar_url
     ? `<img src="${esc(author.avatar_url)}" alt="avatar" />`
-    : `<div class="fi-avatar">${esc((name || "P")[0] || "P")}</div>`;
+    : `<div>${esc((name || "P")[0] || "P")}</div>`;
 
-  const sub = [
-    author?.rank ? esc(author.rank) : "",
-    author?.nationality ? esc(author.nationality) : "",
-  ]
-    .filter(Boolean)
-    .join(" • ");
-
+  const subParts = [];
+  if (author?.rank) subParts.push(author.rank);
+  if (author?.nationality) subParts.push(author.nationality);
   const when = post?.created_at ? new Date(post.created_at).toLocaleString() : "";
+  if (when) subParts.push(when);
+
+  let mediaHtml = "";
+  if (post?.media_url) {
+    const t = String(post.media_type || "").toLowerCase();
+    if (t.startsWith("image")) {
+      mediaHtml = `<div class="pv-media"><img src="${esc(post.media_url)}" alt="post media" /></div>`;
+    } else if (t.startsWith("video")) {
+      mediaHtml = `<div class="pv-media"><video src="${esc(post.media_url)}" controls playsinline></video></div>`;
+    } else {
+      // fallback
+      mediaHtml = `<div class="pv-media"><a href="${esc(post.media_url)}" target="_blank" rel="noreferrer">Open file</a></div>`;
+    }
+  }
 
   return `
-    <div class="feed-item">
-      <div class="fi-top">
-        <div class="fi-avatar-wrap">${avatar}</div>
+    <div class="pv-post">
+      <div class="pv-post-top">
+        <div class="pv-avatar">${avatar}</div>
         <div>
-          <div class="fi-title">${esc(name)}</div>
-          <div class="fi-sub">${sub ? `${sub} • ` : ""}${esc(when)}</div>
+          <div class="pv-post-name">${esc(name)}</div>
+          <div class="pv-post-sub">${esc(subParts.join(" • "))}</div>
         </div>
       </div>
-      <div class="fi-body">${esc(post.content || "")}</div>
-      <div class="fi-actions">
-        <button class="btn btn-ghost" disabled>Like</button>
-        <button class="btn btn-ghost" disabled>Comment</button>
-        <button class="btn btn-ghost" disabled>Share</button>
-      </div>
+      <div class="pv-post-body">${esc(post.content || "")}</div>
+      ${mediaHtml}
     </div>
   `;
 }
 
-async function loadAndRenderFeed({ targetSel = "#feedList", limit = 30 } = {}) {
-  const host = $(targetSel);
+async function loadFeedInto(sel = "#feedList") {
+  const host = $(sel);
   if (!host) return;
-
-  host.innerHTML = `<div class="muted small">Loading feed…</div>`;
+  host.innerHTML = `<div class="pv-muted">Loading feed…</div>`;
 
   try {
-    const posts = await fetchFeedPosts(limit);
+    const posts = await fetchFeedPosts(40);
     const ids = [...new Set(posts.map((p) => p.user_id).filter(Boolean))];
     const profs = await fetchProfilesByIds(ids);
     const map = new Map(profs.map((p) => [p.id, p]));
 
     if (!posts.length) {
-      host.innerHTML = `<div class="muted small">No posts yet. Be the first to post ✨</div>`;
+      host.innerHTML = `<div class="pv-muted">No posts yet. Be the first to post.</div>`;
       return;
     }
 
-    host.innerHTML = posts.map((p) => renderFeedItem(p, map.get(p.user_id))).join("");
+    host.innerHTML = posts.map((p) => renderPostItem(p, map.get(p.user_id))).join("");
   } catch (e) {
-    console.error("loadAndRenderFeed error:", e);
-
-    // Friendly, direct error for RLS / schema mismatch
-    const msg = e?.message || "Could not load feed.";
-    host.innerHTML = `
-      <div class="status error" style="display:block;">
-        Feed not loading: ${esc(msg)}
-        <div class="muted small" style="margin-top:8px;">
-          If you enabled RLS, make sure authenticated users can SELECT/INSERT on feed_posts.
-          Also confirm columns: user_id, content, created_at.
-        </div>
-      </div>
-    `;
+    console.error("loadFeedInto:", e);
+    host.innerHTML = `<div class="pv-status error" style="display:block;">Feed not loading: ${esc(
+      e?.message || "Unknown error"
+    )}</div>`;
   }
 }
 
-async function createFeedPost(content) {
+async function uploadPostMedia(file, userId) {
+  if (!file) return { media_url: null, media_type: null };
+
+  const type = String(file.type || "").toLowerCase();
+  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+  const path = `${userId}/post_${Date.now()}.${ext}`;
+
+  const { error: upErr } = await sb.storage
+    .from(POST_MEDIA_BUCKET)
+    .upload(path, file, { upsert: true, cacheControl: "3600" });
+
+  if (upErr) throw upErr;
+
+  const { data } = sb.storage.from(POST_MEDIA_BUCKET).getPublicUrl(path);
+  return { media_url: data?.publicUrl || null, media_type: type || null };
+}
+
+async function createFeedPost({ content, file }) {
   const text = (content || "").trim();
-  if (!text) throw new Error("Write something before posting.");
+  if (!text && !file) throw new Error("Write something or attach a photo/video.");
   if (!state.user) throw new Error("Not logged in.");
+
+  let media_url = null;
+  let media_type = null;
+
+  if (file) {
+    const up = await uploadPostMedia(file, state.user.id);
+    media_url = up.media_url;
+    media_type = up.media_type;
+  }
 
   const { error } = await sb.from("feed_posts").insert({
     user_id: state.user.id,
-    content: text,
+    content: text || "",
+    media_url,
+    media_type,
   });
 
   if (error) throw error;
 }
 
-/* Auth */
+/* -------------------------
+   Auth
+------------------------- */
 async function loadSession() {
   const { data } = await sb.auth.getSession();
   state.session = data.session || null;
@@ -269,8 +475,7 @@ async function loadSession() {
 }
 
 async function signUpEmail(email, password) {
-  setStatus("", "info");
-  const emailRedirectTo = window.location.origin + window.location.pathname; // GitHub Pages safe
+  const emailRedirectTo = window.location.origin + window.location.pathname;
   const { data, error } = await sb.auth.signUp({
     email,
     password,
@@ -278,20 +483,20 @@ async function signUpEmail(email, password) {
   });
   if (error) throw error;
 
+  // if confirmation enabled, no session
   if (!data.session) {
-    toast("Account created. Please check your email to confirm, then login.", "success");
+    toast("Account created. Check your email and confirm, then login.", "success");
   } else {
     toast("Signed up & logged in.", "success");
   }
 }
 
 async function signInEmail(email, password) {
-  setStatus("", "info");
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   if (error) throw error;
   state.session = data.session;
   state.user = data.user;
-  toast("Logged in successfully.", "success");
+  toast("Logged in.", "success");
 }
 
 async function signOut() {
@@ -300,712 +505,709 @@ async function signOut() {
   state.user = null;
   state.profile = null;
   toast("Logged out.", "info");
-  window.location.hash = "#home";
-  renderApp();
+  setHash("#auth?mode=login");
+  render();
 }
 
-/* Routing */
-function getRoute() {
-  const h = (window.location.hash || "#home").replace("#", "");
-  const [path, query] = h.split("?");
-  const params = new URLSearchParams(query || "");
-  return { path: path || "home", params };
-}
-
-function goto(hash) {
-  window.location.hash = hash;
-}
-
-/* Layout */
-function mountBase() {
+/* -------------------------
+   UI Shell
+------------------------- */
+function mountShell() {
   const root = $("#app");
-  if (!root) return;
-  root.innerHTML = `
-    <div id="toastHost" class="toast-host"></div>
+  if (!root) {
+    document.body.innerHTML = `<div id="app"></div>`;
+  }
 
-    <header class="topbar">
-      <div class="brand">
-        <img class="brand-logo" src="logo.webp" alt="PEPSVAL logo" />
-        <div class="brand-text">
-          <div class="brand-row">
-            <span class="brand-name">PEPSVAL</span>
-            <span class="badge">BETA</span>
+  const app = $("#app");
+  app.innerHTML = `
+    <div class="pv-wrap">
+      <div id="toastHost" class="pv-toast-host"></div>
+
+      <header class="pv-topbar">
+        <div class="pv-brand" onclick="location.hash='#dashboard'">
+          <div class="pv-logo"><img src="logo.webp" alt="PEPSVAL" onerror="this.style.display='none'"/></div>
+          <div>
+            <h1>PEPSVAL</h1>
+            <div class="sub">${esc(TAGLINE)}</div>
           </div>
-          <div class="brand-sub">Maritime network for careers and jobs</div>
         </div>
-      </div>
+        <div class="pv-actions" id="pvActions"></div>
+      </header>
 
-      <div class="topbar-actions">
-        <button id="installBtn" class="btn btn-ghost" style="display:none;">Install</button>
-        <button id="themeToggle" class="btn btn-ghost">Dark</button>
-        <div id="authButtons"></div>
-      </div>
-    </header>
+      <main class="pv-view" id="pvView"></main>
 
-    <main id="view" class="view"></main>
-
-    <nav id="mobileNav" class="mobile-nav" style="display:none;">
-      <button data-tab="home" class="mnav-btn">
-        <span class="mnav-ico">🏠</span><span>Home</span>
-      </button>
-      <button data-tab="jobs" class="mnav-btn">
-        <span class="mnav-ico">🧭</span><span>Jobs</span>
-      </button>
-      <button data-tab="post" class="mnav-btn">
-        <span class="mnav-ico">➕</span><span>Post</span>
-      </button>
-      <button data-tab="network" class="mnav-btn">
-        <span class="mnav-ico">👥</span><span>Network</span>
-      </button>
-      <button data-tab="me" class="mnav-btn">
-        <span class="mnav-ico">🙂</span><span>Me</span>
-      </button>
-    </nav>
-
-    <footer class="footer">
-      <div>© ${new Date().getFullYear()} Pepsval. All rights reserved.</div>
-      <div class="footer-right">
-        Founder
-        <a href="https://www.linkedin.com/in/jithinilip?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noreferrer">
-          JITHIN PHILIP
-        </a>
-      </div>
-    </footer>
+      <nav class="pv-tabs" id="pvTabs"></nav>
+    </div>
   `;
-
-  $("#themeToggle")?.addEventListener("click", toggleTheme);
-  $("#installBtn")?.addEventListener("click", handleInstall);
-
-  $("#mobileNav")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-tab]");
-    if (!btn) return;
-    state.activeTab = btn.dataset.tab;
-    renderApp();
-  });
 }
 
-function renderAuthButtons() {
-  const host = $("#authButtons");
+function renderActions() {
+  const host = $("#pvActions");
   if (!host) return;
 
   if (!state.user) {
     host.innerHTML = `
-      <button class="btn btn-ghost" id="btnLogin">Sign in</button>
-      <button class="btn btn-primary" id="btnJoin">Join</button>
+      <button class="pv-btn" id="btnLogin">Sign in</button>
+      <button class="pv-btn primary" id="btnJoin">Join</button>
     `;
-    $("#btnLogin")?.addEventListener("click", () => goto("#auth?mode=login"));
-    $("#btnJoin")?.addEventListener("click", () => goto("#auth?mode=signup"));
+    $("#btnLogin")?.addEventListener("click", () => setHash("#auth?mode=login"));
+    $("#btnJoin")?.addEventListener("click", () => setHash("#auth?mode=signup"));
   } else {
     host.innerHTML = `
-      <button class="btn btn-ghost" id="btnLogout">Logout</button>
+      <button class="pv-btn" id="btnMe">${esc(state.profile?.username || "Me")}</button>
+      <button class="pv-btn danger" id="btnLogout">Logout</button>
     `;
+    $("#btnMe")?.addEventListener("click", () => {
+      state.tab = "profile";
+      setHash("#dashboard");
+      render();
+    });
     $("#btnLogout")?.addEventListener("click", signOut);
   }
 }
 
-/* Views */
-function renderLanding() {
-  const view = $("#view");
-  view.innerHTML = `
-    <section class="hero">
-      <div class="hero-left">
-        <h1>Explore maritime jobs<br/>and grow your professional network</h1>
-        <p class="hero-sub">
-          Sea jobs • Shore jobs • Companies • Agencies • Training • Marine services — all in one place.
-        </p>
+function renderTabs() {
+  const tabs = $("#pvTabs");
+  if (!tabs) return;
 
-        <div class="auth-card">
-          <div class="auth-card-tabs">
-            <button class="tab-btn active">Sign in</button>
-            <button class="tab-btn" id="goJoin">Join</button>
-          </div>
+  if (!state.user) {
+    tabs.innerHTML = "";
+    return;
+  }
 
-          <div class="auth-card-body">
-            <button class="btn btn-wide btn-muted" disabled>Continue with Google (coming later)</button>
-            <button class="btn btn-wide btn-muted" disabled>Continue with Microsoft (coming later)</button>
-            <button class="btn btn-wide btn-primary" id="goEmail">Sign in with email</button>
+  const items = [
+    ["feed", "Feed"],
+    ["jobs", "Jobs"],
+    ["post", "Post"],
+    ["network", "Network"],
+    ["messages", "Messages"],
+    ["profile", "Profile"],
+  ];
 
-            <div class="auth-legal">
-              By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.
-            </div>
-          </div>
-        </div>
+  tabs.innerHTML = items
+    .map(
+      ([k, label]) =>
+        `<div class="pv-tab ${state.tab === k ? "active" : ""}" data-tab="${k}">${esc(label)}</div>`
+    )
+    .join("");
 
-        <div class="chips">
-          <span class="chip">SEA JOBS</span>
-          <span class="chip">SHORE JOBS</span>
-          <span class="chip">COMPANIES</span>
-          <span class="chip">AGENCIES</span>
-          <span class="chip">MARINE SERVICES</span>
-        </div>
-
-        <div class="feature-cards">
-          <div class="card">
-            <div class="card-title">Find the right role</div>
-            <div class="card-sub">2/O • 3/O • C/E • Master • ETO • Shore Ops</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Hire with confidence</div>
-            <div class="card-sub">Better profiles — hiring tools come next</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Build your network</div>
-            <div class="card-sub">Connect across the maritime industry</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="hero-right">
-        <div class="hero-art">
-          <div class="glow"></div>
-          <div class="hero-art-inner">
-            <div class="art-title">Maritime Trust Layer</div>
-            <div class="art-sub">A friendly network for sea & shore careers.</div>
-            <div class="art-grid">
-              <div class="art-box">Jobs</div>
-              <div class="art-box">People</div>
-              <div class="art-box">Companies</div>
-              <div class="art-box">Posts</div>
-            </div>
-            <div class="art-note">Install PEPSVAL as an app for a faster experience.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="below">
-      <div class="below-grid">
-        <div class="below-card">
-          <div class="below-title">Maritime Jobs</div>
-          <div class="below-sub">Browse sea & shore roles posted by companies and agencies.</div>
-          <button class="btn btn-ghost" onclick="location.hash='#auth?mode=login'">Explore jobs</button>
-        </div>
-
-        <div class="below-card">
-          <div class="below-title">Professional Network</div>
-          <div class="below-sub">Connect with seafarers, recruiters, training centers & service providers.</div>
-          <button class="btn btn-ghost" onclick="location.hash='#auth?mode=signup'">Discover people</button>
-        </div>
-
-        <div class="below-card">
-          <div class="below-title">Install the App</div>
-          <div class="below-sub">Add PEPSVAL to your home screen for faster access.</div>
-          <div class="below-sub small">On iPhone: Share → “Add to Home Screen”.</div>
-        </div>
-      </div>
-    </section>
-  `;
-
-  $("#goEmail")?.addEventListener("click", () => goto("#auth?mode=login"));
-  $("#goJoin")?.addEventListener("click", () => goto("#auth?mode=signup"));
-
-  showInstallCTA(Boolean(deferredInstallPrompt));
+  tabs.onclick = (e) => {
+    const el = e.target.closest("[data-tab]");
+    if (!el) return;
+    state.tab = el.dataset.tab;
+    setHash("#dashboard");
+    render();
+  };
 }
 
-function renderAuth() {
-  const view = $("#view");
-  const route = getRoute();
-  const mode = route.params.get("mode") || "login";
-
-  view.innerHTML = `
-    <section class="center">
-      <div class="panel">
-        <h2>${mode === "signup" ? "Create your PEPSVAL account" : "Sign in to PEPSVAL"}</h2>
-        <p class="muted">
-          Email + password only. Email confirmation is ON (production style).
-        </p>
-
-        <div id="status" class="status" style="display:none;"></div>
-
-        <label class="field">
-          <span>Email</span>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
-        </label>
-
-        <label class="field">
-          <span>Password</span>
-          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
-        </label>
-
-        <div class="row">
-          <button class="btn btn-primary" id="btnSubmit">
-            ${mode === "signup" ? "Create account" : "Login"}
-          </button>
-          <button class="btn btn-ghost" id="btnBack">Back</button>
+/* -------------------------
+   Views
+------------------------- */
+function viewSplash() {
+  const v = $("#pvView");
+  v.innerHTML = `
+    <div class="pv-splash">
+      <div class="pv-splash-inner">
+        <div class="pv-splash-logo">
+          <img src="logo.webp" alt="PEPSVAL" onerror="this.style.display='none'"/>
         </div>
-
-        <div class="row small">
-          <button class="link" id="switchMode">
-            ${mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-          </button>
-        </div>
-
-        <div class="row small">
-          <button class="link" id="forgot">Forgot password?</button>
-        </div>
+        <div class="pv-splash-name">PEPSVAL</div>
+        <div class="pv-splash-tag">${esc(TAGLINE)}</div>
+        <div class="pv-splash-bottom">Maritime network for careers and jobs</div>
       </div>
-    </section>
+    </div>
   `;
 
-  $("#btnBack")?.addEventListener("click", () => goto("#home"));
-  $("#switchMode")?.addEventListener("click", () =>
-    goto(mode === "signup" ? "#auth?mode=login" : "#auth?mode=signup")
+  // after short splash, go to correct page
+  setTimeout(async () => {
+    await loadSession();
+    state.profile = state.user ? await fetchMyProfile() : null;
+
+    if (!state.user) {
+      setHash("#auth?mode=login");
+    } else if (!profileIsComplete(state.profile)) {
+      setHash("#setup");
+    } else {
+      setHash("#dashboard");
+    }
+    render();
+  }, 900);
+}
+
+function viewAuth() {
+  const { params } = getRoute();
+  const mode = params.get("mode") || "login";
+
+  const v = $("#pvView");
+  v.innerHTML = `
+    <div class="pv-center">
+      <div class="pv-card" style="width:min(520px,92vw);">
+        <h2 class="pv-title">${mode === "signup" ? "Create your account" : "Sign in"}</h2>
+        <div class="pv-muted">Email + password. Non-logged users cannot see anything.</div>
+
+        <div id="pvStatus" class="pv-status"></div>
+
+        <div class="pv-field">
+          <label>Email</label>
+          <input class="pv-input" id="email" type="email" autocomplete="email" placeholder="you@example.com" />
+        </div>
+
+        <div class="pv-field">
+          <label>Password</label>
+          <input class="pv-input" id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+
+        ${
+          mode === "signup"
+            ? `
+          <div class="pv-field">
+            <label>Confirm password</label>
+            <input class="pv-input" id="password2" type="password" placeholder="••••••••" />
+          </div>`
+            : ``
+        }
+
+        <div class="pv-row" style="margin-top:10px;">
+          <button class="pv-btn primary" id="submit">${mode === "signup" ? "Create account" : "Login"}</button>
+          <button class="pv-btn" id="back">Back</button>
+          <button class="pv-btn" id="switch">${mode === "signup" ? "I have an account" : "Create account"}</button>
+        </div>
+
+        <div class="pv-muted" style="margin-top:14px;">
+          By continuing you agree to our <a href="#privacy">Privacy Policy</a> and <a href="#terms">Terms</a>.
+        </div>
+      </div>
+    </div>
+  `;
+
+  $("#back")?.addEventListener("click", () => setHash("#splash"));
+  $("#switch")?.addEventListener("click", () =>
+    setHash(mode === "signup" ? "#auth?mode=login" : "#auth?mode=signup")
   );
 
-  $("#btnSubmit")?.addEventListener("click", async () => {
+  $("#submit")?.addEventListener("click", async () => {
+    statusMsg("", "info");
     const email = ($("#email")?.value || "").trim();
-    const password = $("#password")?.value || "";
+    const pass = $("#password")?.value || "";
 
-    if (!email || !password) {
-      setStatus("Please enter email and password.", "warn");
-      return;
-    }
+    if (!email || !pass) return statusMsg("Enter email and password.", "warn");
 
     try {
       if (mode === "signup") {
-        setStatus("Creating account…", "info");
-        await signUpEmail(email, password);
-        setStatus("If email confirmation is enabled, check your inbox and confirm. Then login.", "success");
-      } else {
-        setStatus("Signing in…", "info");
-        await signInEmail(email, password);
+        const pass2 = $("#password2")?.value || "";
+        if (pass !== pass2) return statusMsg("Passwords do not match.", "warn");
 
-        state.profile = await fetchMyProfile();
-        if (profileIsComplete(state.profile)) {
-          goto("#dashboard");
-        } else {
-          goto("#setup");
+        statusMsg("Creating account…", "info");
+        await signUpEmail(email, pass);
+
+        // if user is not logged in yet (email confirmation), move to login
+        await loadSession();
+        if (!state.user) {
+          statusMsg("Check your email and confirm. Then login.", "success");
+          setTimeout(() => setHash("#auth?mode=login"), 900);
+          return;
         }
-        renderApp();
+      } else {
+        statusMsg("Signing in…", "info");
+        await signInEmail(email, pass);
       }
+
+      state.profile = await fetchMyProfile();
+      if (!profileIsComplete(state.profile)) {
+        setHash("#setup");
+      } else {
+        setHash("#dashboard");
+      }
+      render();
     } catch (e) {
       console.error(e);
-      setStatus(e.message || "Something went wrong.", "error");
-    }
-  });
-
-  $("#forgot")?.addEventListener("click", async () => {
-    const email = ($("#email")?.value || "").trim();
-    if (!email) return setStatus("Enter your email first, then tap Forgot password.", "warn");
-    try {
-      const redirectTo = window.location.origin + window.location.pathname;
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) throw error;
-      setStatus("Password reset email sent (check inbox/spam).", "success");
-    } catch (e) {
-      setStatus(e.message || "Could not send reset email.", "error");
+      statusMsg(e?.message || "Login failed.", "error");
     }
   });
 }
 
-function renderSetup() {
-  const view = $("#view");
+function viewSetup() {
   const p = state.profile || {};
+  const v = $("#pvView");
 
-  view.innerHTML = `
-    <section class="center">
-      <div class="panel wide">
-        <h2>Profile setup</h2>
-        <p class="muted">Fill your basic details once. After saving, you’ll enter your dashboard.</p>
-
-        <div id="status" class="status" style="display:none;"></div>
-
-        <div class="grid2">
-          <label class="field">
-            <span>Full name</span>
-            <input id="full_name" type="text" placeholder="e.g., Jithin Philip" value="${esc(p.full_name)}" />
-          </label>
-
-          <label class="field">
-            <span>Nationality</span>
-            <input id="nationality" type="text" placeholder="e.g., Indian" value="${esc(p.nationality)}" />
-          </label>
-
-          <label class="field">
-            <span>Rank</span>
-            <input id="rank" type="text" placeholder="e.g., Second Officer" value="${esc(p.rank)}" />
-          </label>
-
-          <label class="field">
-            <span>Date of birth</span>
-            <input id="dob" type="date" value="${esc(p.dob)}" />
-          </label>
+  v.innerHTML = `
+    <div class="pv-center">
+      <div class="pv-card" style="width:min(760px,92vw);">
+        <h2 class="pv-title">Profile setup</h2>
+        <div class="pv-muted">
+          This is required once. You can skip later pages, but **this page opens first after login**.
         </div>
 
-        <label class="field">
-          <span>Profile picture (optional)</span>
-          <input id="avatar" type="file" accept="image/*" />
-          <div class="muted small">
-            If avatar upload is not configured yet, your details still save and you can add photo later.
-          </div>
-        </label>
+        <div id="pvStatus" class="pv-status"></div>
 
-        <div class="row">
-          <button class="btn btn-primary" id="saveContinue">Save & Continue</button>
-          <button class="btn btn-ghost" id="logout2">Logout</button>
+        <div class="pv-row" style="gap:14px; margin-top:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <div class="pv-field">
+              <label>Username (unique)</label>
+              <input class="pv-input" id="username" placeholder="e.g. jithinphilip" value="${esc(
+                p.username || ""
+              )}" />
+              <div class="pv-muted">
+                Rule: starts with a letter. Use letters, numbers, dot or underscore. Length 3–20.
+              </div>
+            </div>
+            <div class="pv-row">
+              <button class="pv-btn" id="checkUser">Check availability</button>
+              <div class="pv-muted" id="userCheckMsg"></div>
+            </div>
+          </div>
+
+          <div style="flex:1; min-width:240px;">
+            <div class="pv-field">
+              <label>Full name</label>
+              <input class="pv-input" id="full_name" value="${esc(p.full_name || "")}" />
+            </div>
+
+            <div class="pv-field">
+              <label>Country / Nationality</label>
+              <input class="pv-input" id="nationality" value="${esc(p.nationality || "")}" />
+            </div>
+
+            <div class="pv-field">
+              <label>Rank</label>
+              <input class="pv-input" id="rank" value="${esc(p.rank || "")}" />
+            </div>
+
+            <div class="pv-field">
+              <label>Date of birth</label>
+              <input class="pv-input" id="dob" type="date" value="${esc(p.dob || "")}" />
+            </div>
+          </div>
+        </div>
+
+        <div class="pv-field" style="margin-top:14px;">
+          <label>Avatar (optional)</label>
+          <input class="pv-input" id="avatar" type="file" accept="image/*" />
+          <div class="pv-muted">Stored in your bucket <b>${esc(POST_MEDIA_BUCKET)}</b> for now.</div>
+        </div>
+
+        <div class="pv-row" style="margin-top:14px;">
+          <button class="pv-btn primary" id="save">Save & Continue</button>
+          <button class="pv-btn" id="skip">Skip for now</button>
+          <button class="pv-btn danger" id="logout">Logout</button>
         </div>
       </div>
-    </section>
+    </div>
   `;
 
-  $("#logout2")?.addEventListener("click", signOut);
+  $("#logout")?.addEventListener("click", signOut);
 
-  $("#saveContinue")?.addEventListener("click", async () => {
+  $("#checkUser")?.addEventListener("click", async () => {
+    const msg = $("#userCheckMsg");
+    if (msg) msg.textContent = "";
     try {
-      setStatus("", "info");
+      const u = ($("#username")?.value || "").trim().toLowerCase();
+      if (!validUsername(u)) {
+        if (msg) msg.textContent = "Invalid username format.";
+        return;
+      }
+      const ok = await usernameAvailable(u);
+      if (msg) msg.textContent = ok ? "✅ Available" : "❌ Taken";
+    } catch (e) {
+      console.error(e);
+      if (msg) msg.textContent = "Error checking username.";
+    }
+  });
+
+  $("#skip")?.addEventListener("click", () => {
+    // You wanted "skip exists", but this page opens first.
+    // If skipped and still incomplete, dashboard will keep redirecting here.
+    toast("You can skip, but you must complete later to use PEPSVAL.", "info");
+    setHash("#dashboard");
+    render();
+  });
+
+  $("#save")?.addEventListener("click", async () => {
+    statusMsg("", "info");
+
+    try {
+      const username = ($("#username")?.value || "").trim().toLowerCase();
       const full_name = ($("#full_name")?.value || "").trim();
       const nationality = ($("#nationality")?.value || "").trim();
       const rank = ($("#rank")?.value || "").trim();
       const dob = $("#dob")?.value || null;
 
-      if (!full_name || !nationality || !rank || !dob) {
-        setStatus("Please fill full name, nationality, rank and date of birth.", "warn");
-        return;
+      if (!username || !full_name || !nationality || !rank || !dob) {
+        return statusMsg("Fill all required fields (including username).", "warn");
       }
 
-      setStatus("Saving…", "info");
+      if (!validUsername(username)) {
+        return statusMsg("Username format is invalid.", "warn");
+      }
+
+      const ok = await usernameAvailable(username);
+      if (!ok) return statusMsg("Username already taken. Try another.", "warn");
+
+      statusMsg("Saving…", "info");
 
       const file = $("#avatar")?.files?.[0] || null;
       let avatar_url = p.avatar_url || null;
-      const uploadedUrl = await tryUploadAvatar(file, state.user.id);
-      if (uploadedUrl) avatar_url = uploadedUrl;
+
+      if (file) {
+        const up = await tryUploadAvatar(file, state.user.id);
+        if (up) avatar_url = up;
+      }
 
       const payload = {
         id: state.user.id,
+        username,
         full_name,
         nationality,
         rank,
         dob,
         avatar_url,
-        updated_at: new Date().toISOString(),
+        updated_at: nowISO(),
       };
 
       const saved = await upsertMyProfile(payload);
       state.profile = saved;
 
-      setStatus("Saved successfully.", "success");
+      statusMsg("Saved successfully.", "success");
+      toast("Profile saved ✅", "success");
 
-      window.location.hash = "#dashboard";
-      state.activeTab = "home";
-      renderApp();
+      setHash("#dashboard");
+      render();
     } catch (e) {
       console.error(e);
-      setStatus(e.message || "Save failed.", "error");
+
+      // common unique error
+      if (String(e?.message || "").toLowerCase().includes("duplicate")) {
+        statusMsg("Username already exists. Try another.", "error");
+      } else {
+        statusMsg(e?.message || "Save failed.", "error");
+      }
     }
   });
 }
 
-function renderDashboard() {
-  const view = $("#view");
+function dashboardShell() {
+  const v = $("#pvView");
+
   const p = state.profile || {};
-  const tab = state.activeTab || "home";
+  const name = p.full_name || p.username || "Member";
 
-  $("#mobileNav").style.display = "flex";
-  highlightMobileTab(tab);
-
-  view.innerHTML = `
-    <section class="dash">
-      <aside class="dash-left">
-        <div class="profile-card">
-          <div class="avatar">
-            ${
-              p.avatar_url
-                ? `<img src="${esc(p.avatar_url)}" alt="avatar" />`
-                : `<div class="avatar-fallback">${esc((p.full_name || "P")[0] || "P")}</div>`
-            }
+  v.innerHTML = `
+    <div class="pv-card">
+      <div class="pv-row" style="justify-content:space-between;">
+        <div>
+          <h2 class="pv-title" style="margin:0;">Welcome, ${esc(name)}</h2>
+          <div class="pv-muted">
+            ${esc(p.rank || "")}${p.rank && p.nationality ? " • " : ""}${esc(p.nationality || "")}
           </div>
-          <div class="pc-name">${esc(p.full_name || "Your name")}</div>
-          <div class="pc-sub">${esc(p.rank || "")}${p.rank && p.nationality ? " • " : ""}${esc(p.nationality || "")}</div>
-          <div class="pc-sub small">${p.dob ? `DOB: ${esc(p.dob)}` : ""}</div>
-
-          <div class="pc-actions">
-            <button class="btn btn-ghost" id="editProfileBtn">Edit profile</button>
-            <button class="btn btn-ghost" id="logoutDash">Logout</button>
+          <div class="pv-muted" style="margin-top:8px;">
+            NOTE: If any sea service entry is verified by peer or employer, it becomes locked and cannot be edited.
           </div>
         </div>
-
-        <div class="side-nav">
-          <button class="side-btn ${tab === "home" ? "active" : ""}" data-tab="home">Home feed</button>
-          <button class="side-btn ${tab === "jobs" ? "active" : ""}" data-tab="jobs">Jobs</button>
-          <button class="side-btn ${tab === "post" ? "active" : ""}" data-tab="post">Create post</button>
-          <button class="side-btn ${tab === "network" ? "active" : ""}" data-tab="network">Network</button>
-          <button class="side-btn ${tab === "me" ? "active" : ""}" data-tab="me">Me</button>
+        <div class="pv-row">
+          <button class="pv-btn" id="tabFeed">Feed</button>
+          <button class="pv-btn" id="tabPost">Post</button>
+          <button class="pv-btn" id="tabProfile">Profile</button>
         </div>
-      </aside>
+      </div>
+    </div>
 
-      <section class="dash-main">
-        ${renderDashTab(tab, p)}
-      </section>
+    <div style="height:14px;"></div>
 
-      <aside class="dash-right">
-        <div class="mini-card">
-          <div class="mini-title">Install PEPSVAL</div>
-          <div class="mini-sub">Use it like an app — faster and cleaner on mobile.</div>
-          <button class="btn btn-primary" id="installBtn2">Install</button>
-          <div class="mini-sub small">On iPhone: Share → “Add to Home Screen”.</div>
-        </div>
-
-        <div class="mini-card">
-          <div class="mini-title">What’s next</div>
-          <div class="mini-sub">Documents, sea service, and hiring tools will be added step-by-step.</div>
-        </div>
-      </aside>
-    </section>
+    <div id="dashContent"></div>
   `;
 
-  $("#logoutDash")?.addEventListener("click", signOut);
-  $("#editProfileBtn")?.addEventListener("click", () => {
-    state.activeTab = "me";
-    renderApp();
+  $("#tabFeed")?.addEventListener("click", () => {
+    state.tab = "feed";
+    render();
   });
-
-  $("#installBtn2")?.addEventListener("click", handleInstall);
-
-  $$(".side-btn").forEach((b) => {
-    b.addEventListener("click", () => {
-      state.activeTab = b.dataset.tab;
-      renderApp();
-    });
+  $("#tabPost")?.addEventListener("click", () => {
+    state.tab = "post";
+    render();
   });
-
-  // Hook feed UI for tabs that need it
-  hookDashTab(tab);
-
-  showInstallCTA(Boolean(deferredInstallPrompt));
+  $("#tabProfile")?.addEventListener("click", () => {
+    state.tab = "profile";
+    render();
+  });
 }
 
-function hookDashTab(tab) {
-  // Home feed: load posts
-  if (tab === "home") {
-    loadAndRenderFeed({ targetSel: "#feedList", limit: 30 });
+function viewDashboard() {
+  // SECURITY: non-logged users must never see feed
+  if (!state.user) {
+    setHash("#auth?mode=login");
+    return viewAuth();
   }
 
-  // Post tab: enable posting + refresh feed preview
-  if (tab === "post") {
-    const btn = $("#postSend");
-    const ta = $("#postText");
-
-    loadAndRenderFeed({ targetSel: "#feedPreview", limit: 8 });
-
-    btn?.addEventListener("click", async () => {
-      try {
-        btn.disabled = true;
-        const text = ta?.value || "";
-        await createFeedPost(text);
-        if (ta) ta.value = "";
-        toast("Posted ✅", "success");
-
-        // After posting, switch to Home feed
-        state.activeTab = "home";
-        renderApp();
-      } catch (e) {
-        console.error(e);
-        toast(e?.message || "Post failed.", "error");
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
+  // if profile incomplete, force setup
+  if (!profileIsComplete(state.profile)) {
+    setHash("#setup");
+    return viewSetup();
   }
+
+  dashboardShell();
+  renderTabs(); // mobile tabs
+
+  // desktop: keep state.tab
+  const content = $("#dashContent");
+  if (!content) return;
+
+  if (state.tab === "feed") return dashFeed(content);
+  if (state.tab === "post") return dashPost(content);
+  if (state.tab === "jobs") return dashPlaceholder(content, "Jobs", "Jobs will be wired next (filters + search + post a job).");
+  if (state.tab === "network") return dashPlaceholder(content, "Network", "Search seafarers, companies and recruiters with filters (coming next).");
+  if (state.tab === "messages") return dashPlaceholder(content, "Messages", "Instagram-style messaging (photos/videos + block/unblock) will be built next.");
+  if (state.tab === "profile") return dashProfile(content);
+
+  // fallback
+  state.tab = "feed";
+  return dashFeed(content);
 }
 
-function renderDashTab(tab, p) {
-  if (tab === "home") {
-    return `
-      <div class="panel-lite">
-        <h2>Home feed</h2>
-        <p class="muted">
-          Real posts from the community. Text posts now — media comes after storage rules.
-        </p>
+function dashPlaceholder(host, title, sub) {
+  host.innerHTML = `
+    <div class="pv-card">
+      <h3 style="margin:0 0 8px;">${esc(title)}</h3>
+      <div class="pv-muted">${esc(sub)}</div>
+    </div>
+  `;
+}
 
-        <div id="feedList" class="feed"></div>
+function dashFeed(host) {
+  host.innerHTML = `
+    <div class="pv-card">
+      <h3 style="margin:0 0 8px;">Feed</h3>
+      <div class="pv-muted">Only logged-in users can see posts.</div>
+      <div style="height:10px;"></div>
+      <div id="feedList" class="pv-feed"></div>
+    </div>
+  `;
+  loadFeedInto("#feedList");
+}
+
+function dashPost(host) {
+  host.innerHTML = `
+    <div class="pv-card">
+      <h3 style="margin:0 0 8px;">Create post</h3>
+      <div class="pv-muted">Supports text, photos, videos.</div>
+
+      <div id="pvStatus" class="pv-status"></div>
+
+      <div class="pv-field" style="margin-top:12px;">
+        <label>Text</label>
+        <textarea class="pv-textarea" id="postText" placeholder="Write something…"></textarea>
       </div>
-    `;
-  }
 
-  if (tab === "jobs") {
-    return `
-      <div class="panel-lite">
-        <h2>Jobs</h2>
-        <p class="muted">Jobs database will be wired next. For now the UI is ready.</p>
-        <div class="jobs">
-          ${fakeJob("Second Officer — Container", "Singapore • 4 months • ASAP")}
-          ${fakeJob("Chief Engineer — Bulk", "Middle East • 6 months")}
-          ${fakeJob("Shore Ops — Port Captain", "Dublin • Full time")}
+      <div class="pv-field">
+        <label>Photo / Video (optional)</label>
+        <input class="pv-input" id="postFile" type="file" accept="image/*,video/*" />
+        <div class="pv-muted">Uploads to bucket: <b>${esc(POST_MEDIA_BUCKET)}</b></div>
+      </div>
+
+      <div class="pv-row" style="margin-top:10px;">
+        <button class="pv-btn primary" id="btnPost">Post</button>
+        <button class="pv-btn" id="btnRefresh">Refresh feed</button>
+      </div>
+
+      <div style="height:14px;"></div>
+      <div class="pv-muted">Recent posts</div>
+      <div style="height:10px;"></div>
+      <div id="feedPreview" class="pv-feed"></div>
+    </div>
+  `;
+
+  loadFeedInto("#feedPreview");
+
+  $("#btnRefresh")?.addEventListener("click", () => loadFeedInto("#feedPreview"));
+
+  $("#btnPost")?.addEventListener("click", async () => {
+    statusMsg("", "info");
+    const btn = $("#btnPost");
+    if (btn) btn.disabled = true;
+
+    try {
+      const content = $("#postText")?.value || "";
+      const file = $("#postFile")?.files?.[0] || null;
+
+      statusMsg("Posting…", "info");
+      await createFeedPost({ content, file });
+
+      if ($("#postText")) $("#postText").value = "";
+      if ($("#postFile")) $("#postFile").value = "";
+
+      statusMsg("Posted ✅", "success");
+      toast("Posted ✅", "success");
+
+      // switch to feed
+      state.tab = "feed";
+      render();
+    } catch (e) {
+      console.error(e);
+      statusMsg(e?.message || "Post failed.", "error");
+      toast("Post failed", "error");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+}
+
+function dashProfile(host) {
+  const p = state.profile || {};
+  host.innerHTML = `
+    <div class="pv-card">
+      <h3 style="margin:0 0 8px;">Profile</h3>
+      <div class="pv-muted">You can change username later (must stay unique).</div>
+
+      <div style="height:14px;"></div>
+
+      <div class="pv-row" style="align-items:flex-start;">
+        <div class="pv-avatar" style="width:70px;height:70px;border-radius:22px;">
+          ${
+            p.avatar_url
+              ? `<img src="${esc(p.avatar_url)}" alt="avatar" />`
+              : `<div>${esc((p.username || "P")[0] || "P")}</div>`
+          }
         </div>
-      </div>
-    `;
-  }
 
-  if (tab === "post") {
-    return `
-      <div class="panel-lite">
-        <h2>Create a post</h2>
-        <p class="muted">Share a text update. (Media posts come after storage rules are finalized.)</p>
-
-        <div class="post-box">
-          <textarea id="postText" placeholder="Share an update…"></textarea>
-          <div class="row">
-            <button class="btn btn-muted" disabled>Add photo/video (coming next)</button>
-            <button class="btn btn-primary" id="postSend">Post</button>
+        <div style="flex:1;">
+          <div style="font-weight:900;font-size:16px;">${esc(p.full_name || "-")}</div>
+          <div class="pv-muted">@${esc(p.username || "-")}</div>
+          <div class="pv-muted" style="margin-top:6px;">
+            ${esc(p.rank || "")}${p.rank && p.nationality ? " • " : ""}${esc(p.nationality || "")}
           </div>
+          <div class="pv-muted">DOB: ${esc(p.dob || "-")}</div>
         </div>
-
-        <div class="muted small" style="margin-top:10px;">Recent posts</div>
-        <div id="feedPreview" class="feed" style="margin-top:8px;"></div>
       </div>
+
+      <div class="pv-row" style="margin-top:14px;">
+        <button class="pv-btn primary" id="editBasics">Edit basics</button>
+        <button class="pv-btn" id="privacy">Privacy Policy</button>
+        <button class="pv-btn" id="terms">Terms</button>
+        <button class="pv-btn danger" id="logout3">Logout</button>
+      </div>
+    </div>
+  `;
+
+  $("#editBasics")?.addEventListener("click", () => setHash("#setup"));
+  $("#privacy")?.addEventListener("click", () => setHash("#privacy"));
+  $("#terms")?.addEventListener("click", () => setHash("#terms"));
+  $("#logout3")?.addEventListener("click", signOut);
+}
+
+function viewStatic(type) {
+  const title = type === "privacy" ? "Privacy Policy" : type === "terms" ? "Terms of Service" : "Page";
+
+  // simple short text (your request: simple + understandable + short)
+  let body = "";
+  if (type === "privacy") {
+    body = `
+      <p><b>What we collect</b><br/>Account email, your profile details (name, username, rank, nationality, DOB) and posts you create.</p>
+      <p><b>How we use data</b><br/>To run Pepsval features: login, profile, feed, jobs, network and messaging.</p>
+      <p><b>Sharing</b><br/>We don’t sell your personal data. Data is visible only to logged-in users (as per Pepsval rules).</p>
+      <p><b>Storage</b><br/>Images/videos you upload are stored in our Supabase storage bucket.</p>
+      <p><b>Security</b><br/>We use authentication and database access rules (RLS) to protect data.</p>
+      <p><b>Contact</b><br/>If you need help or want your account deleted, contact the Pepsval admin.</p>
+    `;
+  } else if (type === "terms") {
+    body = `
+      <p><b>Purpose</b><br/>Pepsval is a maritime network for careers and jobs.</p>
+      <p><b>Account</b><br/>You are responsible for your account and activity.</p>
+      <p><b>Content</b><br/>Do not post illegal, abusive, misleading or harmful content.</p>
+      <p><b>Verification</b><br/>Verification tools help trust, but Pepsval does not guarantee employment or claims.</p>
+      <p><b>Changes</b><br/>We may update features and these terms as Pepsval grows.</p>
     `;
   }
 
-  if (tab === "network") {
-    return `
-      <div class="panel-lite">
-        <h2>Network</h2>
-        <p class="muted">This is where people discovery and connections will live.</p>
-
-        <div class="grid-cards">
-          ${fakePerson("Recruiter • Agency", "Hiring for tankers")}
-          ${fakePerson("Second Officer", "Looking for next contract")}
-          ${fakePerson("Training Center", "Courses & certifications")}
+  const v = $("#pvView");
+  v.innerHTML = `
+    <div class="pv-center">
+      <div class="pv-card" style="width:min(760px,92vw);">
+        <h2 class="pv-title">${esc(title)}</h2>
+        <div class="pv-muted">Simple draft. We can refine later.</div>
+        <div style="height:14px;"></div>
+        <div class="pv-muted" style="font-size:14px; line-height:1.7;">
+          ${body}
+          <p><b>Delete account</b><br/>If you want deletion, we will delete your profile and account records as required by law and platform rules.</p>
+          <p><b>Data usage</b><br/>Data is used only to operate Pepsval features and improve the platform.</p>
         </div>
-      </div>
-    `;
-  }
-
-  // tab === "me"
-  return `
-    <div class="panel-lite">
-      <h2>Your profile</h2>
-      <p class="muted">Edit your basic profile now. Documents and sea service will be added later.</p>
-
-      <div class="kv">
-        <div><span>Name</span><b>${esc(p.full_name || "-")}</b></div>
-        <div><span>Nationality</span><b>${esc(p.nationality || "-")}</b></div>
-        <div><span>Rank</span><b>${esc(p.rank || "-")}</b></div>
-        <div><span>DOB</span><b>${esc(p.dob || "-")}</b></div>
-      </div>
-
-      <div class="row">
-        <button class="btn btn-primary" onclick="location.hash='#setup'">Edit basics</button>
+        <div class="pv-row" style="margin-top:14px;">
+          <button class="pv-btn" onclick="location.hash='${state.user ? "#dashboard" : "#auth?mode=login"}'">Back</button>
+        </div>
       </div>
     </div>
   `;
 }
 
-/* fake UI blocks */
-function fakeJob(role, meta) {
-  return `
-    <div class="job-item">
-      <div class="job-role">${esc(role)}</div>
-      <div class="job-meta">${esc(meta)}</div>
-      <button class="btn btn-ghost" disabled>View</button>
-    </div>
-  `;
-}
-function fakePerson(title, sub) {
-  return `
-    <div class="p-card">
-      <div class="p-ico">👤</div>
-      <div class="p-title">${esc(title)}</div>
-      <div class="p-sub">${esc(sub)}</div>
-      <button class="btn btn-ghost" disabled>Connect</button>
-    </div>
-  `;
-}
-
-/* Mobile nav active */
-function highlightMobileTab(tab) {
-  $$("#mobileNav .mnav-btn").forEach((b) => {
-    b.classList.toggle("active", b.dataset.tab === tab);
-  });
-}
-
-/* Main render */
-async function renderApp() {
-  renderAuthButtons();
-
-  setTheme(getTheme());
+/* -------------------------
+   Main Render
+------------------------- */
+async function render() {
+  renderActions();
 
   const { path } = getRoute();
 
-  if (path !== "dashboard") $("#mobileNav").style.display = "none";
+  // Always refresh session state when route changes (safe)
+  await loadSession();
+  state.user = state.session?.user || null;
+  state.profile = state.user ? await fetchMyProfile() : null;
 
-  if (path === "home" || path === "terms" || path === "privacy") {
-    if (path === "home") return renderLanding();
-    const view = $("#view");
-    view.innerHTML = `
-      <section class="center">
-        <div class="panel">
-          <h2>${path === "terms" ? "Terms" : "Privacy Policy"}</h2>
-          <p class="muted">Draft page. We can write proper legal text later.</p>
-          <button class="btn btn-ghost" onclick="location.hash='#home'">Back</button>
-        </div>
-      </section>
-    `;
-    return;
-  }
+  renderActions();
+  renderTabs();
 
-  if (path === "auth") {
-    return renderAuth();
-  }
+  // ROUTES
+  if (path === "splash") return viewSplash();
 
+  if (path === "auth") return viewAuth();
+
+  if (path === "privacy") return viewStatic("privacy");
+  if (path === "terms") return viewStatic("terms");
+
+  // From here, enforce login
   if (!state.user) {
-    goto("#home");
-    return renderLanding();
+    setHash("#auth?mode=login");
+    return viewAuth();
   }
 
-  if (!state.profile) {
-    state.profile = await fetchMyProfile();
-  }
+  if (path === "setup") return viewSetup();
 
-  if (path === "setup") {
-    return renderSetup();
-  }
+  if (path === "dashboard") return viewDashboard();
 
-  if (path === "dashboard") {
-    if (!profileIsComplete(state.profile)) {
-      goto("#setup");
-      return renderSetup();
-    }
-    return renderDashboard();
-  }
-
-  if (profileIsComplete(state.profile)) {
-    goto("#dashboard");
-    return renderDashboard();
-  } else {
-    goto("#setup");
-    return renderSetup();
-  }
+  // default
+  setHash("#dashboard");
+  return viewDashboard();
 }
 
-/* Init */
+/* -------------------------
+   Init
+------------------------- */
 async function init() {
-  mountBase();
-  setTheme(getTheme());
+  injectBaseStyles();
+  mountShell();
 
   await loadSession();
   state.profile = state.user ? await fetchMyProfile() : null;
+
+  // Start with splash always (Instagram-style)
+  if (!window.location.hash) {
+    setHash("#splash");
+  }
 
   sb.auth.onAuthStateChange(async (_event, session) => {
     state.session = session;
     state.user = session?.user || null;
     state.profile = state.user ? await fetchMyProfile() : null;
 
-    if (state.user) {
-      if (profileIsComplete(state.profile)) {
-        goto("#dashboard");
-      } else {
-        goto("#setup");
-      }
+    if (!state.user) {
+      setHash("#auth?mode=login");
+    } else if (!profileIsComplete(state.profile)) {
+      setHash("#setup");
     } else {
-      goto("#home");
+      setHash("#dashboard");
     }
-    renderApp();
+    render();
   });
 
-  window.addEventListener("hashchange", () => renderApp());
+  window.addEventListener("hashchange", () => render());
 
-  renderApp();
+  render();
 }
 
 init();
