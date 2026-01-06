@@ -1,13 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pepsval – Maritime Network</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Connect, hire and grow</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Meta -->
+  <meta name="description" content="PEPSVAL is a maritime network where seafarers, employers, agencies and shore professionals connect, hire and grow." />
   <meta name="theme-color" content="#1F6F86" />
 
-  <!-- PWA -->
+  <!-- PWA (optional but recommended) -->
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="favicon.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -16,200 +18,343 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    :root {
-      --bg: #f4fbfd;
-      --card: #ffffff;
-      --text: #102a33;
-      --muted: #5b7c86;
-      --brand: #1f6f86;
-      --border: #e2eef2;
+    /* =========================
+       PEPSVAL — Premium Shell
+       ========================= */
+
+    :root{
+      --brand:#1F6F86;         /* deep turquoise */
+      --brand2:#2CB7C9;        /* aqua */
+      --ink:#07151b;
+      --muted:rgba(7,21,27,.62);
+      --muted2:rgba(7,21,27,.45);
+      --card:rgba(255,255,255,.78);
+      --border:rgba(7,21,27,.10);
+      --shadow: 0 22px 70px rgba(0,0,0,.14);
+      --shadow2: 0 12px 30px rgba(0,0,0,.10);
+      --r-xl:24px;
+      --r-lg:18px;
+      --r-md:14px;
+
+      --bgTop:#F3FBFF;
+      --bgMid:#EAF7FF;
+      --bgBot:#FFFFFF;
+
+      --btn:#0E5E74;
+      --btnHover:#0B5164;
+      --btnText:#ffffff;
     }
 
-    [data-theme="dark"] {
-      --bg: #0c1c22;
-      --card: #132e36;
-      --text: #ecf7fb;
-      --muted: #9cc7d4;
-      --brand: #4dd0e1;
-      --border: #20424d;
+    /* Dark theme (optional toggle later, but shell supports it) */
+    html[data-theme="dark"]{
+      --ink:#EAF7FB;
+      --muted:rgba(234,247,251,.72);
+      --muted2:rgba(234,247,251,.55);
+      --card:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.12);
+      --shadow: 0 22px 70px rgba(0,0,0,.42);
+      --shadow2: 0 12px 30px rgba(0,0,0,.34);
+      --bgTop:#071219;
+      --bgMid:#0A1A22;
+      --bgBot:#08141A;
+      --btn:#2CB7C9;
+      --btnHover:#23A8B8;
+      --btnText:#062028;
     }
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: linear-gradient(180deg, var(--bg), #ffffff);
-      color: var(--text);
-      min-height: 100vh;
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--ink);
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 720px at 10% -10%, rgba(31,111,134,.18), transparent 55%),
+        radial-gradient(900px 600px at 90% 0%, rgba(44,183,201,.18), transparent 55%),
+        linear-gradient(180deg, var(--bgTop), var(--bgMid) 55%, var(--bgBot));
     }
 
-    #app {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    /* App container */
+    #app{min-height:100vh; display:flex; flex-direction:column;}
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
+    /* Topbar (premium + bigger branding) */
+    .topbar{
+      position:sticky; top:0; z-index:20;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px;
+      padding:14px 16px;
+      margin:12px 12px 0;
+      border:1px solid var(--border);
+      border-radius: var(--r-xl);
       background: var(--card);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow2);
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width: 220px;
+    }
+    .brand-logo{
+      width:44px; height:44px;
+      object-fit:contain;
+      /* blend into page (no box) */
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,.10));
+    }
+    .brand-text{display:flex; flex-direction:column; gap:2px}
+    .brand-row{display:flex; align-items:center; gap:10px}
+    .brand-name{
+      font-weight:950;
+      letter-spacing:.18em;
+      font-size:16px;
+    }
+    .badge{
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.08em;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(31,111,134,.10);
+      color: var(--ink);
+    }
+    .brand-sub{
+      font-size:12px;
+      color: var(--muted);
+      letter-spacing:.02em;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .topbar-actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    .btn{
+      appearance:none; border:0; cursor:pointer;
+      padding:10px 14px;
+      border-radius: 999px;
+      font-weight:900;
+      letter-spacing:.02em;
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px;
+      user-select:none;
+      transition: transform .12s ease, filter .12s ease, background .12s ease;
+    }
+    .btn:active{transform: scale(.99)}
+    .btn-primary{background: var(--btn); color: var(--btnText); box-shadow: 0 18px 40px rgba(0,0,0,.14)}
+    .btn-primary:hover{background: var(--btnHover)}
+    .btn-ghost{background: rgba(255,255,255,.0); color: var(--ink); border:1px solid var(--border)}
+    html[data-theme="dark"] .btn-ghost{background: rgba(255,255,255,.04)}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    /* View area */
+    .view{flex:1; padding: 18px 12px 86px;}
+    @media (min-width: 980px){
+      .view{padding: 26px 18px 86px;}
+      .topbar{margin:14px auto 0; max-width: 1120px;}
+      .view{max-width:1120px; margin:0 auto;}
     }
 
-    .brand-logo {
-      width: 38px;
-      height: 38px;
+    /* Footer */
+    .footer{
+      padding:18px 14px;
+      color:var(--muted2);
+      display:flex;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .footer a{color:var(--brand2); font-weight:900; text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+
+    /* Mobile nav (optional; app.js decides when to show) */
+    .mobile-nav{
+      position:sticky; bottom:0; z-index:25;
+      display:flex; justify-content:space-around; gap:8px;
+      margin:0 12px 12px;
+      border:1px solid var(--border);
+      border-radius: var(--r-xl);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow2);
+      padding:10px 8px;
+    }
+    .mnav-btn{
+      width:100%;
+      background:transparent;
+      border:0;
+      color:var(--muted);
+      padding:10px 8px;
+      border-radius: 14px;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .mnav-btn.active{
+      color:var(--ink);
+      background: rgba(31,111,134,.10);
+      border:1px solid rgba(31,111,134,.14);
     }
 
-    .brand-name {
-      font-weight: 700;
-      font-size: 18px;
+    /* Toast host (app.js uses) */
+    .toast-host{
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .toast{
+      transform: translateY(-6px);
+      opacity:0;
+      transition: all .18s ease;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: var(--card);
+      color: var(--ink);
+      box-shadow: var(--shadow2);
+      font-weight:800;
+      max-width: 320px;
+    }
+    .toast.show{transform: translateY(0); opacity:1}
+    .toast.success{border-color: rgba(34,197,94,.35)}
+    .toast.error{border-color: rgba(239,68,68,.35)}
+    .toast.info{border-color: rgba(59,130,246,.30)}
+
+    /* =========================
+       Instagram-style splash
+       ========================= */
+    #splash{
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(900px 540px at 50% 10%, rgba(44,183,201,.35), transparent 55%),
+        radial-gradient(900px 540px at 25% 80%, rgba(31,111,134,.22), transparent 60%),
+        linear-gradient(180deg, #E9FBFF 0%, #F4FDFF 35%, #FFFFFF 100%);
+      overflow:hidden;
+    }
+    html[data-theme="dark"] #splash{
+      background:
+        radial-gradient(900px 540px at 50% 10%, rgba(44,183,201,.18), transparent 55%),
+        radial-gradient(900px 540px at 25% 80%, rgba(31,111,134,.18), transparent 60%),
+        linear-gradient(180deg, #071219 0%, #0A1A22 55%, #08141A 100%);
     }
 
-    .badge {
-      background: var(--brand);
-      color: white;
-      font-size: 10px;
-      padding: 3px 6px;
-      border-radius: 6px;
-      margin-left: 6px;
+    .splash-inner{
+      width: min(520px, 92vw);
+      text-align:center;
+      padding: 22px 18px 18px;
+      position: relative;
     }
 
-    .view {
-      flex: 1;
-      padding: 16px;
+    /* subtle floating glow */
+    .splash-glow{
+      position:absolute;
+      inset:-60px -40px auto -40px;
+      height: 220px;
+      background: radial-gradient(circle at 50% 50%, rgba(44,183,201,.26), transparent 60%);
+      filter: blur(12px);
+      animation: floatGlow 2.4s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes floatGlow{
+      0%,100%{transform: translateY(0)}
+      50%{transform: translateY(10px)}
     }
 
-    .footer {
-      padding: 16px;
-      text-align: center;
+    /* Apple-ish entrance animation */
+    .splash-logo{
+      width: 82px; height: 82px;
+      object-fit: contain;
+      filter: drop-shadow(0 26px 55px rgba(0,0,0,.14));
+      transform: translateY(10px) scale(.96);
+      opacity: 0;
+      animation: popIn .55s ease-out .05s forwards;
+    }
+    @keyframes popIn{
+      to{opacity:1; transform: translateY(0) scale(1)}
+    }
+
+    /* glass reflection effect */
+    .splash-reflection{
+      width: 92px;
+      height: 26px;
+      margin: 10px auto 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0));
+      filter: blur(1px);
+      opacity: .55;
+      transform: scaleX(.85);
+      animation: reflect 1.6s ease-in-out infinite;
+    }
+    html[data-theme="dark"] .splash-reflection{
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+      opacity: .45;
+    }
+    @keyframes reflect{
+      0%,100%{transform: scaleX(.82)}
+      50%{transform: scaleX(.92)}
+    }
+
+    .splash-bottom{
+      position: fixed;
+      left:0; right:0; bottom: 42px;
+      text-align:center;
+      pointer-events:none;
+    }
+    .splash-name{
+      font-weight: 950;
+      letter-spacing: .22em;
+      font-size: 16px;
+      color: var(--ink);
+    }
+    .splash-tag{
+      margin-top: 6px;
+      font-weight: 800;
       font-size: 13px;
       color: var(--muted);
-      border-top: 1px solid var(--border);
-      background: var(--card);
+      letter-spacing: .02em;
     }
 
-    .footer a {
-      color: var(--brand);
-      text-decoration: none;
-      font-weight: 600;
+    /* fade out */
+    #splash.hide{
+      animation: splashOut .26s ease forwards;
     }
-
-    .btn {
-      border: none;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: var(--brand);
-      color: white;
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--text);
-    }
-
-    .btn-muted {
-      background: #ddd;
-      color: #666;
-    }
-
-    .panel {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      max-width: 520px;
-      margin: 40px auto;
-    }
-
-    .panel.wide {
-      max-width: 700px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 12px;
-    }
-
-    .field input {
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .status {
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-
-    .status.error { background:#ffd6d6; color:#700 }
-    .status.success { background:#d7f5e7; color:#065 }
-    .status.warn { background:#fff4c2; color:#665 }
-    .status.info { background:#d9eff6; color:#055 }
-
-    .mobile-nav {
-      display: flex;
-      justify-content: space-around;
-      border-top: 1px solid var(--border);
-      background: var(--card);
-      padding: 6px 0;
-      position: sticky;
-      bottom: 0;
-    }
-
-    .mnav-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 12px;
-    }
-
-    .mnav-btn.active {
-      color: var(--brand);
-      font-weight: 700;
+    @keyframes splashOut{
+      to{opacity:0; visibility:hidden}
     }
   </style>
 </head>
 
 <body>
+  <!-- Splash overlay (shows ~1s and fades out) -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-inner">
+      <div class="splash-glow"></div>
+      <img class="splash-logo" src="logo.webp" alt="PEPSVAL" />
+      <div class="splash-reflection"></div>
+    </div>
+
+    <div class="splash-bottom">
+      <div class="splash-name">PEPSVAL</div>
+      <div class="splash-tag">Connect, hire and grow</div>
+    </div>
+  </div>
+
   <div id="app"></div>
 
-  <!-- Service worker (PWA) -->
+  <!-- OPTIONAL: Service worker (only if you already have sw.js).
+       If you keep getting "old UI", temporarily comment this out. -->
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js").catch(()=>{});
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
     }
   </script>
 
-  <!-- Pepsval App -->
-  <script src="app.js?v=2026"></script>
+  <!-- App (cache-busted) -->
+  <script src="app.js?v=20260106_1"></script>
 </body>
 </html>
