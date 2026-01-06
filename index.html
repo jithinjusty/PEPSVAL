@@ -1,150 +1,52 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PEPSVAL</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#061c25" />
+    <title>PEPSVAL</title>
 
-<link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="styles.css?v=9">
+    <link rel="icon" href="favicon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
 
-<style>
-html, body {
-  margin: 0;
-  height: 100%;
-  background:#05131c;
-  overflow: hidden;
-}
+    <!-- Supabase MUST load BEFORE app.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-/* FULL SCREEN SPLASH */
-#splash {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(180deg,#06141c,#041018);
-  z-index: 99999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-}
+    <!-- app.js loads after HTML is ready -->
+    <script defer src="app.js"></script>
+  </head>
 
-/* Moving water */
-#splash::before {
-  content:"";
-  position:absolute;
-  inset:-30%;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(31,111,134,.4), transparent 60%),
-    radial-gradient(circle at 70% 40%, rgba(0,150,255,.2), transparent 60%);
-  animation: water 6s ease-in-out infinite;
-  filter: blur(10px);
-}
+  <body>
+    <!-- SPLASH (3 seconds) -->
+    <div id="splash" class="splash">
+      <div class="splash-water"></div>
+      <div class="splash-caustics"></div>
+      <div class="splash-rays"></div>
 
-@keyframes water {
-  0%{transform:translate(-2%,-2%)}
-  50%{transform:translate(2%,2%)}
-  100%{transform:translate(-2%,-2%)}
-}
+      <div class="splash-center">
+        <img class="splash-logo" src="logo.webp" alt="PEPSVAL" />
+      </div>
 
-/* Light rays */
-#splash::after {
-  content:"";
-  position:absolute;
-  top:-40%;
-  left:-30%;
-  width:160%;
-  height:120%;
-  background: repeating-linear-gradient(
-    110deg,
-    rgba(255,255,255,.08),
-    rgba(255,255,255,0) 50px
-  );
-  animation: rays 4s ease-in-out infinite;
-  mix-blend-mode: screen;
-}
+      <div class="splash-bottom">
+        <div class="splash-title">PEPSVAL</div>
+        <div class="splash-tag">connect, hire and grow</div>
+      </div>
+    </div>
 
-@keyframes rays {
-  0%{opacity:.2}
-  50%{opacity:.4}
-  100%{opacity:.2}
-}
+    <!-- APP -->
+    <div id="app"></div>
 
-/* Center logo */
-#splash-content{
-  position:relative;
-  z-index:2;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-#splash img{
-  width:260px;
-  max-width:70vw;
-  animation: float 2.5s ease-in-out infinite;
-}
-
-@keyframes float{
-  0%{transform:translateY(0)}
-  50%{transform:translateY(-14px)}
-  100%{transform:translateY(0)}
-}
-
-/* Bottom text */
-#splash-text{
-  position:absolute;
-  bottom:40px;
-  text-align:center;
-  color:white;
-  letter-spacing:.2em;
-  font-weight:600;
-}
-
-#app{
-  display:none;
-  min-height:100vh;
-}
-</style>
-</head>
-
-<body>
-
-<div id="splash">
-  <div id="splash-content">
-    <img src="logo.webp">
-  </div>
-  <div id="splash-text">
-    PEPSVAL<br>
-    <span style="letter-spacing:.05em;font-weight:400">connect, hire and grow</span>
-  </div>
-</div>
-
-<div id="app"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=9"></script>
-
-<script>
-setTimeout(() => {
-  document.getElementById("splash").style.opacity="0";
-  document.getElementById("splash").style.transition="opacity .4s ease";
-  setTimeout(()=>{
-    document.getElementById("splash").remove();
-    document.getElementById("app").style.display="block";
-  },400);
-},3000);   // 3 SECONDS
-</script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
-      try {
-        const reg = await navigator.serviceWorker.register("./sw.js");
-        reg.update();
-      } catch (e) {}
-    });
-  }
-</script>
-</body>
+    <!-- If service worker is ON, force updates -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", async () => {
+          try {
+            const reg = await navigator.serviceWorker.register("./sw.js");
+            reg.update();
+          } catch (e) {}
+        });
+      }
+    </script>
+  </body>
 </html>
