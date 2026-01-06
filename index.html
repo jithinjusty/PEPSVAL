@@ -1,164 +1,141 @@
 <!doctype html>
-<html lang="en" data-theme="light">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#06131b" />
-    <title>PEPSVAL</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PEPSVAL</title>
 
-    <link rel="icon" href="favicon.png" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="styles.css?v=9">
 
-    <!-- IMPORTANT: cache-bust to force latest CSS -->
-    <link rel="stylesheet" href="./styles.css?v=7" />
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  background:#05131c;
+  overflow: hidden;
+}
 
-    <style>
-      /* Minimal emergency styles so splash NEVER looks broken even if CSS fails */
-      html, body { height: 100%; margin: 0; }
-      body { background:#06131b; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+/* FULL SCREEN SPLASH */
+#splash {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(180deg,#06141c,#041018);
+  z-index: 99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
 
-      /* Splash base (will be enhanced by your styles.css too) */
-      #splash {
-        position: fixed;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        z-index: 9999;
-        overflow: hidden;
-        background: radial-gradient(1200px 600px at 50% 0%, rgba(80,180,255,.18), transparent 60%),
-                    linear-gradient(180deg, #06131b 0%, #071f2a 45%, #031018 100%);
-      }
+/* Moving water */
+#splash::before {
+  content:"";
+  position:absolute;
+  inset:-30%;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(31,111,134,.4), transparent 60%),
+    radial-gradient(circle at 70% 40%, rgba(0,150,255,.2), transparent 60%);
+  animation: water 6s ease-in-out infinite;
+  filter: blur(10px);
+}
 
-      /* Moving “water” layers */
-      #splash .water {
-        position:absolute; inset:-30%;
-        background:
-          radial-gradient(900px 400px at 30% 20%, rgba(31,111,134,.28), transparent 60%),
-          radial-gradient(800px 500px at 70% 30%, rgba(0,180,255,.12), transparent 60%),
-          radial-gradient(900px 700px at 50% 80%, rgba(0,80,120,.25), transparent 60%);
-        filter: blur(10px);
-        animation: drift 5.5s ease-in-out infinite;
-        transform: translate3d(0,0,0);
-      }
-      @keyframes drift {
-        0%   { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
-        50%  { transform: translate3d( 1.5%,  1%, 0) scale(1.03); }
-        100% { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
-      }
+@keyframes water {
+  0%{transform:translate(-2%,-2%)}
+  50%{transform:translate(2%,2%)}
+  100%{transform:translate(-2%,-2%)}
+}
 
-      /* Light rays */
-      #splash .rays {
-        position:absolute; inset:-40% -30% auto -30%;
-        height: 90%;
-        background:
-          repeating-linear-gradient(110deg,
-            rgba(255,255,255,.08) 0px,
-            rgba(255,255,255,.02) 18px,
-            rgba(255,255,255,0) 42px
-          );
-        opacity: .35;
-        filter: blur(1px);
-        animation: rays 4.2s ease-in-out infinite;
-        mix-blend-mode: screen;
-      }
-      @keyframes rays {
-        0%   { transform: translate3d(-2%, 0, 0) skewX(-10deg); opacity:.25; }
-        50%  { transform: translate3d( 2%, 0, 0) skewX(-6deg);  opacity:.40; }
-        100% { transform: translate3d(-2%, 0, 0) skewX(-10deg); opacity:.25; }
-      }
+/* Light rays */
+#splash::after {
+  content:"";
+  position:absolute;
+  top:-40%;
+  left:-30%;
+  width:160%;
+  height:120%;
+  background: repeating-linear-gradient(
+    110deg,
+    rgba(255,255,255,.08),
+    rgba(255,255,255,0) 50px
+  );
+  animation: rays 4s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
 
-      /* Logo floating */
-      #splash .logoWrap{
-        position: relative;
-        display: grid;
-        place-items: center;
-        gap: 18px;
-        padding: 22px 20px 34px;
-      }
-      #splash .logo {
-        width: min(70vw, 320px);
-        height: auto;
-        filter: drop-shadow(0 14px 26px rgba(0,0,0,.35));
-        animation: floaty 2.6s ease-in-out infinite;
-      }
-      @keyframes floaty {
-        0%   { transform: translate3d(0, 0, 0); }
-        50%  { transform: translate3d(0, -10px, 0); }
-        100% { transform: translate3d(0, 0, 0); }
-      }
+@keyframes rays {
+  0%{opacity:.2}
+  50%{opacity:.4}
+  100%{opacity:.2}
+}
 
-      /* Text at the bottom (as you requested) */
-      #splash .brandBottom {
-        position: absolute;
-        left: 0; right: 0;
-        bottom: max(28px, env(safe-area-inset-bottom));
-        text-align: center;
-        color: rgba(255,255,255,.92);
-        letter-spacing: .22em;
-        font-weight: 700;
-      }
-      #splash .brandBottom .sub {
-        display:block;
-        margin-top: 8px;
-        letter-spacing: .06em;
-        font-weight: 500;
-        opacity: .85;
-      }
+/* Center logo */
+#splash-content{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
-      /* App hidden until splash ends */
-      #app { display: none; min-height: 100vh; }
-    </style>
-  </head>
+#splash img{
+  width:260px;
+  max-width:70vw;
+  animation: float 2.5s ease-in-out infinite;
+}
 
-  <body>
-    <!-- SPLASH -->
-    <div id="splash" aria-label="PEPSVAL splash screen">
-      <div class="water"></div>
-      <div class="rays"></div>
+@keyframes float{
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-14px)}
+  100%{transform:translateY(0)}
+}
 
-      <div class="logoWrap">
-        <!-- Use your existing logo file -->
-        <img class="logo" src="./logo.webp" alt="PEPSVAL" />
-      </div>
+/* Bottom text */
+#splash-text{
+  position:absolute;
+  bottom:40px;
+  text-align:center;
+  color:white;
+  letter-spacing:.2em;
+  font-weight:600;
+}
 
-      <div class="brandBottom">
-        PEPSVAL
-        <span class="sub">connect, hire and grow</span>
-      </div>
-    </div>
+#app{
+  display:none;
+  min-height:100vh;
+}
+</style>
+</head>
 
-    <!-- APP ROOT -->
-    <div id="app"></div>
+<body>
 
-    <!-- Supabase MUST load before app.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="splash">
+  <div id="splash-content">
+    <img src="logo.webp">
+  </div>
+  <div id="splash-text">
+    PEPSVAL<br>
+    <span style="letter-spacing:.05em;font-weight:400">connect, hire and grow</span>
+  </div>
+</div>
 
-    <!-- cache-bust to force latest JS -->
-    <script src="./app.js?v=7" defer></script>
+<div id="app"></div>
 
-    <script>
-      // Guaranteed splash exit (prevents “stuck”)
-      (function () {
-        const SPLASH_MS = 1200; // your 1.2 sec
-        const splash = document.getElementById("splash");
-        const app = document.getElementById("app");
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js?v=9"></script>
 
-        function endSplash() {
-          if (app) app.style.display = "block";
-          if (splash) {
-            splash.style.transition = "opacity 250ms ease";
-            splash.style.opacity = "0";
-            setTimeout(() => splash.remove(), 260);
-          }
-        }
+<script>
+setTimeout(() => {
+  document.getElementById("splash").style.opacity="0";
+  document.getElementById("splash").style.transition="opacity .4s ease";
+  setTimeout(()=>{
+    document.getElementById("splash").remove();
+    document.getElementById("app").style.display="block";
+  },400);
+},3000);   // 3 SECONDS
+</script>
 
-        // Always end splash after 1.2s
-        setTimeout(endSplash, SPLASH_MS);
-
-        // Extra safety: if hash changes, end splash too
-        window.addEventListener("hashchange", endSplash, { once: true });
-      })();
-    </script>
-  </body>
+</body>
 </html>
