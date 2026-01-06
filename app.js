@@ -1,3 +1,13 @@
+// --- SPLASH CONTROL (3 seconds) ---
+(function splashBoot() {
+  const splash = document.getElementById("splash");
+  // Always remove splash even if JS later errors
+  setTimeout(() => {
+    if (!splash) return;
+    splash.classList.add("hide");
+    setTimeout(() => splash.remove(), 650);
+  }, 3000);
+})();
 /* =========================
    PEPSVAL — app.js (SPA)
    GitHub Pages friendly (hash routing)
