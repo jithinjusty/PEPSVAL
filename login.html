@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PEPSVAL – Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Background using splash image */
+.login-bg {
+  position: fixed;
+  inset: 0;
+  background: url("splash.jpg") center / cover no-repeat;
+  filter: blur(6px);
+  transform: scale(1.05);
+}
+
+/* Light blue overlay */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    rgba(120,200,230,0.4),
+    rgba(20,60,90,0.6)
+  );
+}
+
+/* Centered content */
+.login-container {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* White Instagram-style box */
+.login-box {
+  width: 90%;
+  max-width: 360px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+/* Logo */
+.login-logo {
+  display: block;
+  width: 90px;
+  margin: 0 auto 20px;
+}
+
+/* Inputs */
+.login-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 0 12px;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+/* Button */
+.login-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: #1F6F86;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Links */
+.login-link {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  color: #1F6F86;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* Bottom area */
+.login-bottom {
+  width: 90%;
+  max-width: 360px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.create-btn {
+  display: block;
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #1F6F86;
+  margin-bottom: 10px;
+}
+
+.tiny-text {
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+}
+
+.footer {
+  margin-top: 14px;
+  letter-spacing: 4px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 700;
+}
+</style>
+
+</head>
+<body>
+
+<div class="login-bg"></div>
+<div class="login-overlay"></div>
+
+<div class="login-container">
+
+  <div class="login-box">
+    <img src="logo.webp" class="login-logo" alt="PEPSVAL">
+
+    <input class="login-input" placeholder="User ID or email">
+    <input class="login-input" type="password" placeholder="Password">
+
+    <button class="login-btn">Log in</button>
+
+    <a class="login-link" href="#">Forgotten password?</a>
+  </div>
+
+  <div class="login-bottom">
+    <a class="create-btn" href="#">Create new account</a>
+
+    <div class="tiny-text">
+      By signing up, you agree to our Terms & Privacy Policy
+    </div>
+
+    <div class="footer">PEPSVAL</div>
+  </div>
+
+</div>
+
+</body>
+</html>
