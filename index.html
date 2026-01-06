@@ -1,82 +1,163 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b2b3a" />
-
+    <meta name="theme-color" content="#06131b" />
     <title>PEPSVAL</title>
 
     <link rel="icon" href="favicon.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
 
-    <link rel="preload" href="logo.webp" as="image" />
-    <link rel="stylesheet" href="styles.css" />
+    <!-- IMPORTANT: cache-bust to force latest CSS -->
+    <link rel="stylesheet" href="./styles.css?v=7" />
 
-    <!-- Supabase (required by app.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      /* Minimal emergency styles so splash NEVER looks broken even if CSS fails */
+      html, body { height: 100%; margin: 0; }
+      body { background:#06131b; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
-    <!-- App -->
-    <script defer src="app.js"></script>
+      /* Splash base (will be enhanced by your styles.css too) */
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 9999;
+        overflow: hidden;
+        background: radial-gradient(1200px 600px at 50% 0%, rgba(80,180,255,.18), transparent 60%),
+                    linear-gradient(180deg, #06131b 0%, #071f2a 45%, #031018 100%);
+      }
+
+      /* Moving “water” layers */
+      #splash .water {
+        position:absolute; inset:-30%;
+        background:
+          radial-gradient(900px 400px at 30% 20%, rgba(31,111,134,.28), transparent 60%),
+          radial-gradient(800px 500px at 70% 30%, rgba(0,180,255,.12), transparent 60%),
+          radial-gradient(900px 700px at 50% 80%, rgba(0,80,120,.25), transparent 60%);
+        filter: blur(10px);
+        animation: drift 5.5s ease-in-out infinite;
+        transform: translate3d(0,0,0);
+      }
+      @keyframes drift {
+        0%   { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
+        50%  { transform: translate3d( 1.5%,  1%, 0) scale(1.03); }
+        100% { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
+      }
+
+      /* Light rays */
+      #splash .rays {
+        position:absolute; inset:-40% -30% auto -30%;
+        height: 90%;
+        background:
+          repeating-linear-gradient(110deg,
+            rgba(255,255,255,.08) 0px,
+            rgba(255,255,255,.02) 18px,
+            rgba(255,255,255,0) 42px
+          );
+        opacity: .35;
+        filter: blur(1px);
+        animation: rays 4.2s ease-in-out infinite;
+        mix-blend-mode: screen;
+      }
+      @keyframes rays {
+        0%   { transform: translate3d(-2%, 0, 0) skewX(-10deg); opacity:.25; }
+        50%  { transform: translate3d( 2%, 0, 0) skewX(-6deg);  opacity:.40; }
+        100% { transform: translate3d(-2%, 0, 0) skewX(-10deg); opacity:.25; }
+      }
+
+      /* Logo floating */
+      #splash .logoWrap{
+        position: relative;
+        display: grid;
+        place-items: center;
+        gap: 18px;
+        padding: 22px 20px 34px;
+      }
+      #splash .logo {
+        width: min(70vw, 320px);
+        height: auto;
+        filter: drop-shadow(0 14px 26px rgba(0,0,0,.35));
+        animation: floaty 2.6s ease-in-out infinite;
+      }
+      @keyframes floaty {
+        0%   { transform: translate3d(0, 0, 0); }
+        50%  { transform: translate3d(0, -10px, 0); }
+        100% { transform: translate3d(0, 0, 0); }
+      }
+
+      /* Text at the bottom (as you requested) */
+      #splash .brandBottom {
+        position: absolute;
+        left: 0; right: 0;
+        bottom: max(28px, env(safe-area-inset-bottom));
+        text-align: center;
+        color: rgba(255,255,255,.92);
+        letter-spacing: .22em;
+        font-weight: 700;
+      }
+      #splash .brandBottom .sub {
+        display:block;
+        margin-top: 8px;
+        letter-spacing: .06em;
+        font-weight: 500;
+        opacity: .85;
+      }
+
+      /* App hidden until splash ends */
+      #app { display: none; min-height: 100vh; }
+    </style>
   </head>
 
   <body>
     <!-- SPLASH -->
-    <div id="splash" class="splash" aria-label="Loading">
-      <div class="splash-water">
-        <div class="splash-ripples"></div>
-        <div class="splash-light"></div>
+    <div id="splash" aria-label="PEPSVAL splash screen">
+      <div class="water"></div>
+      <div class="rays"></div>
+
+      <div class="logoWrap">
+        <!-- Use your existing logo file -->
+        <img class="logo" src="./logo.webp" alt="PEPSVAL" />
       </div>
 
-      <div class="splash-center">
-        <div class="splash-logo-wrap">
-          <img class="splash-logo" src="logo.webp" alt="PEPSVAL" />
-        </div>
-      </div>
-
-      <div class="splash-bottom">
-        <div class="splash-title">PEPSVAL</div>
-        <div class="splash-tag">connect, hire and grow</div>
+      <div class="brandBottom">
+        PEPSVAL
+        <span class="sub">connect, hire and grow</span>
       </div>
     </div>
 
     <!-- APP ROOT -->
     <div id="app"></div>
 
-    <noscript>
-      <div style="padding:16px; font-family: system-ui; color:#fff; background:#111;">
-        Please enable JavaScript to run PEPSVAL.
-      </div>
-    </noscript>
+    <!-- Supabase MUST load before app.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- cache-bust to force latest JS -->
+    <script src="./app.js?v=7" defer></script>
 
     <script>
+      // Guaranteed splash exit (prevents “stuck”)
       (function () {
+        const SPLASH_MS = 1200; // your 1.2 sec
         const splash = document.getElementById("splash");
-        if (!splash) return;
+        const app = document.getElementById("app");
 
-        let killed = false;
-        function hideSplash() {
-          if (killed) return;
-          killed = true;
-          splash.classList.add("splash-hide");
-          setTimeout(() => splash.remove(), 350);
+        function endSplash() {
+          if (app) app.style.display = "block";
+          if (splash) {
+            splash.style.transition = "opacity 250ms ease";
+            splash.style.opacity = "0";
+            setTimeout(() => splash.remove(), 260);
+          }
         }
 
-        // Instagram-style: show for ~1.2s, then hide
-        setTimeout(hideSplash, 1200);
+        // Always end splash after 1.2s
+        setTimeout(endSplash, SPLASH_MS);
 
-        // Hard kill (prevents “stuck forever”)
-        setTimeout(hideSplash, 2200);
-
-        // If any script error happens, never keep user stuck
-        window.addEventListener("error", hideSplash);
-        window.addEventListener("unhandledrejection", hideSplash);
-
-        // Optional: service worker (if your sw.js exists)
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("./sw.js").catch(() => {});
-        }
+        // Extra safety: if hash changes, end splash too
+        window.addEventListener("hashchange", endSplash, { once: true });
       })();
     </script>
   </body>
