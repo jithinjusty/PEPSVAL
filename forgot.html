@@ -25,7 +25,7 @@
       <form id="forgotForm" class="form" novalidate>
         <label class="field">
           <span class="label">Email</span>
-          <input id="email" type="email" placeholder="you@example.com" required />
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
         </label>
 
         <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
@@ -38,13 +38,14 @@
         </div>
 
         <div class="legal">
-          <a href="/terms.html" target="_blank">Terms</a> ·
-          <a href="/privacy.html" target="_blank">Privacy</a>
+          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> ·
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
         </div>
       </form>
     </section>
   </main>
 
-  <script src="./forgot.js"></script>
+  <!-- IMPORTANT: module so we can import Supabase -->
+  <script type="module" src="./forgot.js"></script>
 </body>
 </html>
