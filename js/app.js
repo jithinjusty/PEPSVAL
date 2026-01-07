@@ -1,13 +1,19 @@
-// Always hide app first (prevents login flashing before splash)
 document.addEventListener("DOMContentLoaded", () => {
   const splash = document.getElementById("splash");
   const app = document.getElementById("app");
 
-  if (app) app.style.display = "none";
+  // Always hide app until splash ends
+  app.style.display = "none";
 
-  // Show splash for 3 seconds
+  // Keep splash for 3 seconds
   setTimeout(() => {
-    if (splash) splash.style.display = "none";
-    if (app) app.style.display = "flex";
+    splash.style.opacity = "0";
+    splash.style.transition = "opacity 0.6s ease";
+
+    setTimeout(() => {
+      splash.style.display = "none";
+      app.style.display = "flex";
+    }, 600);
+
   }, 3000);
 });
