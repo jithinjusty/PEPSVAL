@@ -5,34 +5,24 @@ const RANKS = [
   "Chief Officer / Chief Mate (C/O)",
   "Second Officer / Second Mate (2/O)",
   "Third Officer / Third Mate (3/O)",
-  "Junior Officer / 4th Officer (if applicable)",
   "Deck Cadet / Trainee OOW",
   "Boatswain (Bosun)",
   "Able Seaman (AB)",
   "Ordinary Seaman (OS)",
-  "Deck Fitter",
-  "Trainee OS",
   "Chief Engineer",
   "Second Engineer",
   "Third Engineer",
   "Fourth Engineer",
-  "Junior Engineer / 5th Engineer (if applicable)",
   "Trainee Marine Engineer (TME) / Engine Cadet",
   "Motorman",
   "Oiler",
   "Wiper",
-  "Engine Fitter",
   "Electro-Technical Officer (ETO)",
-  "Electrician",
-  "Electrical Cadet / Trainee",
   "Chief Cook",
   "Cook",
   "Messman",
   "Steward",
-  "Chief Steward",
   "DPO (Dynamic Positioning Operator)",
-  "Rigger",
-  "Crane Operator",
   "Pumpman",
   "Other (write)"
 ];
@@ -72,16 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const errorBox = document.getElementById("errorBox");
   const saveBtn = document.getElementById("saveBtn");
 
-  // Require login
-  const { data: sessionData } = await supabase.auth.getSession();
-  const session = sessionData?.session;
-  if (!session) {
-    window.location.href = "/auth/login.html";
-    return;
-  }
-
-  let avatarDataUrl = "";
-
   const showError = (msg) => {
     errorBox.textContent = msg;
     errorBox.style.display = "block";
@@ -91,7 +71,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     errorBox.style.display = "none";
   };
 
-  // Load countries
+  // Must be logged in
+  const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+  const session = sessionData?.session;
+
+  if (sessionErr || !session) {
+    window.location.href = "/auth/login.html";
+    return;
+  }
+
+  // Load countries json
   try {
     const res = await fetch("/data/countries.json", { cache: "no-store" });
     COUNTRIES = await res.json();
@@ -99,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     COUNTRIES = [];
   }
 
-  // Build dropdowns
+  // Combos
   const rankCombo = makeCombo({
     input: rankSearch,
     valueEl: rankValue,
@@ -123,14 +112,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       .map(c => ({ label: cleanDial(c.dial_code), value: cleanDial(c.dial_code), sub: cleanName(c.name) }))
   });
 
-  // Auto-fill dial code when country selected
+  // auto dial from country
   countryCombo.onSelect = (countryName) => {
     const match = COUNTRIES.find(c => cleanName(c.name).toLowerCase() === String(countryName).toLowerCase());
     if (match?.dial_code) dialCombo.setValue(cleanDial(match.dial_code));
     validate();
   };
 
-  // Account type rules
+  // account type changes
   accountType.addEventListener("change", () => {
     const type = accountType.value;
 
@@ -147,7 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     validate();
   });
 
-  // Rank other rules
+  // rank other field
   rankCombo.onSelect = (val) => {
     const isOther = String(val).toLowerCase().includes("other");
     rankOtherWrap.classList.toggle("hidden", !isOther);
@@ -155,24 +144,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     validate();
   };
 
-  // Photo required
+  // Profile photo
+  let avatarFile = null;
+  let avatarPreviewUrl = "";
+
   photoInput.addEventListener("change", async () => {
     clearError();
     const file = photoInput.files?.[0];
+    avatarFile = file || null;
+
     if (!file) {
-      avatarDataUrl = "";
+      avatarPreviewUrl = "";
       renderAvatar("");
       validate();
       return;
     }
-    avatarDataUrl = await compressImageToDataUrl(file, 360, 0.82);
-    renderAvatar(avatarDataUrl);
+
+    avatarPreviewUrl = await fileToDataUrl(file);
+    renderAvatar(avatarPreviewUrl);
     validate();
   });
 
   removePhotoBtn.addEventListener("click", () => {
     photoInput.value = "";
-    avatarDataUrl = "";
+    avatarFile = null;
+    avatarPreviewUrl = "";
     renderAvatar("");
     validate();
   });
@@ -192,27 +188,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     avatarPreview.appendChild(img);
   }
 
-  // Validate when typing
+  // validate on input
   [accountTypeOther, fullName, phoneInput, rankOther].forEach(el => el.addEventListener("input", validate));
-  rankSearch.addEventListener("input", validate);
-  countrySearch.addEventListener("input", validate);
-  dialSearch.addEventListener("input", validate);
+  [rankSearch, countrySearch, dialSearch].forEach(el => el.addEventListener("input", validate));
 
   function validate() {
     clearError();
 
     const type = accountType.value;
-
-    const hasPhoto = !!avatarDataUrl;
     const dial = cleanDial(dialCombo.getValue() || dialSearch.value);
     const phone = (phoneInput.value || "").trim();
-
     const nationality = (countryCombo.getValue() || countrySearch.value || "").trim();
+    const hasPhoto = !!avatarFile;
 
     // Your rule: cannot save without profile photo + mobile number
     if (!hasPhoto || !dial || !phone) { saveBtn.disabled = true; return; }
 
-    // also require account type + nationality
+    // also need account type + nationality
     if (!type || !nationality) { saveBtn.disabled = true; return; }
 
     if (type === "other" && !(accountTypeOther.value || "").trim()) { saveBtn.disabled = true; return; }
@@ -230,57 +222,91 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   validate();
 
-  // Save
+  // SUBMIT
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearError();
 
-    if (saveBtn.disabled) return showError("Please complete the required fields (*).");
-
-    const type = accountType.value;
-
-    let accountTypeLabel = type;
-    if (type === "other") accountTypeLabel = (accountTypeOther.value || "").trim();
-
-    const nationality = (countryCombo.getValue() || countrySearch.value || "").trim();
-
-    let finalRank = null;
-    if (type === "seafarer") {
-      const r = (rankCombo.getValue() || rankSearch.value || "").trim();
-      const isOther = r.toLowerCase().includes("other");
-      finalRank = isOther ? (rankOther.value || "").trim() : r;
-      if (!finalRank) return showError("Please choose your rank.");
+    if (saveBtn.disabled) {
+      showError("Please complete the required fields (*).");
+      return;
     }
 
-    const dial = cleanDial(dialCombo.getValue() || dialSearch.value || "");
-    const phone = (phoneInput.value || "").trim();
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
 
-    const payload = {
-      id: session.user.id,
-      email: session.user.email,
-      full_name: (fullName.value || "").trim(),
-      account_type: type,
-      account_type_label: accountTypeLabel,
-      rank: finalRank,
-      nationality,
-      phone_country_code: dial,
-      phone_number: phone,
-      avatar_url: avatarDataUrl || null,
-      setup_complete: true,
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const userId = session.user.id;
 
-    const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
-    if (error) return showError(error.message || "Could not save profile.");
+      // build values
+      const type = accountType.value;
 
-    window.location.href = "/dashboard.html";
+      let accountTypeLabel = type;
+      if (type === "other") accountTypeLabel = (accountTypeOther.value || "").trim();
+
+      const nationality = (countryCombo.getValue() || countrySearch.value || "").trim();
+
+      let finalRank = null;
+      if (type === "seafarer") {
+        const r = (rankCombo.getValue() || rankSearch.value || "").trim();
+        const isOther = r.toLowerCase().includes("other");
+        finalRank = isOther ? (rankOther.value || "").trim() : r;
+      }
+
+      const dial = cleanDial(dialCombo.getValue() || dialSearch.value || "");
+      const phone = (phoneInput.value || "").trim();
+
+      // Upload avatar to Supabase Storage (bucket: avatars)
+      // If bucket not present, we fallback to saving base64 preview (still works)
+      let avatarUrl = null;
+
+      if (avatarFile) {
+        const fileExt = (avatarFile.name.split(".").pop() || "jpg").toLowerCase();
+        const filePath = `${userId}/${Date.now()}.${fileExt}`;
+
+        const { data: up, error: upErr } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile, { upsert: true });
+
+        if (!upErr && up?.path) {
+          const { data: pub } = supabase.storage.from("avatars").getPublicUrl(up.path);
+          avatarUrl = pub?.publicUrl || null;
+        } else {
+          // fallback
+          avatarUrl = avatarPreviewUrl || null;
+        }
+      }
+
+      const payload = {
+        id: userId,
+        email: session.user.email,
+        full_name: (fullName.value || "").trim(),
+        account_type: type,
+        account_type_label: accountTypeLabel,
+        rank: finalRank,
+        nationality,
+        phone_country_code: dial,
+        phone_number: phone,
+        avatar_url: avatarUrl,
+        setup_complete: true,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
+      if (error) throw new Error(error.message || "Could not save profile.");
+
+      window.location.href = "/dashboard.html";
+    } catch (err) {
+      showError(err?.message || "Something went wrong. Please try again.");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save & Continue";
+    }
   });
 });
 
 /* ---------- combo helper ---------- */
 function makeCombo({ input, valueEl, listEl, items }) {
   const wrapper = input.closest(".combo");
-  let filtered = items.slice();
 
   const api = {
     onSelect: null,
@@ -304,11 +330,13 @@ function makeCombo({ input, valueEl, listEl, items }) {
 
   function render() {
     const q = (input.value || "").trim().toLowerCase();
-    filtered = !q
-      ? items
-      : items.filter(it => String(it.label).toLowerCase().includes(q) || String(it.value).toLowerCase().includes(q));
+    const filtered = !q ? items : items.filter(it =>
+      String(it.label).toLowerCase().includes(q) ||
+      String(it.value).toLowerCase().includes(q) ||
+      String(it.sub || "").toLowerCase().includes(q)
+    );
 
-    listEl.innerHTML = filtered.slice(0, 200).map(it => {
+    listEl.innerHTML = filtered.slice(0, 250).map(it => {
       const sub = it.sub ? `<small>${escapeHtml(it.sub)}</small>` : "";
       return `<div class="comboItem" data-value="${escapeHtml(it.value)}">${escapeHtml(it.label)}${sub}</div>`;
     }).join("") || `<div class="comboItem" data-value="">No results</div>`;
@@ -317,7 +345,7 @@ function makeCombo({ input, valueEl, listEl, items }) {
   input.addEventListener("focus", open);
   input.addEventListener("click", open);
   input.addEventListener("input", () => {
-    valueEl.value = ""; // typing means not selected yet
+    valueEl.value = "";
     open();
   });
 
@@ -334,8 +362,6 @@ function makeCombo({ input, valueEl, listEl, items }) {
     if (!wrapper.contains(e.target)) close();
   });
 
-  // initial render
-  render();
   return api;
 }
 
@@ -347,28 +373,11 @@ function escapeHtml(s) {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[m]));
 }
-function compressImageToDataUrl(file, maxSize = 360, quality = 0.82) {
+
+function fileToDataUrl(file){
   return new Promise((resolve) => {
-    const img = new Image();
-    const reader = new FileReader();
-    reader.onload = () => {
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        const w = img.width, h = img.height;
-        const scale = Math.min(1, maxSize / Math.max(w, h));
-        const nw = Math.round(w * scale);
-        const nh = Math.round(h * scale);
-
-        canvas.width = nw;
-        canvas.height = nh;
-        ctx.drawImage(img, 0, 0, nw, nh);
-
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || ""));
+    r.readAsDataURL(file);
   });
 }
