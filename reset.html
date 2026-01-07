@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Set New Password</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./reset.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card" role="region" aria-label="Set new password">
+      <header class="brand">
+        <div class="logoWord">PEPSVAL</div>
+        <div class="tagline">connect, hire and grow</div>
+      </header>
+
+      <h1 class="title">Set new password</h1>
+      <p class="subtitle">Enter your new password below.</p>
+
+      <div id="infoBox" class="info" role="status" aria-live="polite"></div>
+
+      <form id="resetForm" class="form" novalidate>
+        <label class="field">
+          <span class="label">New password</span>
+          <input id="password" type="password" placeholder="New password" minlength="6" autocomplete="new-password" required />
+        </label>
+
+        <label class="field">
+          <span class="label">Confirm new password</span>
+          <input id="confirmPassword" type="password" placeholder="Confirm new password" minlength="6" autocomplete="new-password" required />
+        </label>
+
+        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+        <div id="successBox" class="success" role="status" aria-live="polite"></div>
+
+        <button class="primary" type="submit">Update password</button>
+
+        <div class="links">
+          <a class="link" href="/auth/login.html">Back to login</a>
+        </div>
+
+        <div class="legal">
+          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> ·
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="./reset.js"></script>
+</body>
+</html>
