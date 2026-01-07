@@ -6,46 +6,57 @@
 }
 
 body {
-  background: #eaf6fb;
+  background: #000;
 }
 
-/* Splash Screen */
+/* ---------------- SPLASH ---------------- */
+
 #splash {
   position: fixed;
   width: 100%;
   height: 100vh;
-  background: url("../assets/splash.jpg") center/cover no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
+  background: radial-gradient(circle at top, #3fb8ff, #062038);
   overflow: hidden;
+  z-index: 10;
 }
 
-/* Dark mask to hide image logo */
-#splash::after {
-  content: "";
+/* Moving light rays */
+.rays {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,30,70,0.3),
-    rgba(0,30,70,0.8)
-  );
-  z-index: 1;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.15), transparent 60%),
+    linear-gradient(240deg, rgba(255,255,255,0.12), transparent 60%);
+  animation: raysMove 8s ease-in-out infinite alternate;
+}
+
+/* Water caustics (glare patterns) */
+.water {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-radial-gradient(circle, rgba(255,255,255,0.05) 0px, transparent 80px);
+  animation: waterMove 12s linear infinite;
+  opacity: 0.6;
+}
+
+/* soft glow */
+.glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(100,200,255,0.25), transparent 70%);
 }
 
 /* Splash text at bottom */
 .splash-content {
   position: absolute;
-  z-index: 2;
-  left: 50%;
   bottom: 12%;
+  left: 50%;
   transform: translateX(-50%);
   text-align: center;
   color: white;
+  z-index: 5;
   animation: float 3s ease-in-out infinite;
-  width: 90%;
 }
 
 .splash-content h1 {
@@ -58,14 +69,27 @@ body {
   font-size: 18px;
 }
 
-/* Floating animation */
+/* Floating logo */
 @keyframes float {
   0% { transform: translateX(-50%) translateY(0px); }
   50% { transform: translateX(-50%) translateY(-10px); }
   100% { transform: translateX(-50%) translateY(0px); }
 }
 
-/* App */
+/* Light rays movement */
+@keyframes raysMove {
+  0% { transform: translateX(-10%) translateY(-10%); }
+  100% { transform: translateX(10%) translateY(10%); }
+}
+
+/* Water shimmer */
+@keyframes waterMove {
+  from { background-position: 0 0; }
+  to { background-position: 400px 400px; }
+}
+
+/* ---------------- APP ---------------- */
+
 #app {
   display: none;
   height: 100vh;
