@@ -1,3 +1,134 @@
+:root{
+  --brand:#1f6f86;
+  --bg1:#bfe9f7;
+  --bg2:#ffffff;
+  --text:#0b1b24;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+body{
+  min-height:100vh;
+  background:linear-gradient(var(--bg1),var(--bg2));
+  color:var(--text);
+}
+
+.hidden{display:none !important;}
+
+.wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+
+.card{
+  width:min(520px, 96vw);
+  background:rgba(255,255,255,0.82);
+  backdrop-filter: blur(10px);
+  border-radius:22px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.12);
+  border:1px solid rgba(255,255,255,0.8);
+  padding:22px;
+}
+
+.head{margin-bottom:14px;}
+.brand{margin-bottom:10px;text-align:center;}
+.logoWord{font-weight:900;letter-spacing:3px;font-size:22px;}
+.tagline{opacity:.7;margin-top:4px;}
+.title{font-size:28px;font-weight:900;text-align:center;margin-top:8px;}
+
+.req{color:#c62828;}
+
+.photoSection{
+  margin-top:14px;
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.7);
+  border:1px solid rgba(11,27,36,0.10);
+}
+
+.lblRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.lbl{font-weight:800;margin-bottom:6px;}
+.form{margin-top:14px;display:flex;flex-direction:column;gap:14px;}
+
+.field{display:flex;flex-direction:column;gap:8px;}
+
+input, select{
+  width:100%;
+  padding:13px 14px;
+  border-radius:14px;
+  border:1px solid rgba(11,27,36,0.18);
+  background:rgba(255,255,255,0.95);
+  outline:none;
+  font-size:16px;
+}
+
+input:focus, select:focus{
+  border-color: rgba(31,111,134,0.60);
+  box-shadow:0 0 0 4px rgba(31,111,134,0.12);
+}
+
+.help{font-size:13px;opacity:.7;}
+
+.avatarWrap{display:flex;justify-content:center;margin:8px 0 12px;}
+.avatar{
+  width:110px;height:110px;border-radius:999px;
+  background:rgba(31,111,134,0.08);
+  border:2px solid rgba(31,111,134,0.18);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.avatarHint{font-weight:800;opacity:.7;}
+
+.photoActions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+}
+#photoInput{padding:10px;border-radius:14px;}
+
+.btnGhost{
+  padding:10px 14px;
+  border-radius:14px;
+  border:1px solid rgba(11,27,36,0.18);
+  background:rgba(255,255,255,0.9);
+  font-weight:900;
+}
+
+.btnPrimary{
+  padding:14px 16px;
+  border-radius:16px;
+  border:none;
+  background:var(--brand);
+  color:#fff;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 16px 30px rgba(31,111,134,0.22);
+}
+.btnPrimary:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+.error{
+  background:rgba(198,40,40,0.08);
+  border:1px solid rgba(198,40,40,0.25);
+  color:#8b1f1f;
+  padding:12px 14px;
+  border-radius:14px;
+  font-weight:700;
+}
+
+/* Phone row */
+.phoneRow{display:flex;gap:10px;align-items:center;}
+.dialCombo{width:140px;min-width:140px;}
+.phone{flex:1;}
+
 /* --- searchable dropdown (combo) --- */
 .combo{position:relative;}
 .combo input[type="text"]{width:100%;}
@@ -18,9 +149,12 @@
 .comboItem{
   padding:10px 12px;
   cursor:pointer;
-  font-weight:700;
+  font-weight:800;
 }
 .comboItem:hover{background:rgba(31,111,134,0.10);}
-.comboItem small{display:block;font-weight:600;color:rgba(11,27,36,0.60);margin-top:2px;}
-
-.dialCombo{width:120px;}
+.comboItem small{
+  display:block;
+  font-weight:700;
+  color:rgba(11,27,36,0.60);
+  margin-top:2px;
+}
