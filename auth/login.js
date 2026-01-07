@@ -19,19 +19,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   function setLoading(on) {
     loginBtn.disabled = on;
     loginBtn.textContent = on ? "Logging in…" : "Log in";
-    loginBtn.style.opacity = on ? "0.85" : "1";
   }
 
-  // If already logged in, route immediately
+  // If already logged in, route correctly
   const { data: sessionData } = await supabase.auth.getSession();
   if (sessionData?.session) {
-    window.location.href = "/dashboard.html";
+    await routeAfterLogin(sessionData.session.user.id);
     return;
   }
 
   togglePw?.addEventListener("click", () => {
-    const isPw = passEl.type === "password";
-    passEl.type = isPw ? "text" : "password";
+    passEl.type = passEl.type === "password" ? "text" : "password";
   });
 
   form.addEventListener("submit", async (e) => {
@@ -53,30 +51,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       return showError("Incorrect email or password.");
     }
 
-    // Route: profile complete? -> dashboard, else -> profile setup
-    try {
-      const userId = data.user.id;
-
-      const { data: profile, error: pErr } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (pErr || !profile) {
-        window.location.href = "/profile-setup.html";
-        return;
-      }
-
-      const complete =
-        !!(profile.full_name || profile.name || profile.first_name) &&
-        !!(profile.account_type || profile.user_type);
-
-      window.location.href = complete ? "/dashboard.html" : "/profile-setup.html";
-    } catch (e2) {
-      window.location.href = "/profile-setup.html";
-    } finally {
-      setLoading(false);
-    }
+    await routeAfterLogin(data.user.id);
+    setLoading(false);
   });
+
+  async function routeAfterLogin(userId) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("setup_complete")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // If no profile or setup not complete => go setup
+    if (error || !profile || profile.setup_complete !== true) {
+      window.location.href = "/setup/profile-setup.html";
+      return;
+    }
+
+    // setup done => dashboard
+    window.location.href = "/dashboard.html";
+  }
 });
