@@ -5,33 +5,217 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="./dashboard.css" />
+  <link rel="stylesheet" href="/dashboard.css?v=1" />
 </head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logoWord">PEPSVAL</div>
-      <div class="tagline">connect, hire and grow</div>
-    </div>
 
-    <button id="logoutBtn" class="btn">Logout</button>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">PEPSVAL</div>
+    <div class="title" id="pageTitle">Feed</div>
+    <button class="avatarBtn" id="avatarBtn" aria-label="Profile">
+      <span class="avatarDot" id="avatarDot"></span>
+    </button>
   </header>
 
-  <main class="main">
-    <h1 class="title">Welcome</h1>
-    <p class="sub">You’re logged in. Dashboard is ready — we will build tabs (Profile / Feed / Jobs / Messages) next.</p>
+  <!-- Main pages -->
+  <main class="main" id="main">
 
-    <section class="card">
-      <div class="label">Logged in as</div>
-      <div id="userEmail" class="value">—</div>
+    <!-- Welcome overlay (first-time after setup) -->
+    <section class="welcome hidden" id="welcome">
+      <div class="welcomeCard">
+        <div class="welcomeBrand">
+          <div class="welcomeLogo">PEPSVAL</div>
+          <div class="welcomeTag">connect, hire and grow</div>
+        </div>
+
+        <h1 class="welcomeTitle">Complete your profile for top visibility</h1>
+        <p class="welcomeSub">
+          Add your sea service, documents and appraisals to build trust and get discovered faster.
+        </p>
+
+        <div class="welcomeActions">
+          <button class="btnPrimary" id="btnCompleteProfile">Complete your profile</button>
+          <button class="btnGhost" id="btnExplore">Explore Pepsval</button>
+        </div>
+      </div>
     </section>
 
-    <section class="card">
-      <div class="label">Profile status</div>
-      <div id="profileStatus" class="value">Checking…</div>
+    <!-- FEED -->
+    <section class="page" id="pageFeed">
+      <div class="card">
+        <div class="cardTitle">Founder’s post</div>
+        <div class="post">
+          <div class="postHead">
+            <div class="postAvatar"></div>
+            <div>
+              <div class="postName">JITHIN PHILIP</div>
+              <div class="postMeta">Founder • PEPSVAL</div>
+            </div>
+          </div>
+          <div class="postBody">
+            Welcome aboard 🚢 PEPSVAL is built to connect, hire and grow — a trusted space for seafarers and maritime teams worldwide.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="empty">
+          <div class="emptyTitle">Global feed is getting ready</div>
+          <div class="emptySub">Posts from seafarers, companies and shore staff will appear here.</div>
+        </div>
+      </div>
     </section>
+
+    <!-- JOBS -->
+    <section class="page hidden" id="pageJobs">
+      <div class="card">
+        <div class="cardTitle">Jobs</div>
+        <div class="empty">
+          <div class="emptyTitle">Jobs board coming next</div>
+          <div class="emptySub">You’ll be able to browse worldwide sea + shore jobs.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREATE POST -->
+    <section class="page hidden" id="pageCreate">
+      <div class="card">
+        <div class="cardTitle">Create post</div>
+
+        <div class="compose">
+          <textarea id="postText" placeholder="Share a photo, video or message…" rows="5"></textarea>
+
+          <div class="composeRow">
+            <label class="fileBtn">
+              Add media
+              <input id="postFile" type="file" accept="image/*,video/*" hidden />
+            </label>
+            <button class="btnPrimary" id="btnPublish" disabled>Publish</button>
+          </div>
+
+          <div class="hint" id="fileHint">No file selected</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="empty">
+          <div class="emptyTitle">Posting is in MVP mode</div>
+          <div class="emptySub">Next step we connect posts to Supabase.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="page hidden" id="pageSearch">
+      <div class="card">
+        <div class="cardTitle">Search</div>
+
+        <div class="searchBox">
+          <input id="searchInput" type="search" placeholder="Search seafarers, companies…" />
+          <button class="btnGhost" id="btnSearch">Search</button>
+        </div>
+
+        <div class="empty" style="margin-top:12px;">
+          <div class="emptyTitle">Search is coming next</div>
+          <div class="emptySub">Soon you can search by rank, nationality, and company.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="page hidden" id="pageMessages">
+      <div class="card">
+        <div class="cardTitle">Messages</div>
+        <div class="empty">
+          <div class="emptyTitle">No messages yet</div>
+          <div class="emptySub">Chat will be added after feed + search.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="page hidden" id="pageProfile">
+      <div class="card">
+        <div class="profileHead">
+          <div class="profileAvatar" id="profileAvatar"></div>
+          <div class="profileInfo">
+            <div class="profileName" id="profileName">Your name</div>
+            <div class="profileMeta" id="profileMeta">Account type • Nationality</div>
+          </div>
+        </div>
+
+        <div class="profileStats">
+          <div class="stat">
+            <div class="statNum">—</div>
+            <div class="statLbl">Sea time</div>
+          </div>
+          <div class="stat">
+            <div class="statNum">—</div>
+            <div class="statLbl">Contracts</div>
+          </div>
+          <div class="stat">
+            <div class="statNum">—</div>
+            <div class="statLbl">Confirmations</div>
+          </div>
+        </div>
+
+        <div class="profileBtns">
+          <button class="btnPrimary" id="btnEditProfile">Edit profile</button>
+          <button class="btnGhost" id="btnOpenSettings">Settings</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Sea service</div>
+        <div class="note">
+          Sea service entries become locked once any employer or peer verification is approved.
+        </div>
+
+        <div class="empty" style="margin-top:12px;">
+          <div class="emptyTitle">Sea service will be added here</div>
+          <div class="emptySub">Next we build add/view sea service (Seafarer only).</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Legal</div>
+        <div class="linkRow">
+          <a href="/legal/privacy.html">Privacy Policy</a>
+          <a href="/legal/terms.html">Terms</a>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <script type="module" src="./dashboard.js"></script>
+  <!-- Bottom nav -->
+  <nav class="bottomnav">
+    <button class="tab active" data-tab="feed" aria-label="Feed">
+      <span class="ico">🏠</span><span class="lbl">Feed</span>
+    </button>
+
+    <button class="tab" data-tab="jobs" aria-label="Jobs">
+      <span class="ico">💼</span><span class="lbl">Jobs</span>
+    </button>
+
+    <button class="tab plus" data-tab="create" aria-label="Create">
+      <span class="ico">＋</span>
+    </button>
+
+    <button class="tab" data-tab="search" aria-label="Search">
+      <span class="ico">🔎</span><span class="lbl">Search</span>
+    </button>
+
+    <button class="tab" data-tab="messages" aria-label="Messages">
+      <span class="ico">💬</span><span class="lbl">Messages</span>
+    </button>
+
+    <button class="tab" data-tab="profile" aria-label="Profile">
+      <span class="ico">👤</span><span class="lbl">Profile</span>
+    </button>
+  </nav>
+
+  <script type="module" src="/dashboard.js?v=1"></script>
 </body>
 </html>
