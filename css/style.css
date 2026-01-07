@@ -27,17 +27,21 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(0,40,80,0.45), rgba(0,20,60,0.75));
+  background: radial-gradient(circle at center, rgba(0,40,80,0.35), rgba(0,20,60,0.70));
   z-index: 1;
 }
 
-/* Splash text */
+/* Splash text (POSITIONED LOWER) */
 .splash-content {
-  position: relative;
+  position: absolute;
   z-index: 2;
+  left: 50%;
+  top: 62%;              /* move up/down by changing this number */
+  transform: translate(-50%, -50%);
   text-align: center;
   color: white;
   animation: float 3s ease-in-out infinite;
+  width: 90%;
 }
 
 .splash-content h1 {
@@ -52,9 +56,9 @@ body {
 
 /* Floating animation */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translate(-50%, -50%) translateY(0px); }
+  50% { transform: translate(-50%, -50%) translateY(-10px); }
+  100% { transform: translate(-50%, -50%) translateY(0px); }
 }
 
 /* App */
