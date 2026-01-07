@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const roleShore = document.getElementById("roleShore");
 
   const nationality = document.getElementById("nationality");
-  const phoneCode = document.getElementById("phoneCode");
   const phoneNumber = document.getElementById("phoneNumber");
 
   const photo = document.getElementById("photo");
@@ -25,12 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateAccountTypeUI() {
     const type = accountType.value;
 
-    // Hide all
     hide(seafarerFields);
     hide(employerFields);
     hide(shoreFields);
 
-    // Show only relevant
     if (type === "seafarer") show(seafarerFields);
     if (type === "employer") show(employerFields);
     if (type === "shore") show(shoreFields);
@@ -49,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
   photo.addEventListener("change", () => {
     const file = photo.files && photo.files[0];
     if (!file) return;
-
     const url = URL.createObjectURL(file);
     avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo">`;
   });
@@ -62,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const type = accountType.value;
 
-    // Validate role/rank by type
+    // Validate by type
     if (type === "seafarer" && !rankSeafarer.value) {
       return showError("Please select your rank.");
     }
@@ -77,13 +73,19 @@ document.addEventListener("DOMContentLoaded", () => {
       return showError("Please select your nationality.");
     }
 
-    // Phone optional, but if filled ensure at least 6 digits
+    // Phone optional but if filled must be valid
     const pn = (phoneNumber.value || "").trim();
     if (pn && pn.replace(/\D/g, "").length < 6) {
       return showError("Please enter a valid phone number.");
     }
 
-    // Temporary success redirect (next step we will save in Supabase)
-    window.location.href = "/sea-service.html";
+    // ✅ Routing rule:
+    // Seafarer -> Sea Service step
+    // Employer/Shore -> Dashboard
+    if (type === "seafarer") {
+      window.location.href = "/sea-service.html";
+    } else {
+      window.location.href = "/dashboard.html";
+    }
   });
 });
