@@ -19,97 +19,94 @@ body {
   z-index: 10;
 }
 
-/* moving light rays */
+/* Strong moving light rays */
 .rays {
   position: absolute;
-  inset: -20%;
+  inset: -40%;
   background:
-    linear-gradient(110deg, rgba(255,255,255,0.18), transparent 60%),
-    linear-gradient(250deg, rgba(255,255,255,0.12), transparent 60%),
-    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.25), transparent 55%);
+    linear-gradient(110deg, rgba(255,255,255,0.35), transparent 60%),
+    linear-gradient(250deg, rgba(255,255,255,0.25), transparent 60%),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.45), transparent 60%);
   mix-blend-mode: screen;
-  opacity: 0.55;
-  animation: raysMove 9s ease-in-out infinite alternate;
+  animation: raysMove 7s ease-in-out infinite alternate;
 }
 
-/* moving shimmer / caustics */
+/* Moving underwater shimmer */
 .shimmer {
   position: absolute;
-  inset: -30%;
+  inset: -50%;
   background:
-    repeating-radial-gradient(circle at 20% 30%,
-      rgba(255,255,255,0.07) 0px,
-      rgba(255,255,255,0.02) 35px,
-      transparent 80px);
+    repeating-radial-gradient(circle at 30% 40%,
+      rgba(255,255,255,0.14) 0px,
+      rgba(255,255,255,0.06) 40px,
+      transparent 90px);
   mix-blend-mode: overlay;
-  opacity: 0.35;
-  filter: blur(0.2px);
-  animation: shimmerMove 12s linear infinite;
+  opacity: 0.6;
+  filter: blur(0.3px);
+  animation: shimmerMove 10s linear infinite;
 }
 
-/* logo float */
+/* LOGO – 2x bigger + floating */
 .logo {
   position: absolute;
   left: 50%;
   top: 44%;
   transform: translate(-50%, -50%);
-  width: min(44vw, 240px);
-  height: auto;
+  width: min(80vw, 420px);   /* 2x bigger */
   z-index: 5;
-  animation: logoFloat 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 12px 25px rgba(0,0,0,0.35));
+  animation: logoFloat 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 25px 40px rgba(0,0,0,0.5));
 }
 
-/* bottom text */
+/* Bottom text */
 .splash-text {
   position: absolute;
   left: 50%;
-  bottom: 12%;
+  bottom: 10%;
   transform: translateX(-50%);
   text-align: center;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255,255,255,0.95);
   z-index: 6;
   animation: textFloat 3s ease-in-out infinite;
-  width: 90%;
 }
 
 .splash-text h1 {
   font-size: 44px;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
 }
 
 .splash-text p {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 18px;
 }
 
-/* animations */
+/* Animations */
 @keyframes raysMove {
-  0%   { transform: translate(-3%, -2%) rotate(-2deg); }
-  100% { transform: translate(3%, 2%) rotate(2deg); }
+  0%   { transform: translate(-4%, -6%) rotate(-3deg); }
+  100% { transform: translate(4%, 6%) rotate(3deg); }
 }
 
 @keyframes shimmerMove {
-  from { background-position: 0 0; transform: translate(0,0) scale(1.05); }
-  to   { background-position: 500px 420px; transform: translate(-3%, 2%) scale(1.08); }
+  from { background-position: 0 0; }
+  to   { background-position: 800px 600px; }
 }
 
 @keyframes logoFloat {
   0%   { transform: translate(-50%, -50%) translateY(0px); }
-  50%  { transform: translate(-50%, -50%) translateY(-10px); }
+  50%  { transform: translate(-50%, -50%) translateY(-16px); }
   100% { transform: translate(-50%, -50%) translateY(0px); }
 }
 
 @keyframes textFloat {
   0%   { transform: translateX(-50%) translateY(0px); }
-  50%  { transform: translateX(-50%) translateY(-6px); }
+  50%  { transform: translateX(-50%) translateY(-8px); }
   100% { transform: translateX(-50%) translateY(0px); }
 }
 
 /* ---------- APP ---------- */
 
 #app {
-  display: none; /* shown after splash ends */
+  display: none;
   height: 100vh;
   background: linear-gradient(#bfe9f7, #ffffff);
   align-items: center;
@@ -124,16 +121,12 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.12);
 }
 
-.login-box h2 {
-  margin-bottom: 18px;
-}
-
 .login-box input {
   width: 100%;
   padding: 12px;
   margin-bottom: 12px;
-  border: 1px solid #ddd;
   border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
 .login-box button {
@@ -141,6 +134,6 @@ body {
   padding: 12px;
   background: #1f6f86;
   color: white;
-  border: none;
   border-radius: 8px;
+  border: none;
 }
