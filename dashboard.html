@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Dashboard</title>
+
+  <link rel="stylesheet" href="./dashboard.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logoWord">PEPSVAL</div>
+      <div class="tagline">connect, hire and grow</div>
+    </div>
+
+    <button id="logoutBtn" class="btn">Logout</button>
+  </header>
+
+  <main class="main">
+    <h1 class="title">Welcome</h1>
+    <p class="sub">You’re logged in. Dashboard is ready — we will build tabs (Profile / Feed / Jobs / Messages) next.</p>
+
+    <section class="card">
+      <div class="label">Logged in as</div>
+      <div id="userEmail" class="value">—</div>
+    </section>
+
+    <section class="card">
+      <div class="label">Profile status</div>
+      <div id="profileStatus" class="value">Checking…</div>
+    </section>
+  </main>
+
+  <script type="module" src="./dashboard.js"></script>
+</body>
+</html>
