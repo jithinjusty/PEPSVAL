@@ -1,127 +1,119 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+body{background:#000;}
+
+#splash{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  z-index:10;
 }
 
-body { background:#000; }
-
-/* Splash */
-#splash {
-  position: fixed;
-  inset: 0;
-  background: url("../assets/splash.webp") center/cover no-repeat;
-  overflow: hidden;
-  z-index: 10;
+/* Canvas fills the screen */
+#ocean{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
 }
 
-/* Stronger rays */
-.rays {
-  position: absolute;
-  inset: -50%;
+/* Soft moving rays (on top of canvas) */
+.rayLayer{
+  position:absolute;
+  inset:-40%;
   background:
-    linear-gradient(110deg, rgba(255,255,255,0.5), transparent 60%),
-    linear-gradient(250deg, rgba(255,255,255,0.35), transparent 60%),
-    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.6), transparent 65%);
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.40), transparent 60%),
+    linear-gradient(110deg, rgba(255,255,255,0.22), transparent 60%),
+    linear-gradient(250deg, rgba(255,255,255,0.16), transparent 60%);
   mix-blend-mode: screen;
-  animation: raysMove 6s ease-in-out infinite alternate;
+  opacity:0.65;
+  animation:rays 7s ease-in-out infinite alternate;
 }
 
-/* Stronger shimmer */
-.shimmer {
-  position: absolute;
-  inset: -60%;
+/* Vignette to add depth + realism */
+.vignette{
+  position:absolute;
+  inset:0;
   background:
-    repeating-radial-gradient(circle at 30% 40%,
-      rgba(255,255,255,0.18) 0px,
-      rgba(255,255,255,0.08) 50px,
-      transparent 110px);
-  mix-blend-mode: overlay;
-  opacity: 0.75;
-  filter: blur(0.4px);
-  animation: shimmerMove 8s linear infinite;
+    radial-gradient(circle at 50% 10%, rgba(255,255,255,0.08), transparent 55%),
+    radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,10,25,0.55) 85%);
+  pointer-events:none;
 }
 
-/* Logo */
-.logo {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%);
-  width: min(90vw, 520px);   /* much bigger on desktop */
-  z-index: 5;
-  animation: logoFloat 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 35px 60px rgba(0,0,0,0.6));
+/* Logo floats */
+.logo{
+  position:absolute;
+  left:50%;
+  top:42%;
+  transform:translate(-50%,-50%);
+  width:min(70vw, 420px);
+  z-index:5;
+  animation:logoFloat 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 30px 55px rgba(0,0,0,0.55));
 }
 
-/* Text */
-.splash-text {
-  position: absolute;
-  left: 50%;
-  bottom: 9%;
-  transform: translateX(-50%);
-  text-align: center;
-  color: rgba(255,255,255,0.95);
-  z-index: 6;
-  animation: textFloat 3s ease-in-out infinite;
+/* Bottom text */
+.splash-text{
+  position:absolute;
+  left:50%;
+  bottom:9%;
+  transform:translateX(-50%);
+  text-align:center;
+  color:rgba(255,255,255,0.95);
+  z-index:6;
+  animation:textFloat 3s ease-in-out infinite;
+  width:90%;
 }
 
-.splash-text h1 {
-  font-size: 48px;
-  letter-spacing: 4px;
+.splash-text h1{
+  font-size:48px;
+  letter-spacing:4px;
+}
+.splash-text p{
+  margin-top:12px;
+  font-size:18px;
+  opacity:0.95;
 }
 
-.splash-text p {
-  margin-top: 12px;
-  font-size: 18px;
+@keyframes rays{
+  0%{transform:translate(-4%,-4%) rotate(-2deg);}
+  100%{transform:translate(4%,4%) rotate(2deg);}
 }
 
-/* Animations */
-@keyframes raysMove {
-  0%   { transform: translate(-6%, -6%) rotate(-3deg); }
-  100% { transform: translate(6%, 6%) rotate(3deg); }
+@keyframes logoFloat{
+  0%{transform:translate(-50%,-50%) translateY(0);}
+  50%{transform:translate(-50%,-50%) translateY(-16px);}
+  100%{transform:translate(-50%,-50%) translateY(0);}
 }
 
-@keyframes shimmerMove {
-  from { background-position: 0 0; }
-  to   { background-position: 1000px 800px; }
-}
-
-@keyframes logoFloat {
-  0%   { transform: translate(-50%, -50%) translateY(0); }
-  50%  { transform: translate(-50%, -50%) translateY(-18px); }
-  100% { transform: translate(-50%, -50%) translateY(0); }
-}
-
-@keyframes textFloat {
-  0%   { transform: translateX(-50%) translateY(0); }
-  50%  { transform: translateX(-50%) translateY(-10px); }
-  100% { transform: translateX(-50%) translateY(0); }
+@keyframes textFloat{
+  0%{transform:translateX(-50%) translateY(0);}
+  50%{transform:translateX(-50%) translateY(-10px);}
+  100%{transform:translateX(-50%) translateY(0);}
 }
 
 /* App */
-#app {
+#app{
   display:none;
   height:100vh;
-  background: linear-gradient(#bfe9f7, #ffffff);
+  background:linear-gradient(#bfe9f7,#ffffff);
   align-items:center;
   justify-content:center;
 }
 
-.login-box {
-  background:#fff;
+.login-box{
+  background:white;
   padding:30px;
   width:320px;
   border-radius:14px;
   box-shadow:0 10px 30px rgba(0,0,0,0.12);
 }
+.login-box h2{margin-bottom:18px;}
 .login-box input{
   width:100%;
   padding:12px;
   margin-bottom:12px;
-  border-radius:8px;
   border:1px solid #ddd;
+  border-radius:8px;
 }
 .login-box button{
   width:100%;
