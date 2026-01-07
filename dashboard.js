@@ -1,187 +1,157 @@
-// dashboard/dashboard.js
-// Works on GitHub Pages (static). Uses Supabase if you provide URL + anon key.
+(() => {
+  // Basic UI elements
+  const avatarBtn = document.getElementById("avatarBtn");
+  const menu = document.getElementById("profileMenu");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const avatarImg = document.getElementById("avatarImg");
+  const avatarFallback = document.getElementById("avatarFallback");
+  const menuName = document.getElementById("menuName");
+  const menuEmail = document.getElementById("menuEmail");
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  // Nav actions (for now)
+  const navPlus = document.getElementById("navPlus");
+  const navJobs = document.getElementById("navJobs");
+  const navSearch = document.getElementById("navSearch");
+  const navMessages = document.getElementById("navMessages");
+  const navProfile = document.getElementById("navProfile");
 
-/**
- * HOW THIS FINDS YOUR SUPABASE KEYS:
- * - Preferred: window.SUPABASE_URL and window.SUPABASE_ANON_KEY (from /js/config.js if you have it)
- * - OR: localStorage keys: SUPABASE_URL, SUPABASE_ANON_KEY
- *
- * If you already use a config file elsewhere, keep it.
- * This dashboard will still work.
- */
-const SUPABASE_URL =
-  window.SUPABASE_URL ||
-  localStorage.getItem("SUPABASE_URL") ||
-  "";
+  const menuProfile = document.getElementById("menuProfile");
+  const menuSettings = document.getElementById("menuSettings");
+  const menuPassword = document.getElementById("menuPassword");
 
-const SUPABASE_ANON_KEY =
-  window.SUPABASE_ANON_KEY ||
-  localStorage.getItem("SUPABASE_ANON_KEY") ||
-  "";
+  // ---------- Menu toggle ----------
+  function openMenu() { menu.hidden = false; }
+  function closeMenu() { menu.hidden = true; }
 
-let supabase = null;
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+  avatarBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (menu.hidden) openMenu(); else closeMenu();
+  });
 
-const $ = (id) => document.getElementById(id);
+  document.addEventListener("click", () => closeMenu());
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+  });
 
-const avatarBtn = $("avatarBtn");
-const avatarImg = $("avatarImg");
-const avatarFallback = $("avatarFallback");
-const menu = $("menu");
-const menuName = $("menuName");
-const menuEmail = $("menuEmail");
-const logoutBtn = $("logoutBtn");
-
-const plusBtn = $("plusBtn");
-const modal = $("postModal");
-const overlay = $("modalOverlay");
-const closeModalBtn = $("closeModalBtn");
-const createPostBtnTop = $("createPostBtnTop");
-const publishBtn = $("publishBtn");
-const toast = $("toast");
-
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.hidden = false;
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => (toast.hidden = true), 2200);
-}
-
-function openModal() {
-  overlay.hidden = false;
-  modal.hidden = false;
-}
-function closeModal() {
-  overlay.hidden = true;
-  modal.hidden = true;
-}
-
-// --- MENU TOGGLE ---
-function openMenu() {
-  menu.classList.add("show");
-  menu.setAttribute("aria-hidden", "false");
-}
-function closeMenu() {
-  menu.classList.remove("show");
-  menu.setAttribute("aria-hidden", "true");
-}
-
-avatarBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  if (menu.classList.contains("show")) closeMenu();
-  else openMenu();
-});
-
-document.addEventListener("click", () => closeMenu());
-menu.addEventListener("click", (e) => e.stopPropagation());
-
-// --- MODAL ---
-plusBtn.addEventListener("click", openModal);
-createPostBtnTop.addEventListener("click", (e) => {
-  e.preventDefault();
-  openModal();
-});
-overlay.addEventListener("click", closeModal);
-closeModalBtn.addEventListener("click", closeModal);
-
-publishBtn.addEventListener("click", () => {
-  // UI-only for now
-  closeModal();
-  showToast("Post saved (UI only for now).");
-});
-
-// --- AUTH / PROFILE LOADING ---
-async function requireSessionOrRedirect() {
-  if (!supabase) {
-    showToast("Supabase keys missing (dashboard opened in demo mode).");
-    // Demo mode: still show UI
-    menuName.textContent = "Demo user";
-    menuEmail.textContent = "Add Supabase keys to enable login.";
-    setAvatarFromName("Demo user");
-    return;
+  // ---------- Helpers ----------
+  function setAvatar(url, fallbackLetter = "P") {
+    avatarFallback.textContent = (fallbackLetter || "P").toUpperCase();
+    if (url) {
+      avatarImg.src = url;
+      avatarImg.style.display = "block";
+      avatarFallback.style.display = "none";
+    } else {
+      avatarImg.style.display = "none";
+      avatarFallback.style.display = "grid";
+    }
   }
 
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error(error);
-    window.location.href = "/auth/login.html";
-    return;
+  // ---------- Links (safe placeholders now) ----------
+  // Change these later when you create the pages.
+  menuProfile.addEventListener("click", (e) => { e.preventDefault(); alert("Profile page coming soon."); closeMenu(); });
+  menuSettings.addEventListener("click", (e) => { e.preventDefault(); alert("Settings page coming soon."); closeMenu(); });
+  menuPassword.addEventListener("click", (e) => { e.preventDefault(); alert("Change password page coming soon."); closeMenu(); });
+
+  navPlus.addEventListener("click", () => alert("Create post (modal) coming next."));
+  navJobs.addEventListener("click", (e) => { e.preventDefault(); alert("Jobs page coming next."); });
+  navSearch.addEventListener("click", (e) => { e.preventDefault(); alert("Search page coming next."); });
+  navMessages.addEventListener("click", (e) => { e.preventDefault(); alert("Messages page coming next."); });
+  navProfile.addEventListener("click", (e) => { e.preventDefault(); alert("Profile page coming next."); });
+
+  // ---------- Supabase (optional, but will work if your keys exist) ----------
+  // We try multiple places so it works with your current setup:
+  const SUPABASE_URL =
+    window.SUPABASE_URL ||
+    window.__SUPABASE_URL ||
+    localStorage.getItem("SUPABASE_URL") ||
+    localStorage.getItem("supabaseUrl") ||
+    "";
+
+  const SUPABASE_ANON_KEY =
+    window.SUPABASE_ANON_KEY ||
+    window.__SUPABASE_ANON_KEY ||
+    localStorage.getItem("SUPABASE_ANON_KEY") ||
+    localStorage.getItem("supabaseAnonKey") ||
+    "";
+
+  let sb = null;
+
+  async function initSupabaseIfPossible() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+
+    // Load supabase-js v2 from CDN if not already available
+    if (!window.supabase) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
-  if (!session) {
-    window.location.href = "/auth/login.html";
-    return;
-  }
+  async function requireSessionAndLoadProfile() {
+    sb = await initSupabaseIfPossible();
 
-  const email = session.user?.email || "—";
-  menuEmail.textContent = email;
+    // If Supabase not configured here, we still show dashboard UI
+    if (!sb) {
+      setAvatar("", "P");
+      menuName.textContent = "Welcome";
+      menuEmail.textContent = "";
+      return;
+    }
 
-  // Try loading profile from public.profiles
-  // Common columns: full_name, avatar_url
-  let fullName = "";
-  let avatarUrl = "";
+    const { data: { session } } = await sb.auth.getSession();
 
-  try {
-    const { data, error: pErr } = await supabase
+    // Not logged in -> go to login
+    if (!session?.user) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    // Show name/email
+    const email = session.user.email || "";
+    menuEmail.textContent = email;
+
+    // Try fetch profile (if you have public.profiles)
+    // IMPORTANT: adjust column names here if your table uses different names.
+    const { data: profile, error } = await sb
       .from("profiles")
       .select("full_name, avatar_url")
       .eq("id", session.user.id)
       .maybeSingle();
 
-    if (pErr) {
-      console.warn("profiles read error:", pErr.message);
-    } else if (data) {
-      fullName = data.full_name || "";
-      avatarUrl = data.avatar_url || "";
-    }
-  } catch (e) {
-    console.warn("profiles fetch exception:", e);
+    const name =
+      profile?.full_name ||
+      (email ? email.split("@")[0] : "Welcome");
+
+    menuName.textContent = name;
+
+    // avatar_url should exist (you added this earlier)
+    const avatarUrl = profile?.avatar_url || "";
+    const fallback = (name?.trim()?.[0] || "P").toUpperCase();
+    setAvatar(avatarUrl, fallback);
   }
 
-  // Fallback name
-  const displayName =
-    fullName ||
-    (email.includes("@") ? email.split("@")[0] : "User");
-
-  menuName.textContent = displayName;
-  setAvatar(displayName, avatarUrl);
-
-  // Logout
   logoutBtn.addEventListener("click", async () => {
+    closeMenu();
+
     try {
-      await supabase.auth.signOut();
+      if (sb) await sb.auth.signOut();
     } catch (e) {
-      console.warn(e);
+      // ignore
     }
-    window.location.href = "/auth/login.html";
+
+    // clear common stored keys if any
+    localStorage.removeItem("sb-access-token");
+    localStorage.removeItem("sb-refresh-token");
+
+    window.location.href = "/login.html";
   });
-}
 
-function setAvatarFromName(name) {
-  const first = (name || "P").trim().charAt(0).toUpperCase();
-  avatarFallback.textContent = first;
-  avatarFallback.style.display = "grid";
-  avatarImg.style.display = "none";
-}
-
-function setAvatar(name, avatarUrl) {
-  if (avatarUrl && typeof avatarUrl === "string") {
-    avatarImg.src = avatarUrl;
-    avatarImg.onload = () => {
-      avatarImg.style.display = "block";
-      avatarFallback.style.display = "none";
-    };
-    avatarImg.onerror = () => {
-      setAvatarFromName(name);
-    };
-  } else {
-    setAvatarFromName(name);
-  }
-}
-
-// Start
-requireSessionOrRedirect();
+  // Run
+  requireSessionAndLoadProfile();
+})();
