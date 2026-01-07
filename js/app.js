@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("ocean");
+  if (!canvas) return;
+
   const ctx = canvas.getContext("2d", { alpha: false });
   const splash = document.getElementById("splash");
 
@@ -32,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawBackground() {
-    // Lighter underwater gradient (matches our final direction)
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0.0, "#d8f6ff");
     g.addColorStop(0.40, "#bfe9f4");
@@ -42,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawSurfaceWaves() {
-    // Soft ripples near the top to hint surface light
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = "#ffffff";
@@ -65,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawLightRays() {
-    // Procedural rays (subtle, plus your CSS rayLayer on top)
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     ctx.globalAlpha = 0.18;
@@ -104,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
           Math.cos((y * 0.013) - (t * 1.0)) +
           Math.sin(((x + y) * 0.01) + (t * 0.7));
 
-        const v = (n + 3) / 6; // 0..1
+        const v = (n + 3) / 6;
         const a = Math.max(0, v - 0.55) * 0.8;
 
         if (a > 0.02) {
@@ -147,7 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(frame);
   }
 
-  // Init
   resize();
   initParticles();
   window.addEventListener("resize", () => {
@@ -157,10 +155,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   frame();
 
-  // Keep splash for 3s, then fade and go to new login page
+  // Splash for 3 seconds then redirect
   setTimeout(() => {
-    splash.style.transition = "opacity 0.6s ease";
-    splash.style.opacity = "0";
+    if (splash) {
+      splash.style.transition = "opacity 0.6s ease";
+      splash.style.opacity = "0";
+    }
     setTimeout(() => {
       window.location.href = "/auth/login.html";
     }, 600);
