@@ -1,2 +1,0 @@
-# PEPSVAL
-Early joiners.
