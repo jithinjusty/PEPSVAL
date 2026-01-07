@@ -57,10 +57,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return (s || "").trim().toLowerCase();
   }
 
-  function setComboValue({ searchEl, valueEl, listEl, label }) {
-    searchEl.value = label;
-    valueEl.value = label;
-    if (listEl) listEl.style.display = "none";
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   // Enable/disable save based on required fields
@@ -72,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const hasPhoto = !!photoFile;
 
-    // ✅ allow manual entry fallback
+    // allow manual entry fallback
     const nationalityChosen =
       (countryValue?.value || "").trim().length > 0 || (countrySearch?.value || "").trim().length > 0;
 
@@ -172,16 +175,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("countries.json load failed", e);
   }
 
-  // ===== Combo builder =====
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+  // Build quick lookup maps
+  const byName = new Map();
+  for (const c of countries) byName.set(normalize(c.name), c);
 
+  // ===== Combo builder =====
   function setupCombo({ searchEl, valueEl, listEl, items, itemToLabel, onPick }) {
     const render = (query = "") => {
       const q = normalize(query);
@@ -190,7 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         : items.filter((it) => normalize(itemToLabel(it)).includes(q)).slice(0, 40);
 
       listEl.innerHTML = filtered
-        .map((it, idx) => {
+        .map((it) => {
           const label = itemToLabel(it);
           return `<button type="button" class="comboItem" data-label="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
         })
@@ -213,14 +211,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!btnItem) return;
 
       const label = btnItem.getAttribute("data-label") || "";
-      setComboValue({ searchEl, valueEl, listEl, label });
+      searchEl.value = label;
+      valueEl.value = label;
+      close();
+
       if (onPick) onPick(label);
       refreshSaveState();
     });
 
-    // ✅ Important: On blur, accept typed value if it matches something
+    // On blur accept typed
     searchEl.addEventListener("blur", () => {
       const typed = (searchEl.value || "").trim();
+
       if (!typed) {
         valueEl.value = "";
         close();
@@ -228,21 +230,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // If already selected, keep it
       if ((valueEl.value || "").trim()) {
         close();
         refreshSaveState();
         return;
       }
 
-      // Try to match
       const exact = items.find((it) => normalize(itemToLabel(it)) === normalize(typed));
       if (exact) {
         const label = itemToLabel(exact);
-        setComboValue({ searchEl, valueEl, listEl, label });
+        searchEl.value = label;
+        valueEl.value = label;
         if (onPick) onPick(label);
       } else {
-        // fallback: accept typed text as value (for your case India/+91)
         valueEl.value = typed;
       }
 
@@ -255,6 +255,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // ✅ When nationality is picked, auto-set dial code
+  const autoSetDialFromCountry = (countryName) => {
+    const c = byName.get(normalize(countryName));
+    if (!c?.dial_code) return;
+
+    // only set if empty OR user hasn’t intentionally chosen another
+    const currentDial = (dialValue.value || dialSearch.value || "").trim();
+    if (currentDial && currentDial !== c.dial_code) {
+      // user already selected something else; do not override
+      return;
+    }
+
+    dialSearch.value = c.dial_code;
+    dialValue.value = c.dial_code;
+    dialList.style.display = "none";
+  };
+
   // Nationality combo
   setupCombo({
     searchEl: countrySearch,
@@ -262,6 +279,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     listEl: countryList,
     items: countries,
     itemToLabel: (c) => c.name,
+    onPick: (label) => {
+      // label is the country name
+      autoSetDialFromCountry(label);
+    },
   });
 
   // Dial combo
@@ -272,11 +293,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     items: countries.filter((c) => c.dial_code),
     itemToLabel: (c) => `${c.dial_code} — ${c.name}`,
     onPick: (label) => {
-      // store ONLY +code
       const code = label.split("—")[0].trim();
       dialValue.value = code;
       dialSearch.value = code;
     },
+  });
+
+  // If user typed nationality manually and leaves field -> try set dial code
+  countrySearch.addEventListener("blur", () => {
+    const typed = (countryValue.value || countrySearch.value || "").trim();
+    if (typed) autoSetDialFromCountry(typed);
+    refreshSaveState();
   });
 
   // ===== Ranks =====
@@ -318,7 +345,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
   });
 
-  // When user types "Other" manually
   rankSearch.addEventListener("blur", () => {
     if (normalize(rankSearch.value) === "other") rankOtherWrap.classList.remove("hidden");
     refreshSaveState();
@@ -328,6 +354,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   fullName.addEventListener("input", refreshSaveState);
   phoneInput.addEventListener("input", refreshSaveState);
   rankOther.addEventListener("input", refreshSaveState);
+  dialSearch.addEventListener("input", refreshSaveState);
 
   // Init
   syncAccountType();
@@ -347,19 +374,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (at === "other" && !(accountTypeOther.value || "").trim())
         throw new Error("Please specify your account type.");
 
-      // final resolved values (prefer hidden else visible)
       const finalCountry = (countryValue.value || countrySearch.value || "").trim();
       if (!finalCountry) throw new Error("Nationality is required.");
 
       let finalDial = (dialValue.value || dialSearch.value || "").trim();
       if (!finalDial) throw new Error("Country code is required.");
-      // if user typed "+91 — India" keep only +91
       if (finalDial.includes("—")) finalDial = finalDial.split("—")[0].trim();
 
       const finalPhone = (phoneInput.value || "").trim();
       if (!finalPhone) throw new Error("Mobile number is required.");
 
-      // rank if required
       const needsRank = at === "seafarer" || at === "shore";
       let finalRank = null;
       if (needsRank) {
