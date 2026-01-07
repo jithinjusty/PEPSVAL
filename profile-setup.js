@@ -1,8 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const addBtn = document.getElementById("addSeaService");
-  const seaBody = document.getElementById("seaBody");
+  const accountType = document.getElementById("accountType");
+
+  const seafarerFields = document.querySelectorAll(".onlySeafarer");
+  const employerFields = document.querySelectorAll(".onlyEmployer");
+  const shoreFields = document.querySelectorAll(".onlyShore");
+
+  const rankSeafarer = document.getElementById("rankSeafarer");
+  const roleEmployer = document.getElementById("roleEmployer");
+  const roleShore = document.getElementById("roleShore");
+
+  const nationality = document.getElementById("nationality");
+  const phoneCode = document.getElementById("phoneCode");
+  const phoneNumber = document.getElementById("phoneNumber");
+
+  const photo = document.getElementById("photo");
+  const avatarPreview = document.getElementById("avatarPreview");
+
   const saveBtn = document.getElementById("saveBtn");
   const errorBox = document.getElementById("errorBox");
+
+  function show(nodes) { nodes.forEach(n => (n.style.display = "grid")); }
+  function hide(nodes) { nodes.forEach(n => (n.style.display = "none")); }
+
+  function updateAccountTypeUI() {
+    const type = accountType.value;
+
+    // Hide all
+    hide(seafarerFields);
+    hide(employerFields);
+    hide(shoreFields);
+
+    // Show only relevant
+    if (type === "seafarer") show(seafarerFields);
+    if (type === "employer") show(employerFields);
+    if (type === "shore") show(shoreFields);
+  }
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -13,81 +45,45 @@ document.addEventListener("DOMContentLoaded", () => {
     errorBox.style.display = "none";
   }
 
-  function emptyRow() {
-    return `
-      <tr>
-        <td colspan="7" class="empty">No sea service added yet.</td>
-      </tr>
-    `;
-  }
+  // Photo preview (local only)
+  photo.addEventListener("change", () => {
+    const file = photo.files && photo.files[0];
+    if (!file) return;
 
-  function hasOnlyEmpty() {
-    return seaBody.querySelectorAll("tr").length === 1 &&
-           seaBody.querySelector(".empty");
-  }
-
-  function makeRow() {
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td><input class="cellInput" data-k="vessel" type="text" placeholder="Vessel name" /></td>
-      <td><input class="cellInput" data-k="company" type="text" placeholder="Company" /></td>
-      <td><input class="cellInput" data-k="rank" type="text" placeholder="Rank" /></td>
-      <td><input class="cellInput" data-k="from" type="date" /></td>
-      <td><input class="cellInput" data-k="to" type="date" /></td>
-      <td>
-        <span class="status statusSelf">Self-declared</span>
-      </td>
-      <td style="white-space:nowrap;">
-        <button type="button" class="rowBtn deleteBtn">Delete</button>
-      </td>
-    `;
-
-    // Delete
-    tr.querySelector(".deleteBtn").addEventListener("click", () => {
-      tr.remove();
-      if (seaBody.querySelectorAll("tr").length === 0) {
-        seaBody.innerHTML = emptyRow();
-      }
-    });
-
-    return tr;
-  }
-
-  // Add row
-  addBtn.addEventListener("click", () => {
-    clearError();
-
-    // Remove empty row first
-    if (seaBody.querySelector(".empty")) {
-      seaBody.innerHTML = "";
-    }
-
-    seaBody.appendChild(makeRow());
+    const url = URL.createObjectURL(file);
+    avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo">`;
   });
 
-  // Save (temporary)
+  accountType.addEventListener("change", updateAccountTypeUI);
+  updateAccountTypeUI();
+
   saveBtn.addEventListener("click", () => {
     clearError();
 
-    // Basic validation example: if seafarer and at least one entry exists, ensure vessel/company filled
-    const rows = Array.from(seaBody.querySelectorAll("tr"));
-    const emptyState = seaBody.querySelector(".empty");
+    const type = accountType.value;
 
-    if (!emptyState && rows.length > 0) {
-      for (const r of rows) {
-        const vessel = r.querySelector('[data-k="vessel"]')?.value?.trim() || "";
-        const company = r.querySelector('[data-k="company"]')?.value?.trim() || "";
-        if (!vessel || !company) {
-          return showError("Please fill at least Vessel and Company for each sea service entry.");
-        }
-      }
+    // Validate role/rank by type
+    if (type === "seafarer" && !rankSeafarer.value) {
+      return showError("Please select your rank.");
+    }
+    if (type === "employer" && !roleEmployer.value) {
+      return showError("Please select your role.");
+    }
+    if (type === "shore" && !roleShore.value) {
+      return showError("Please select your role.");
     }
 
-    // Next step: save to Supabase
-    window.location.href = "/dashboard.html";
-  });
+    if (!nationality.value) {
+      return showError("Please select your nationality.");
+    }
 
-  // Start with empty row
-  seaBody.innerHTML = emptyRow();
+    // Phone optional, but if filled ensure at least 6 digits
+    const pn = (phoneNumber.value || "").trim();
+    if (pn && pn.replace(/\D/g, "").length < 6) {
+      return showError("Please enter a valid phone number.");
+    }
+
+    // Temporary success redirect (next step we will save in Supabase)
+    window.location.href = "/sea-service.html";
+  });
 });
