@@ -6,11 +6,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const splash = document.getElementById("splash");
 
   let w = 0, h = 0;
-  let time = 0;
+  let t = 0;
 
-  // Big visible bubbles (stronger than before)
-  const bubbles = [];
-  const bubbleCount = 55;
+  // Fine particles (visible but not distracting)
+  const particles = [];
+  const particleCount = 170;
 
   function resize() {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -24,156 +24,183 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function rand(min, max) {
-    return Math.random() * (max - min) + min;
-  }
+  function rand(min, max) { return Math.random() * (max - min) + min; }
 
-  function initBubbles() {
-    bubbles.length = 0;
-    for (let i = 0; i < bubbleCount; i++) {
-      bubbles.push({
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
         x: rand(0, w),
         y: rand(0, h),
-        r: rand(2.5, 9.5),          // bigger
-        v: rand(0.35, 1.25),        // faster
-        drift: rand(0.6, 2.0),
-        alpha: rand(0.10, 0.28)
+        r: rand(0.6, 2.0),
+        v: rand(0.10, 0.45),
+        a: rand(0.10, 0.35)
       });
     }
   }
 
-  function drawBackground() {
-    // Light underwater base gradient
+  function drawDeepBackground() {
+    // Deep clean water: bright top → deep blue-green bottom
     const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0.0, "#d8f6ff");
-    g.addColorStop(0.45, "#bfe9f4");
-    g.addColorStop(1.0, "#7fc7d8");
+    g.addColorStop(0.0, "#5fd6ff");
+    g.addColorStop(0.22, "#157cc6");
+    g.addColorStop(0.55, "#0a3b57");
+    g.addColorStop(1.0, "#031522");
     ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    // Gentle vignette depth (keeps center readable)
+    const vg = ctx.createRadialGradient(w * 0.5, h * 0.35, 60, w * 0.5, h * 0.55, Math.max(w, h) * 0.85);
+    vg.addColorStop(0, "rgba(255,255,255,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.22)");
+    ctx.fillStyle = vg;
     ctx.fillRect(0, 0, w, h);
   }
 
-  function drawMovingLightBands() {
-    // Very visible moving shimmer bands
+  function drawSurfaceWaves() {
+    // Moving wave band near top (clearly visible)
     ctx.save();
-    ctx.globalAlpha = 0.16;
     ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.18;
 
-    const bandH = 36;
-    for (let y = -bandH; y < h + bandH; y += bandH) {
-      const shift = Math.sin((y * 0.02) + time * 1.25) * 55;
-      const g = ctx.createLinearGradient(0, y, w, y);
-      g.addColorStop(0, "rgba(255,255,255,0)");
-      g.addColorStop(0.45 + (shift / w), "rgba(255,255,255,0.40)");
-      g.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, y, w, bandH * 0.55);
+    const bandTop = h * 0.08;
+    const bandHeight = h * 0.14;
+
+    // soft white foam glow
+    const g = ctx.createLinearGradient(0, bandTop, 0, bandTop + bandHeight);
+    g.addColorStop(0, "rgba(255,255,255,0.35)");
+    g.addColorStop(1, "rgba(255,255,255,0.00)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, bandTop, w, bandHeight);
+
+    // ripples
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 5; i++) {
+      const y0 = bandTop + i * (bandHeight / 6);
+      const amp = 10 + i * 4;
+      const freq = 0.010 + i * 0.002;
+
+      ctx.beginPath();
+      ctx.moveTo(0, y0);
+      for (let x = 0; x <= w; x += 10) {
+        const y = y0 + Math.sin(x * freq + t * 1.4 + i) * amp;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, bandTop);
+      ctx.lineTo(0, bandTop);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.fill();
     }
 
     ctx.restore();
   }
 
-  function drawCausticsGrid() {
-    // A more visible caustics pattern (still tasteful)
+  function drawGodRays() {
+    // Strong, slow moving rays from top center
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+
+    const cx = w * 0.5;
+    const cy = -h * 0.08;
+
+    for (let i = 0; i < 8; i++) {
+      const base = (i - 3.5) * 0.22;
+      const sway = Math.sin(t * 0.35 + i) * 0.10;
+      const angle = base + sway;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      const width = w * (0.12 + (i % 3) * 0.03);
+
+      const rg = ctx.createLinearGradient(0, 0, 0, h * 1.2);
+      rg.addColorStop(0.0, "rgba(255,255,255,0.45)");
+      rg.addColorStop(0.25, "rgba(255,255,255,0.14)");
+      rg.addColorStop(1.0, "rgba(255,255,255,0)");
+
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = rg;
+      ctx.fillRect(-width * 0.5, 0, width, h * 1.2);
+
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawCaustics() {
+    // Caustics moving mid-water (noticeable, not too much)
     ctx.save();
     ctx.globalCompositeOperation = "overlay";
-    ctx.globalAlpha = 0.14;
+    ctx.globalAlpha = 0.18;
 
-    const step = 42;
+    const step = 34;
     for (let y = 0; y < h; y += step) {
       for (let x = 0; x < w; x += step) {
         const n =
-          Math.sin((x * 0.012) + time * 1.1) +
-          Math.cos((y * 0.014) - time * 0.9) +
-          Math.sin(((x + y) * 0.01) + time * 0.7);
+          Math.sin((x * 0.014) + t * 1.15) +
+          Math.cos((y * 0.013) - t * 0.95) +
+          Math.sin(((x + y) * 0.011) + t * 0.65);
 
         const v = (n + 3) / 6; // 0..1
-        const a = Math.max(0, v - 0.52) * 0.9;
+        const a = Math.max(0, v - 0.54) * 0.85;
 
-        if (a > 0.03) {
+        if (a > 0.02) {
           ctx.fillStyle = `rgba(255,255,255,${a})`;
           ctx.fillRect(x, y, step, step);
         }
       }
     }
-
     ctx.restore();
   }
 
-  function drawBubbles() {
-    // Big bubbles rising (very noticeable)
+  function drawParticles() {
+    // Rising particulate (gives depth)
     ctx.save();
     ctx.globalCompositeOperation = "screen";
+    for (const p of particles) {
+      p.y -= p.v;
+      p.x += Math.sin(t * 0.8 + p.y * 0.01) * 0.25;
 
-    for (const b of bubbles) {
-      b.y -= b.v;
-      b.x += Math.sin(time * 0.9 + b.y * 0.01) * b.drift;
-
-      // recycle
-      if (b.y < -20) {
-        b.y = h + 20;
-        b.x = rand(0, w);
+      if (p.y < -12) {
+        p.y = h + 12;
+        p.x = rand(0, w);
       }
-      if (b.x < -40) b.x = w + 40;
-      if (b.x > w + 40) b.x = -40;
 
-      ctx.globalAlpha = b.alpha;
-
-      // bubble glow
-      const rg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 2.2);
-      rg.addColorStop(0, "rgba(255,255,255,0.55)");
-      rg.addColorStop(0.35, "rgba(255,255,255,0.18)");
-      rg.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = rg;
+      ctx.globalAlpha = p.a;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r * 2.2, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = "white";
       ctx.fill();
-
-      // bubble ring
-      ctx.globalAlpha = b.alpha + 0.06;
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx.stroke();
     }
-
-    ctx.restore();
-  }
-
-  function drawTinyIndicator() {
-    // Small moving dot, just to prove animation is moving
-    ctx.save();
-    const x = (time * 60) % w;
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.beginPath();
-    ctx.arc(x, 18, 4, 0, Math.PI * 2);
-    ctx.fill();
     ctx.restore();
   }
 
   function frame() {
-    time += 0.016;
+    t += 0.016;
 
-    drawBackground();
-    drawMovingLightBands();
-    drawCausticsGrid();
-    drawBubbles();
-    drawTinyIndicator();
+    drawDeepBackground();
+    drawSurfaceWaves();
+    drawGodRays();
+    drawCaustics();
+    drawParticles();
 
     requestAnimationFrame(frame);
   }
 
-  // init
+  // Init
   resize();
-  initBubbles();
+  initParticles();
   window.addEventListener("resize", () => {
     resize();
-    initBubbles();
+    initParticles();
   });
 
   frame();
 
-  // Splash for 3 seconds, then redirect
+  // Splash for 3 seconds, then redirect to login
   setTimeout(() => {
     if (splash) {
       splash.style.transition = "opacity 0.6s ease";
