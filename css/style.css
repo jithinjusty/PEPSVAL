@@ -16,11 +16,10 @@ body{background:#000;}
   height:100%;
 }
 
-/* --- NEW: Realistic GOD RAYS like your example --- */
+/* Realistic GOD RAYS layer (your example style) */
 .rayLayer{
   position:absolute;
   inset:-60%;
-  /* many rays from top-center */
   background:
     radial-gradient(circle at 50% 8%, rgba(255,255,255,0.55), transparent 52%),
     repeating-conic-gradient(
@@ -32,17 +31,17 @@ body{background:#000;}
     );
   filter: blur(1.2px);
   mix-blend-mode: screen;
-  opacity: 0.85;
+  opacity: 0.75;
   animation: raysDrift 5.5s ease-in-out infinite alternate;
 }
 
-/* Vignette to add depth + realism */
+/* Vignette to add depth */
 .vignette{
   position:absolute;
   inset:0;
   background:
-    radial-gradient(circle at 50% 10%, rgba(255,255,255,0.12), transparent 55%),
-    radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,10,25,0.55) 85%);
+    radial-gradient(circle at 50% 10%, rgba(255,255,255,0.10), transparent 55%),
+    radial-gradient(circle at 50% 55%, transparent 35%, rgba(0,10,25,0.45) 88%);
   pointer-events:none;
 }
 
@@ -96,37 +95,4 @@ body{background:#000;}
   0%{transform:translateX(-50%) translateY(0);}
   50%{transform:translateX(-50%) translateY(-10px);}
   100%{transform:translateX(-50%) translateY(0);}
-}
-
-/* App */
-#app{
-  display:none;
-  height:100vh;
-  background:linear-gradient(#bfe9f7,#ffffff);
-  align-items:center;
-  justify-content:center;
-}
-
-.login-box{
-  background:white;
-  padding:30px;
-  width:320px;
-  border-radius:14px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.12);
-}
-.login-box h2{margin-bottom:18px;}
-.login-box input{
-  width:100%;
-  padding:12px;
-  margin-bottom:12px;
-  border:1px solid #ddd;
-  border-radius:8px;
-}
-.login-box button{
-  width:100%;
-  padding:12px;
-  background:#1f6f86;
-  color:white;
-  border:none;
-  border-radius:8px;
 }
