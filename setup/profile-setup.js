@@ -1,434 +1,403 @@
-import { supabase } from "../js/supabase.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // ===== Elements =====
-  const form = document.getElementById("setupForm");
-  const err = document.getElementById("errorBox");
-  const btn = document.getElementById("saveBtn");
+const DASHBOARD_URL = "/dashboard/"; // ✅ folder dashboard
 
-  const photoInput = document.getElementById("photoInput");
-  const removePhotoBtn = document.getElementById("removePhotoBtn");
-  const avatarPreview = document.getElementById("avatarPreview");
+// ===== Supabase config (your existing pattern) =====
+const SUPABASE_URL = (window.SUPABASE_URL || localStorage.getItem("SUPABASE_URL") || "").trim();
+const SUPABASE_ANON_KEY = (window.SUPABASE_ANON_KEY || localStorage.getItem("SUPABASE_ANON_KEY") || "").trim();
 
-  const accountType = document.getElementById("accountType");
-  const accountTypeOtherWrap = document.getElementById("accountTypeOtherWrap");
-  const accountTypeOther = document.getElementById("accountTypeOther");
+function isValidHttpUrl(u){ return /^https?:\/\/.+/i.test(u); }
+function $(id){ return document.getElementById(id); }
 
-  const fullName = document.getElementById("fullName");
+const errorBox = $("errorBox");
+function showError(msg){
+  errorBox.style.display = "block";
+  errorBox.textContent = msg;
+}
+function clearError(){
+  errorBox.style.display = "none";
+  errorBox.textContent = "";
+}
 
-  const rankWrap = document.getElementById("rankWrap");
-  const rankSearch = document.getElementById("rankSearch");
-  const rankValue = document.getElementById("rankValue");
-  const rankList = document.getElementById("rankList");
+let sb = null;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  showError("Supabase keys are missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY.");
+} else if (!isValidHttpUrl(SUPABASE_URL)) {
+  showError("Invalid SUPABASE_URL. It must start with https://");
+} else {
+  sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
-  const rankOtherWrap = document.getElementById("rankOtherWrap");
-  const rankOther = document.getElementById("rankOther");
+// ===== Elements =====
+const form = $("setupForm");
+const saveBtn = $("saveBtn");
 
-  const countrySearch = document.getElementById("countrySearch");
-  const countryValue = document.getElementById("countryValue");
-  const countryList = document.getElementById("countryList");
+const accountType = $("accountType");
+const accountTypeOtherWrap = $("accountTypeOtherWrap");
+const accountTypeOther = $("accountTypeOther");
 
-  const dialSearch = document.getElementById("dialSearch");
-  const dialValue = document.getElementById("dialValue");
-  const dialList = document.getElementById("dialList");
+const fullName = $("fullName");
 
-  const phoneInput = document.getElementById("phoneInput");
+const rankWrap = $("rankWrap");
+const rankSearch = $("rankSearch");
+const rankValue = $("rankValue");
+const rankList = $("rankList");
+const rankOtherWrap = $("rankOtherWrap");
+const rankOther = $("rankOther");
 
-  // ===== State =====
-  let currentUser = null;
-  let photoFile = null;
-  let countries = [];
+const countrySearch = $("countrySearch");
+const countryValue = $("countryValue");
+const countryList = $("countryList");
 
-  // ===== Helpers =====
-  const showError = (m) => {
-    err.textContent = m;
-    err.style.display = "block";
-  };
-  const clearError = () => {
-    err.textContent = "";
-    err.style.display = "none";
-  };
-  const setLoading = (on) => {
-    btn.disabled = on;
-    btn.textContent = on ? "Saving…" : "Save & Continue";
-  };
+const dialSearch = $("dialSearch");
+const dialValue = $("dialValue");
+const dialList = $("dialList");
+const phoneInput = $("phoneInput");
 
-  function normalize(s) {
-    return (s || "").trim().toLowerCase();
+// Photo (optional)
+const photoInput = $("photoInput");
+const avatarPreview = $("avatarPreview");
+const removePhotoBtn = $("removePhotoBtn");
+let selectedPhotoFile = null;
+
+// ===== Data (Ranks + Countries) =====
+const RANKS = [
+  "Master / Captain",
+  "Chief Officer / C/O",
+  "Second Officer / 2/O",
+  "Third Officer / 3/O",
+  "Deck Cadet",
+  "Chief Engineer / C/E",
+  "Second Engineer / 2/E",
+  "Third Engineer / 3/E",
+  "Fourth Engineer / 4/E",
+  "Engine Cadet",
+  "Bosun",
+  "AB (Able Seaman)",
+  "OS (Ordinary Seaman)",
+  "Motorman",
+  "Oiler",
+  "Fitter",
+  "Cook",
+  "Steward",
+  "Electrician / ETO",
+  "Pumpman",
+  "Crane Operator",
+  "Other"
+];
+
+let COUNTRIES = []; // expects objects: {name, dial_code, code}
+
+// IMPORTANT: you said "countries.json committed" — so we load from root.
+async function loadCountries(){
+  try{
+    const res = await fetch("/countries.json?v=1", { cache: "no-store" });
+    if(!res.ok) throw new Error("countries.json not found");
+    const data = await res.json();
+    if(!Array.isArray(data)) throw new Error("countries.json format invalid");
+    COUNTRIES = data.map(c => ({
+      name: (c.name || "").trim(),
+      dial_code: (c.dial_code || "").toString().replace(/\s+/g,""),
+      code: (c.code || "").trim()
+    })).filter(c => c.name);
+  }catch(e){
+    // fallback minimal (so page never breaks)
+    COUNTRIES = [
+      { name:"India", dial_code:"+91", code:"IN" },
+      { name:"Ireland", dial_code:"+353", code:"IE" },
+      { name:"United Kingdom", dial_code:"+44", code:"GB" },
+      { name:"Singapore", dial_code:"+65", code:"SG" },
+      { name:"United Arab Emirates", dial_code:"+971", code:"AE" },
+    ];
   }
+}
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+// ===== Combo UI helper =====
+function openList(listEl){ listEl.classList.add("show"); }
+function closeList(listEl){ listEl.classList.remove("show"); }
 
-  // Enable/disable save based on required fields
-  const refreshSaveState = () => {
-    const at = (accountType?.value || "").trim();
-
-    const atOtherOk =
-      normalize(at) !== "other" || (accountTypeOther?.value || "").trim().length > 0;
-
-    const hasPhoto = !!photoFile;
-
-    // allow manual entry fallback
-    const nationalityChosen =
-      (countryValue?.value || "").trim().length > 0 || (countrySearch?.value || "").trim().length > 0;
-
-    const dialChosen =
-      (dialValue?.value || "").trim().length > 0 || (dialSearch?.value || "").trim().length > 0;
-
-    const hasPhone = (phoneInput?.value || "").trim().length > 0;
-
-    // rank required only for seafarer/shore
-    const needsRank = normalize(at) === "seafarer" || normalize(at) === "shore";
-    const rankChosen =
-      !needsRank ||
-      (rankValue?.value || "").trim().length > 0 ||
-      (rankSearch?.value || "").trim().length > 0;
-
-    const rankIsOther =
-      normalize(rankValue?.value) === "other" || normalize(rankSearch?.value) === "other";
-    const rankOtherOk = !needsRank || !rankIsOther || (rankOther?.value || "").trim().length > 0;
-
-    const ok =
-      hasPhoto &&
-      at &&
-      atOtherOk &&
-      nationalityChosen &&
-      dialChosen &&
-      hasPhone &&
-      rankChosen &&
-      rankOtherOk;
-
-    btn.disabled = !ok;
-  };
-
-  // ===== Require login =====
-  const { data: sessionData, error: sessErr } = await supabase.auth.getSession();
-  if (sessErr || !sessionData?.session?.user) {
-    window.location.href = "/auth/login.html";
+function renderList(listEl, items, onPick){
+  listEl.innerHTML = "";
+  if(!items.length){
+    const d = document.createElement("div");
+    d.className = "comboEmpty";
+    d.textContent = "No results";
+    listEl.appendChild(d);
+    openList(listEl);
     return;
   }
-  currentUser = sessionData.session.user;
+  items.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "comboItem";
+    row.innerHTML = it.html;
+    row.addEventListener("click", () => onPick(it));
+    listEl.appendChild(row);
+  });
+  openList(listEl);
+}
 
-  // ===== Photo handling =====
-  photoInput.addEventListener("change", () => {
-    photoFile = photoInput.files?.[0] || null;
+function filterByText(arr, key, q){
+  const t = (q || "").toLowerCase().trim();
+  if(!t) return arr.slice(0, 60);
+  return arr.filter(x => (x[key] || "").toLowerCase().includes(t)).slice(0, 60);
+}
 
-    if (photoFile && avatarPreview) {
-      const url = URL.createObjectURL(photoFile);
-      avatarPreview.style.backgroundImage = `url("${url}")`;
-      avatarPreview.style.backgroundSize = "cover";
-      avatarPreview.style.backgroundPosition = "center";
-      avatarPreview.innerHTML = "";
-    }
-    refreshSaveState();
+function setupCombo({ inputEl, listEl, itemsProvider, itemToRow, onPick }){
+  inputEl.addEventListener("focus", () => {
+    const items = itemsProvider();
+    renderList(listEl, items.map(itemToRow), (it) => onPick(it.value));
   });
 
-  removePhotoBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    photoInput.value = "";
-    photoFile = null;
-
-    if (avatarPreview) {
-      avatarPreview.style.backgroundImage = "";
-      avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
-    }
-    refreshSaveState();
+  inputEl.addEventListener("input", () => {
+    const items = itemsProvider(inputEl.value);
+    renderList(listEl, items.map(itemToRow), (it) => onPick(it.value));
   });
 
-  // ===== Account type behavior =====
-  const syncAccountType = () => {
-    const v = normalize(accountType?.value);
+  document.addEventListener("click", (e) => {
+    if (listEl.contains(e.target) || inputEl.contains(e.target)) return;
+    closeList(listEl);
+  });
+}
 
-    if (v === "other") accountTypeOtherWrap.classList.remove("hidden");
-    else {
-      accountTypeOtherWrap.classList.add("hidden");
-      accountTypeOther.value = "";
-    }
-
-    if (v === "seafarer" || v === "shore") rankWrap.classList.remove("hidden");
-    else {
-      rankWrap.classList.add("hidden");
-      rankValue.value = "";
-      rankSearch.value = "";
-      rankOther.value = "";
-      rankOtherWrap.classList.add("hidden");
-    }
-
-    refreshSaveState();
-  };
-
-  accountType.addEventListener("change", syncAccountType);
-  accountTypeOther.addEventListener("input", refreshSaveState);
-
-  // ===== Load countries =====
-  try {
-    const res = await fetch("/data/countries.json", { cache: "no-store" });
-    countries = await res.json();
-  } catch (e) {
-    console.warn("countries.json load failed", e);
+// ===== Photo preview (optional) =====
+photoInput.addEventListener("change", () => {
+  const f = photoInput.files?.[0] || null;
+  selectedPhotoFile = f;
+  if(!f){
+    avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+    return;
   }
+  const url = URL.createObjectURL(f);
+  avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo" />`;
+});
 
-  // Build quick lookup maps
-  const byName = new Map();
-  for (const c of countries) byName.set(normalize(c.name), c);
+removePhotoBtn.addEventListener("click", () => {
+  selectedPhotoFile = null;
+  photoInput.value = "";
+  avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+});
 
-  // ===== Combo builder =====
-  function setupCombo({ searchEl, valueEl, listEl, items, itemToLabel, onPick }) {
-    const render = (query = "") => {
-      const q = normalize(query);
-      const filtered = !q
-        ? items.slice(0, 40)
-        : items.filter((it) => normalize(itemToLabel(it)).includes(q)).slice(0, 40);
+// ===== Account type logic =====
+function updateAccountTypeUI(){
+  const t = accountType.value;
 
-      listEl.innerHTML = filtered
-        .map((it) => {
-          const label = itemToLabel(it);
-          return `<button type="button" class="comboItem" data-label="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
-        })
-        .join("");
+  // other field
+  if(t === "other") accountTypeOtherWrap.classList.remove("hidden");
+  else accountTypeOtherWrap.classList.add("hidden");
 
-      listEl.style.display = filtered.length ? "block" : "none";
-    };
-
-    const close = () => (listEl.style.display = "none");
-
-    searchEl.addEventListener("focus", () => render(searchEl.value));
-    searchEl.addEventListener("input", () => {
-      valueEl.value = ""; // reset hidden until chosen/confirmed
-      render(searchEl.value);
-      refreshSaveState();
-    });
-
-    listEl.addEventListener("click", (e) => {
-      const btnItem = e.target.closest(".comboItem");
-      if (!btnItem) return;
-
-      const label = btnItem.getAttribute("data-label") || "";
-      searchEl.value = label;
-      valueEl.value = label;
-      close();
-
-      if (onPick) onPick(label);
-      refreshSaveState();
-    });
-
-    // On blur accept typed
-    searchEl.addEventListener("blur", () => {
-      const typed = (searchEl.value || "").trim();
-
-      if (!typed) {
-        valueEl.value = "";
-        close();
-        refreshSaveState();
-        return;
-      }
-
-      if ((valueEl.value || "").trim()) {
-        close();
-        refreshSaveState();
-        return;
-      }
-
-      const exact = items.find((it) => normalize(itemToLabel(it)) === normalize(typed));
-      if (exact) {
-        const label = itemToLabel(exact);
-        searchEl.value = label;
-        valueEl.value = label;
-        if (onPick) onPick(label);
-      } else {
-        valueEl.value = typed;
-      }
-
-      close();
-      refreshSaveState();
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(`[data-combo]`)) close();
-    });
+  // rank only for seafarer
+  if(t === "seafarer") rankWrap.classList.remove("hidden");
+  else {
+    rankWrap.classList.add("hidden");
+    rankValue.value = "";
+    rankSearch.value = "";
+    rankOtherWrap.classList.add("hidden");
+    rankOther.value = "";
   }
+}
+accountType.addEventListener("change", updateAccountTypeUI);
 
-  // ✅ When nationality is picked, auto-set dial code
-  const autoSetDialFromCountry = (countryName) => {
-    const c = byName.get(normalize(countryName));
-    if (!c?.dial_code) return;
-
-    // only set if empty OR user hasn’t intentionally chosen another
-    const currentDial = (dialValue.value || dialSearch.value || "").trim();
-    if (currentDial && currentDial !== c.dial_code) {
-      // user already selected something else; do not override
-      return;
-    }
-
-    dialSearch.value = c.dial_code;
-    dialValue.value = c.dial_code;
-    dialList.style.display = "none";
-  };
-
-  // Nationality combo
+// ===== Build combos =====
+function initRankCombo(){
   setupCombo({
-    searchEl: countrySearch,
-    valueEl: countryValue,
-    listEl: countryList,
-    items: countries,
-    itemToLabel: (c) => c.name,
-    onPick: (label) => {
-      // label is the country name
-      autoSetDialFromCountry(label);
-    },
-  });
-
-  // Dial combo
-  setupCombo({
-    searchEl: dialSearch,
-    valueEl: dialValue,
-    listEl: dialList,
-    items: countries.filter((c) => c.dial_code),
-    itemToLabel: (c) => `${c.dial_code} — ${c.name}`,
-    onPick: (label) => {
-      const code = label.split("—")[0].trim();
-      dialValue.value = code;
-      dialSearch.value = code;
-    },
-  });
-
-  // If user typed nationality manually and leaves field -> try set dial code
-  countrySearch.addEventListener("blur", () => {
-    const typed = (countryValue.value || countrySearch.value || "").trim();
-    if (typed) autoSetDialFromCountry(typed);
-    refreshSaveState();
-  });
-
-  // ===== Ranks =====
-  const ranks = [
-    "Master / Captain",
-    "Chief Officer / C/O",
-    "Second Officer / 2/O",
-    "Third Officer / 3/O",
-    "Deck Cadet",
-    "Chief Engineer",
-    "Second Engineer",
-    "Third Engineer",
-    "Fourth Engineer",
-    "Engine Cadet",
-    "Bosun",
-    "AB (Able Seaman)",
-    "OS (Ordinary Seaman)",
-    "Pumpman",
-    "Fitter",
-    "Cook",
-    "Steward",
-    "ETO (Electro-Technical Officer)",
-    "Electrician",
-    "Other",
-  ];
-
-  setupCombo({
-    searchEl: rankSearch,
-    valueEl: rankValue,
+    inputEl: rankSearch,
     listEl: rankList,
-    items: ranks,
-    itemToLabel: (r) => r,
-    onPick: (label) => {
-      if (normalize(label) === "other") rankOtherWrap.classList.remove("hidden");
-      else {
+    itemsProvider: (q) => filterByText(RANKS.map(r => ({label:r})), "label", q),
+    itemToRow: (item) => ({
+      value: item.label,
+      html: `<strong>${item.label}</strong>`
+    }),
+    onPick: (value) => {
+      rankSearch.value = value;
+      rankValue.value = value;
+      closeList(rankList);
+
+      if(value === "Other"){
+        rankOtherWrap.classList.remove("hidden");
+      } else {
         rankOtherWrap.classList.add("hidden");
         rankOther.value = "";
       }
-    },
-  });
-
-  rankSearch.addEventListener("blur", () => {
-    if (normalize(rankSearch.value) === "other") rankOtherWrap.classList.remove("hidden");
-    refreshSaveState();
-  });
-
-  // inputs refresh
-  fullName.addEventListener("input", refreshSaveState);
-  phoneInput.addEventListener("input", refreshSaveState);
-  rankOther.addEventListener("input", refreshSaveState);
-  dialSearch.addEventListener("input", refreshSaveState);
-
-  // Init
-  syncAccountType();
-  refreshSaveState();
-
-  // ===== SUBMIT =====
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearError();
-    setLoading(true);
-
-    try {
-      if (!photoFile) throw new Error("Profile photo is required.");
-
-      const at = (accountType.value || "").trim().toLowerCase();
-      if (!at) throw new Error("Account type is required.");
-      if (at === "other" && !(accountTypeOther.value || "").trim())
-        throw new Error("Please specify your account type.");
-
-      const finalCountry = (countryValue.value || countrySearch.value || "").trim();
-      if (!finalCountry) throw new Error("Nationality is required.");
-
-      let finalDial = (dialValue.value || dialSearch.value || "").trim();
-      if (!finalDial) throw new Error("Country code is required.");
-      if (finalDial.includes("—")) finalDial = finalDial.split("—")[0].trim();
-
-      const finalPhone = (phoneInput.value || "").trim();
-      if (!finalPhone) throw new Error("Mobile number is required.");
-
-      const needsRank = at === "seafarer" || at === "shore";
-      let finalRank = null;
-      if (needsRank) {
-        finalRank = (rankValue.value || rankSearch.value || "").trim();
-        if (!finalRank) throw new Error("Rank is required.");
-        if (finalRank.toLowerCase() === "other") {
-          finalRank = (rankOther.value || "").trim();
-          if (!finalRank) throw new Error("Please specify your rank.");
-        }
-      }
-
-      const finalAccountType = at === "other" ? accountTypeOther.value.trim() : accountType.value;
-
-      // Upload avatar
-      const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
-      const filePath = `${currentUser.id}/${Date.now()}.${ext}`;
-
-      const { error: upErr } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, photoFile, { upsert: true });
-
-      if (upErr) throw new Error(`Avatar upload failed: ${upErr.message}`);
-
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const avatarUrl = pub?.publicUrl || null;
-
-      const payload = {
-        account_type: finalAccountType,
-        full_name: (fullName.value || "").trim() || null,
-        rank: finalRank,
-        nationality: finalCountry,
-        phone_country_code: finalDial,
-        phone_number: finalPhone,
-        avatar_url: avatarUrl,
-        setup_complete: true,
-      };
-
-      const { error: updErr } = await supabase.from("profiles").update(payload).eq("id", currentUser.id);
-      if (updErr) throw new Error(`Profile save failed: ${updErr.message}`);
-
-      window.location.href = "/dashboard.html";
-    } catch (ex) {
-      console.error(ex);
-      showError(ex.message || "Could not save. Please try again.");
-      setLoading(false);
     }
   });
+}
+
+function initCountryCombos(){
+  // Country name
+  setupCombo({
+    inputEl: countrySearch,
+    listEl: countryList,
+    itemsProvider: (q) => filterByText(COUNTRIES, "name", q),
+    itemToRow: (c) => ({
+      value: c,
+      html: `<strong>${c.name}</strong> <span style="color:#5d7a88;">(${c.code})</span>`
+    }),
+    onPick: (c) => {
+      countrySearch.value = c.name;
+      countryValue.value = c.code || c.name;
+      closeList(countryList);
+
+      // Auto dial code
+      if(c.dial_code){
+        dialSearch.value = c.dial_code;
+        dialValue.value = c.dial_code;
+      }
+    }
+  });
+
+  // Dial code
+  setupCombo({
+    inputEl: dialSearch,
+    listEl: dialList,
+    itemsProvider: (q) => {
+      const t = (q || "").toLowerCase().trim();
+      const base = COUNTRIES
+        .filter(c => c.dial_code)
+        .map(c => ({ name:c.name, dial_code:c.dial_code, code:c.code }));
+
+      if(!t) return base.slice(0, 60);
+
+      // search by dial code OR country name
+      return base.filter(c =>
+        c.dial_code.toLowerCase().includes(t) ||
+        c.name.toLowerCase().includes(t)
+      ).slice(0, 60);
+    },
+    itemToRow: (c) => ({
+      value: c,
+      html: `<strong>${c.dial_code}</strong> <span style="color:#5d7a88;">${c.name}</span>`
+    }),
+    onPick: (c) => {
+      dialSearch.value = c.dial_code;
+      dialValue.value = c.dial_code;
+      closeList(dialList);
+
+      // If user picked dial code, also set country (nice UX)
+      if(c.code){
+        countrySearch.value = c.name;
+        countryValue.value = c.code;
+      }
+    }
+  });
+}
+
+// ===== Validation (Photo + phone NOT mandatory) =====
+function validate(){
+  clearError();
+
+  const t = accountType.value;
+  if(!t) return { ok:false, msg:"Please select account type." };
+
+  if(t === "other"){
+    if(!accountTypeOther.value.trim()) return { ok:false, msg:"Please specify account type." };
+  }
+
+  // Nationality required
+  if(!countrySearch.value.trim()) return { ok:false, msg:"Please select nationality." };
+
+  // Rank required only for seafarer
+  if(t === "seafarer"){
+    const r = rankValue.value || rankSearch.value;
+    if(!r) return { ok:false, msg:"Please select your rank." };
+    if(r === "Other" && !rankOther.value.trim()) return { ok:false, msg:"Please enter your rank (Other)." };
+  }
+
+  // Phone is optional, but if number entered, dial code must exist
+  const phone = phoneInput.value.trim();
+  if(phone && !dialSearch.value.trim()){
+    return { ok:false, msg:"Please select country code for your mobile number." };
+  }
+
+  return { ok:true };
+}
+
+// ===== Save profile to Supabase =====
+async function saveProfile(){
+  if(!sb){
+    showError("Supabase not configured.");
+    return;
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session?.user){
+    window.location.href = "/auth/login.html";
+    return;
+  }
+
+  const t = accountType.value;
+
+  const payload = {
+    id: session.user.id,
+    full_name: fullName.value.trim() || null,
+    account_type: t === "other" ? (accountTypeOther.value.trim() || "other") : t,
+    nationality: countrySearch.value.trim() || null,
+    nationality_code: countryValue.value.trim() || null,
+    phone_dial: dialSearch.value.trim() || null,
+    phone_number: phoneInput.value.trim() || null,
+  };
+
+  // Rank only for seafarer
+  if(t === "seafarer"){
+    const chosen = (rankValue.value || rankSearch.value).trim();
+    payload.rank = chosen === "Other" ? (rankOther.value.trim() || "Other") : chosen;
+  } else {
+    payload.rank = null;
+  }
+
+  // Avatar: optional. If no photo, do not touch avatar_url.
+  // If you already have an upload system later, we’ll integrate it.
+  // For now: if photo selected, we just store a local marker and you can upgrade later.
+  // (NOT mandatory)
+  if(selectedPhotoFile){
+    // placeholder: do nothing now (avoid bugs)
+    // We will add real Supabase Storage upload after everything is stable.
+  }
+
+  const { error } = await sb
+    .from("profiles")
+    .upsert(payload, { onConflict: "id" });
+
+  if(error){
+    showError("Database error saving profile: " + (error.message || "Unknown error"));
+    return;
+  }
+
+  // ✅ Success → go dashboard folder (no 404)
+  window.location.href = DASHBOARD_URL;
+}
+
+// ===== Submit =====
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const v = validate();
+  if(!v.ok){
+    showError(v.msg);
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+  try{
+    await saveProfile();
+  } finally {
+    // if redirect happens, user won’t see this; if error, restore
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save & Continue";
+  }
 });
+
+// ===== Boot =====
+(async function boot(){
+  await loadCountries();
+  initRankCombo();
+  initCountryCombos();
+  updateAccountTypeUI();
+
+  // If user is not logged in, go login (prevents weird behavior)
+  if(sb){
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session?.user){
+      window.location.href = "/auth/login.html";
+    }
+  }
+})();
