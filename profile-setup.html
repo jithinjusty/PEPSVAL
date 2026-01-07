@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Profile Setup</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./profile-setup.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card" role="region" aria-label="Profile setup">
+
+      <header class="top">
+        <div class="brand">
+          <div class="logoWord">PEPSVAL</div>
+          <div class="tagline">connect, hire and grow</div>
+        </div>
+        <a class="back" href="/auth/login.html">← Back</a>
+      </header>
+
+      <h1 class="title">Set up your profile</h1>
+      <p class="subtitle">This helps employers and peers verify your professional history.</p>
+
+      <!-- Basic profile -->
+      <div class="section">
+        <h2 class="sectionTitle">Basic details</h2>
+
+        <div class="grid2">
+          <label class="field">
+            <span class="label">Account type</span>
+            <select id="accountType">
+              <option value="seafarer" selected>Seafarer</option>
+              <option value="employer">Employer</option>
+              <option value="shore">Shore professional</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="label">Rank / Role</span>
+            <input id="rank" type="text" placeholder="e.g., Second Officer" />
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label class="field">
+            <span class="label">Nationality</span>
+            <input id="nationality" type="text" placeholder="e.g., Indian" />
+          </label>
+
+          <label class="field">
+            <span class="label">Phone (optional)</span>
+            <input id="phone" type="tel" placeholder="+91…" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Sea service -->
+      <div class="section">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">Sea service</h2>
+          <button id="addSeaService" class="smallBtn" type="button">+ Add entry</button>
+        </div>
+
+        <div class="tableWrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Vessel</th>
+                <th>Company</th>
+                <th>Rank</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="seaBody">
+              <tr>
+                <td colspan="7" class="empty">No sea service added yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- IMPORTANT NOTE (only under sea service table) -->
+        <div class="note">
+          Sea service becomes locked once verified by an employer or peer.
+        </div>
+      </div>
+
+      <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+
+      <div class="actions">
+        <button id="saveBtn" class="primary" type="button">Save & Continue</button>
+      </div>
+
+      <div class="legal">
+        By using PEPSVAL you agree to our
+        <a href="/terms.html" target="_blank">Terms of Service</a> and
+        <a href="/privacy.html" target="_blank">Privacy Policy</a>.
+      </div>
+
+    </section>
+  </main>
+
+  <script src="./profile-setup.js"></script>
+</body>
+</html>
