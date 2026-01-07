@@ -1,7 +1,7 @@
 import { supabase } from "../js/supabase.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // ===== Elements (MATCH YOUR HTML IDs) =====
+  // ===== Elements =====
   const form = document.getElementById("setupForm");
   const err = document.getElementById("errorBox");
   const btn = document.getElementById("saveBtn");
@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===== State =====
   let currentUser = null;
   let photoFile = null;
+  let countries = [];
 
   // ===== Helpers =====
   const showError = (m) => {
@@ -52,25 +53,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.textContent = on ? "Saving…" : "Save & Continue";
   };
 
+  function normalize(s) {
+    return (s || "").trim().toLowerCase();
+  }
+
+  function setComboValue({ searchEl, valueEl, listEl, label }) {
+    searchEl.value = label;
+    valueEl.value = label;
+    if (listEl) listEl.style.display = "none";
+  }
+
   // Enable/disable save based on required fields
   const refreshSaveState = () => {
     const at = (accountType?.value || "").trim();
+
     const atOtherOk =
-      at.toLowerCase() !== "other" || (accountTypeOther?.value || "").trim().length > 0;
+      normalize(at) !== "other" || (accountTypeOther?.value || "").trim().length > 0;
 
     const hasPhoto = !!photoFile;
+
+    // ✅ allow manual entry fallback
+    const nationalityChosen =
+      (countryValue?.value || "").trim().length > 0 || (countrySearch?.value || "").trim().length > 0;
+
+    const dialChosen =
+      (dialValue?.value || "").trim().length > 0 || (dialSearch?.value || "").trim().length > 0;
+
     const hasPhone = (phoneInput?.value || "").trim().length > 0;
-    const hasDial = (dialValue?.value || "").trim().length > 0;
 
-    // rank required only for Seafarer + Shore (you can adjust if needed)
-    const needsRank = at === "seafarer" || at === "shore";
-    const rankOk = !needsRank || (rankValue?.value || "").trim().length > 0;
-    const rankOtherOk =
-      (rankValue?.value || "").toLowerCase() !== "other" || (rankOther?.value || "").trim().length > 0;
+    // rank required only for seafarer/shore
+    const needsRank = normalize(at) === "seafarer" || normalize(at) === "shore";
+    const rankChosen =
+      !needsRank ||
+      (rankValue?.value || "").trim().length > 0 ||
+      (rankSearch?.value || "").trim().length > 0;
 
-    const hasCountry = (countryValue?.value || "").trim().length > 0;
+    const rankIsOther =
+      normalize(rankValue?.value) === "other" || normalize(rankSearch?.value) === "other";
+    const rankOtherOk = !needsRank || !rankIsOther || (rankOther?.value || "").trim().length > 0;
 
-    const ok = hasPhoto && hasPhone && hasDial && at && atOtherOk && rankOk && rankOtherOk && hasCountry;
+    const ok =
+      hasPhoto &&
+      at &&
+      atOtherOk &&
+      nationalityChosen &&
+      dialChosen &&
+      hasPhone &&
+      rankChosen &&
+      rankOtherOk;
+
     btn.disabled = !ok;
   };
 
@@ -82,37 +113,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   currentUser = sessionData.session.user;
 
-  // ===== Account type behavior =====
-  const syncAccountType = () => {
-    const v = (accountType?.value || "").trim().toLowerCase();
-
-    // show/hide "Other"
-    if (v === "other") accountTypeOtherWrap.classList.remove("hidden");
-    else {
-      accountTypeOtherWrap.classList.add("hidden");
-      accountTypeOther.value = "";
-    }
-
-    // show rank only for seafarer/shore
-    if (v === "seafarer" || v === "shore") rankWrap.classList.remove("hidden");
-    else {
-      rankWrap.classList.add("hidden");
-      rankValue.value = "";
-      rankSearch.value = "";
-      rankOther.value = "";
-      rankOtherWrap.classList.add("hidden");
-    }
-
-    refreshSaveState();
-  };
-  accountType.addEventListener("change", syncAccountType);
-  accountTypeOther.addEventListener("input", refreshSaveState);
-
   // ===== Photo handling =====
   photoInput.addEventListener("change", () => {
     photoFile = photoInput.files?.[0] || null;
 
-    // preview
     if (photoFile && avatarPreview) {
       const url = URL.createObjectURL(photoFile);
       avatarPreview.style.backgroundImage = `url("${url}")`;
@@ -120,7 +124,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       avatarPreview.style.backgroundPosition = "center";
       avatarPreview.innerHTML = "";
     }
-
     refreshSaveState();
   });
 
@@ -136,8 +139,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     refreshSaveState();
   });
 
-  // ===== Load Countries JSON + Build searchable combos =====
-  let countries = [];
+  // ===== Account type behavior =====
+  const syncAccountType = () => {
+    const v = normalize(accountType?.value);
+
+    if (v === "other") accountTypeOtherWrap.classList.remove("hidden");
+    else {
+      accountTypeOtherWrap.classList.add("hidden");
+      accountTypeOther.value = "";
+    }
+
+    if (v === "seafarer" || v === "shore") rankWrap.classList.remove("hidden");
+    else {
+      rankWrap.classList.add("hidden");
+      rankValue.value = "";
+      rankSearch.value = "";
+      rankOther.value = "";
+      rankOtherWrap.classList.add("hidden");
+    }
+
+    refreshSaveState();
+  };
+
+  accountType.addEventListener("change", syncAccountType);
+  accountTypeOther.addEventListener("input", refreshSaveState);
+
+  // ===== Load countries =====
   try {
     const res = await fetch("/data/countries.json", { cache: "no-store" });
     countries = await res.json();
@@ -145,18 +172,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("countries.json load failed", e);
   }
 
-  // --- Combo builder (simple, fast, no libraries) ---
-  function setupCombo({ searchEl, valueEl, listEl, items, itemToLabel }) {
+  // ===== Combo builder =====
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function setupCombo({ searchEl, valueEl, listEl, items, itemToLabel, onPick }) {
     const render = (query = "") => {
-      const q = query.trim().toLowerCase();
+      const q = normalize(query);
       const filtered = !q
         ? items.slice(0, 40)
-        : items.filter((it) => itemToLabel(it).toLowerCase().includes(q)).slice(0, 40);
+        : items.filter((it) => normalize(itemToLabel(it)).includes(q)).slice(0, 40);
 
       listEl.innerHTML = filtered
         .map((it, idx) => {
           const label = itemToLabel(it);
-          return `<button type="button" class="comboItem" data-idx="${idx}" data-label="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
+          return `<button type="button" class="comboItem" data-label="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
         })
         .join("");
 
@@ -166,15 +202,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     const close = () => (listEl.style.display = "none");
 
     searchEl.addEventListener("focus", () => render(searchEl.value));
-    searchEl.addEventListener("input", () => render(searchEl.value));
+    searchEl.addEventListener("input", () => {
+      valueEl.value = ""; // reset hidden until chosen/confirmed
+      render(searchEl.value);
+      refreshSaveState();
+    });
 
     listEl.addEventListener("click", (e) => {
-      const btn = e.target.closest(".comboItem");
-      if (!btn) return;
+      const btnItem = e.target.closest(".comboItem");
+      if (!btnItem) return;
 
-      const label = btn.getAttribute("data-label");
-      searchEl.value = label;
-      valueEl.value = label;
+      const label = btnItem.getAttribute("data-label") || "";
+      setComboValue({ searchEl, valueEl, listEl, label });
+      if (onPick) onPick(label);
+      refreshSaveState();
+    });
+
+    // ✅ Important: On blur, accept typed value if it matches something
+    searchEl.addEventListener("blur", () => {
+      const typed = (searchEl.value || "").trim();
+      if (!typed) {
+        valueEl.value = "";
+        close();
+        refreshSaveState();
+        return;
+      }
+
+      // If already selected, keep it
+      if ((valueEl.value || "").trim()) {
+        close();
+        refreshSaveState();
+        return;
+      }
+
+      // Try to match
+      const exact = items.find((it) => normalize(itemToLabel(it)) === normalize(typed));
+      if (exact) {
+        const label = itemToLabel(exact);
+        setComboValue({ searchEl, valueEl, listEl, label });
+        if (onPick) onPick(label);
+      } else {
+        // fallback: accept typed text as value (for your case India/+91)
+        valueEl.value = typed;
+      }
+
       close();
       refreshSaveState();
     });
@@ -182,8 +253,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener("click", (e) => {
       if (!e.target.closest(`[data-combo]`)) close();
     });
-
-    return { render, close };
   }
 
   // Nationality combo
@@ -195,27 +264,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     itemToLabel: (c) => c.name,
   });
 
-  // Dial code combo (+91 India)
+  // Dial combo
   setupCombo({
     searchEl: dialSearch,
     valueEl: dialValue,
     listEl: dialList,
     items: countries.filter((c) => c.dial_code),
     itemToLabel: (c) => `${c.dial_code} — ${c.name}`,
+    onPick: (label) => {
+      // store ONLY +code
+      const code = label.split("—")[0].trim();
+      dialValue.value = code;
+      dialSearch.value = code;
+    },
   });
 
-  // When dial selected, store ONLY dial code in hidden value
-  dialList.addEventListener("click", (e) => {
-    const btnItem = e.target.closest(".comboItem");
-    if (!btnItem) return;
-    const label = btnItem.getAttribute("data-label") || "";
-    const code = label.split("—")[0].trim(); // "+91"
-    dialValue.value = code;
-    dialSearch.value = code;
-    refreshSaveState();
-  });
-
-  // ===== Ranks list (FULL list later; for now includes key ranks + Other) =====
+  // ===== Ranks =====
   const ranks = [
     "Master / Captain",
     "Chief Officer / C/O",
@@ -245,33 +309,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     listEl: rankList,
     items: ranks,
     itemToLabel: (r) => r,
+    onPick: (label) => {
+      if (normalize(label) === "other") rankOtherWrap.classList.remove("hidden");
+      else {
+        rankOtherWrap.classList.add("hidden");
+        rankOther.value = "";
+      }
+    },
   });
 
-  // Show "Other rank" box when selected Other
-  rankList.addEventListener("click", () => {
-    const v = (rankValue.value || "").trim().toLowerCase();
-    if (v === "other") rankOtherWrap.classList.remove("hidden");
-    else {
-      rankOtherWrap.classList.add("hidden");
-      rankOther.value = "";
-    }
+  // When user types "Other" manually
+  rankSearch.addEventListener("blur", () => {
+    if (normalize(rankSearch.value) === "other") rankOtherWrap.classList.remove("hidden");
     refreshSaveState();
   });
 
-  rankOther.addEventListener("input", refreshSaveState);
+  // inputs refresh
   fullName.addEventListener("input", refreshSaveState);
   phoneInput.addEventListener("input", refreshSaveState);
-  countrySearch.addEventListener("input", () => {
-    // only lock in when user clicks an item; but allow manual
-    if (countrySearch.value.trim().length === 0) countryValue.value = "";
-    refreshSaveState();
-  });
-  dialSearch.addEventListener("input", () => {
-    if (dialSearch.value.trim().length === 0) dialValue.value = "";
-    refreshSaveState();
-  });
+  rankOther.addEventListener("input", refreshSaveState);
 
-  // initial state
+  // Init
   syncAccountType();
   refreshSaveState();
 
@@ -282,28 +340,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLoading(true);
 
     try {
-      // Final validation
       if (!photoFile) throw new Error("Profile photo is required.");
-      if (!dialValue.value) throw new Error("Country code is required.");
-      if (!phoneInput.value.trim()) throw new Error("Mobile number is required.");
-      if (!countryValue.value) throw new Error("Nationality is required.");
-      if (!accountType.value) throw new Error("Account type is required.");
 
-      const at = accountType.value.toLowerCase();
-      const finalAccountType =
-        at === "other" ? (accountTypeOther.value || "").trim() : accountType.value;
+      const at = (accountType.value || "").trim().toLowerCase();
+      if (!at) throw new Error("Account type is required.");
+      if (at === "other" && !(accountTypeOther.value || "").trim())
+        throw new Error("Please specify your account type.");
 
+      // final resolved values (prefer hidden else visible)
+      const finalCountry = (countryValue.value || countrySearch.value || "").trim();
+      if (!finalCountry) throw new Error("Nationality is required.");
+
+      let finalDial = (dialValue.value || dialSearch.value || "").trim();
+      if (!finalDial) throw new Error("Country code is required.");
+      // if user typed "+91 — India" keep only +91
+      if (finalDial.includes("—")) finalDial = finalDial.split("—")[0].trim();
+
+      const finalPhone = (phoneInput.value || "").trim();
+      if (!finalPhone) throw new Error("Mobile number is required.");
+
+      // rank if required
       const needsRank = at === "seafarer" || at === "shore";
       let finalRank = null;
-
       if (needsRank) {
-        if (!rankValue.value) throw new Error("Rank is required.");
-        finalRank =
-          rankValue.value.toLowerCase() === "other" ? (rankOther.value || "").trim() : rankValue.value;
-        if (!finalRank) throw new Error("Please specify your rank.");
+        finalRank = (rankValue.value || rankSearch.value || "").trim();
+        if (!finalRank) throw new Error("Rank is required.");
+        if (finalRank.toLowerCase() === "other") {
+          finalRank = (rankOther.value || "").trim();
+          if (!finalRank) throw new Error("Please specify your rank.");
+        }
       }
 
-      // 1) Upload avatar
+      const finalAccountType = at === "other" ? accountTypeOther.value.trim() : accountType.value;
+
+      // Upload avatar
       const ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
       const filePath = `${currentUser.id}/${Date.now()}.${ext}`;
 
@@ -316,26 +386,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(filePath);
       const avatarUrl = pub?.publicUrl || null;
 
-      // 2) Update profile
       const payload = {
         account_type: finalAccountType,
         full_name: (fullName.value || "").trim() || null,
         rank: finalRank,
-        nationality: countryValue.value,
-        phone_country_code: dialValue.value,
-        phone_number: phoneInput.value.trim(),
+        nationality: finalCountry,
+        phone_country_code: finalDial,
+        phone_number: finalPhone,
         avatar_url: avatarUrl,
         setup_complete: true,
       };
 
-      const { error: updErr } = await supabase
-        .from("profiles")
-        .update(payload)
-        .eq("id", currentUser.id);
-
+      const { error: updErr } = await supabase.from("profiles").update(payload).eq("id", currentUser.id);
       if (updErr) throw new Error(`Profile save failed: ${updErr.message}`);
 
-      // 3) Go dashboard
       window.location.href = "/dashboard.html";
     } catch (ex) {
       console.error(ex);
@@ -343,13 +407,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       setLoading(false);
     }
   });
-
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
 });
