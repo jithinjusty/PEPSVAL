@@ -5,6 +5,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const email = document.getElementById("email");
   const errorBox = document.getElementById("errorBox");
   const successBox = document.getElementById("successBox");
+  const debugBox = document.getElementById("debugBox");
+
+  // Prove JS is running
+  if (debugBox) {
+    debugBox.style.display = "block";
+    debugBox.textContent = "forgot.js loaded ✅";
+    // keep it for 1.5s then hide
+    setTimeout(() => { debugBox.style.display = "none"; }, 1500);
+  }
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -22,14 +31,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const em = (email.value || "").trim();
     if (!em) return showError("Please enter your email.");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(em, {
-      redirectTo: window.location.origin + "/reset.html"
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(em, {
+        redirectTo: window.location.origin + "/reset.html"
+      });
 
-    if (error) return showError(error.message);
-    showSuccess("If an account exists for this email, a reset link will be sent.");
+      if (error) return showError(error.message);
+
+      showSuccess("If an account exists for this email, a reset link will be sent.");
+    } catch (err) {
+      showError(err?.message || "Something went wrong. Please try again.");
+    }
   });
 });
