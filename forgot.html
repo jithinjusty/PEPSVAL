@@ -22,6 +22,9 @@
       <h1 class="title">Reset your password</h1>
       <p class="subtitle">Enter your email and we’ll send a reset link.</p>
 
+      <!-- DEBUG BOX (shows JS errors on the page) -->
+      <div id="debugBox" class="error" style="display:none;"></div>
+
       <form id="forgotForm" class="form" novalidate>
         <label class="field">
           <span class="label">Email</span>
@@ -45,7 +48,23 @@
     </section>
   </main>
 
-  <!-- IMPORTANT: module so we can import Supabase -->
+  <!-- Catch JS errors and show them on screen -->
+  <script>
+    window.addEventListener("error", (e) => {
+      const box = document.getElementById("debugBox");
+      if (!box) return;
+      box.style.display = "block";
+      box.textContent = "JS Error: " + (e.message || "Unknown error");
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const box = document.getElementById("debugBox");
+      if (!box) return;
+      box.style.display = "block";
+      box.textContent = "Promise Error: " + (e.reason?.message || String(e.reason));
+    });
+  </script>
+
+  <!-- IMPORTANT: module -->
   <script type="module" src="./forgot.js"></script>
 </body>
 </html>
