@@ -4,7 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
-  <link rel="stylesheet" href="./profile-setup.css?v=2" />
+
+  <!-- IMPORTANT: absolute path -->
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=10" />
 </head>
 
 <body>
@@ -19,7 +21,6 @@
         <h1 class="title">Complete your basics</h1>
       </header>
 
-      <!-- Profile photo (required) -->
       <section class="photoSection">
         <div class="lblRow">
           <div class="lbl">Profile photo <span class="req">*</span></div>
@@ -59,7 +60,6 @@
           <input id="fullName" type="text" placeholder="Your full name" />
         </div>
 
-        <!-- Rank (Seafarer only) -->
         <div class="field hidden" id="rankWrap">
           <label class="lbl">Rank <span class="req">*</span></label>
 
@@ -77,7 +77,6 @@
           <div class="help">Type to search or scroll and choose.</div>
         </div>
 
-        <!-- Nationality -->
         <div class="field">
           <label class="lbl">Nationality <span class="req">*</span></label>
 
@@ -88,7 +87,6 @@
           </div>
         </div>
 
-        <!-- Phone -->
         <div class="field">
           <label class="lbl">Mobile number <span class="req">*</span></label>
 
@@ -113,6 +111,7 @@
     </section>
   </main>
 
-  <script type="module" src="./profile-setup.js?v=2"></script>
+  <!-- IMPORTANT: absolute path -->
+  <script type="module" src="/setup/profile-setup.js?v=10"></script>
 </body>
 </html>
