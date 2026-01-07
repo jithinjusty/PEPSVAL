@@ -11,10 +11,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function resize() {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    w = canvas.clientWidth || window.innerWidth;
-    h = canvas.clientHeight || window.innerHeight;
+    // Use window size to avoid 0-size issues on mobile
+    w = window.innerWidth;
+    h = window.innerHeight;
+
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
@@ -136,13 +140,26 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.restore();
   }
 
+  // DEBUG: show “RUNNING” for 1 second so we KNOW this JS is loading
+  let debugUntil = Date.now() + 1000;
+
   function frame() {
     t += 0.016;
+
     drawBackground();
     drawSurfaceWaves();
     drawLightRays();
     drawCaustics();
     drawParticles();
+
+    if (Date.now() < debugUntil) {
+      ctx.save();
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillText("RUNNING", 14, 26);
+      ctx.restore();
+    }
+
     requestAnimationFrame(frame);
   }
 
