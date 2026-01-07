@@ -1,56 +1,123 @@
-const avatar = document.querySelector(".avatarWrap");
-const menu = document.getElementById("profileMenu");
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const toast = document.getElementById("toast");
+function showToast(msg){
+  if(!toast) return alert(msg);
+  toast.textContent = msg;
+  toast.hidden = false;
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>{ toast.hidden = true; }, 2200);
+}
+
+const avatarBtn = document.getElementById("avatarBtn");
 const avatarImg = document.getElementById("avatarImg");
 const avatarFallback = document.getElementById("avatarFallback");
+const menu = document.getElementById("profileMenu");
 const menuName = document.getElementById("menuName");
 const menuEmail = document.getElementById("menuEmail");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// Toggle menu
-avatar.addEventListener("click", e => {
+// Bottom nav placeholders
+document.getElementById("navPlus")?.addEventListener("click", ()=>showToast("Create post coming next."));
+document.getElementById("navJobs")?.addEventListener("click", ()=>showToast("Jobs coming next."));
+document.getElementById("navSearch")?.addEventListener("click", ()=>showToast("Search coming next."));
+document.getElementById("navMessages")?.addEventListener("click", ()=>showToast("Messages coming next."));
+
+// Menu open/close
+function openMenu(){
+  menu?.classList.add("open");
+  avatarBtn?.setAttribute("aria-expanded","true");
+  menu?.setAttribute("aria-hidden","false");
+}
+function closeMenu(){
+  menu?.classList.remove("open");
+  avatarBtn?.setAttribute("aria-expanded","false");
+  menu?.setAttribute("aria-hidden","true");
+}
+avatarBtn?.addEventListener("click",(e)=>{
   e.stopPropagation();
-  menu.classList.toggle("show");
+  if(menu?.classList.contains("open")) closeMenu();
+  else openMenu();
 });
+document.addEventListener("click", ()=>closeMenu());
+menu?.addEventListener("click",(e)=>e.stopPropagation());
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeMenu(); });
 
-document.addEventListener("click", ()=>menu.classList.remove("show"));
+function setAvatarFromName(nameOrEmail){
+  const letter = (nameOrEmail || "P").trim().charAt(0).toUpperCase() || "P";
+  avatarFallback.textContent = letter;
+  avatarFallback.style.display = "flex";
+  avatarImg.style.display = "none";
+}
+function setAvatar(url, fallbackName){
+  if(url){
+    avatarImg.src = url;
+    avatarImg.onload = ()=>{
+      avatarImg.style.display = "block";
+      avatarFallback.style.display = "none";
+    };
+    avatarImg.onerror = ()=>setAvatarFromName(fallbackName);
+  }else{
+    setAvatarFromName(fallbackName);
+  }
+}
 
-// Supabase auto load
-const url = localStorage.getItem("SUPABASE_URL");
-const key = localStorage.getItem("SUPABASE_ANON_KEY");
+// Supabase keys (from your existing setup)
+const SUPABASE_URL = (window.SUPABASE_URL || localStorage.getItem("SUPABASE_URL") || "").trim();
+const SUPABASE_ANON_KEY = (window.SUPABASE_ANON_KEY || localStorage.getItem("SUPABASE_ANON_KEY") || "").trim();
 
-if(url && key){
-  import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2").then(({createClient})=>{
-    const sb = createClient(url,key);
+let sb = null;
+if(SUPABASE_URL && SUPABASE_ANON_KEY){
+  sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
-    sb.auth.getUser().then(async ({data})=>{
-      if(!data.user){
-        location.href="/auth/login.html";
-        return;
-      }
+async function redirectToLogin(){
+  // your real login page is in /auth/
+  window.location.href = "/auth/login.html";
+}
 
-      menuEmail.textContent = data.user.email;
+async function boot(){
+  // If no supabase keys, still show dashboard UI (demo mode)
+  if(!sb){
+    menuName.textContent = "Demo user";
+    menuEmail.textContent = "Add Supabase keys to enable auth";
+    setAvatar("", "Demo user");
+    logoutBtn?.addEventListener("click", ()=>redirectToLogin());
+    return;
+  }
 
-      const {data:profile} = await sb
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("id", data.user.id)
-        .single();
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session?.user){
+    await redirectToLogin();
+    return;
+  }
 
-      if(profile?.full_name){
-        menuName.textContent = profile.full_name;
-        avatarFallback.textContent = profile.full_name[0].toUpperCase();
-      }
+  const email = session.user.email || "";
+  menuEmail.textContent = email;
 
-      if(profile?.avatar_url){
-        avatarImg.src = profile.avatar_url;
-        avatarImg.style.display="block";
-        avatarFallback.style.display="none";
-      }
+  // Load profile (if table exists)
+  let fullName = "";
+  let avatarUrl = "";
+  try{
+    const { data: profile } = await sb
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", session.user.id)
+      .maybeSingle();
 
-      logoutBtn.onclick = async ()=>{
-        await sb.auth.signOut();
-        location.href="/auth/login.html";
-      };
-    });
+    fullName = profile?.full_name || "";
+    avatarUrl = profile?.avatar_url || "";
+  }catch(_){}
+
+  const displayName = fullName || (email ? email.split("@")[0] : "User");
+  menuName.textContent = displayName;
+  setAvatar(avatarUrl, displayName);
+
+  logoutBtn?.addEventListener("click", async ()=>{
+    closeMenu();
+    try{ await sb.auth.signOut(); }catch(_){}
+    await redirectToLogin();
   });
 }
+
+boot();
