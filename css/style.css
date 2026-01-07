@@ -1,22 +1,27 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+html,body{width:100%;height:100%;}
 body{background:#000;}
 
+/* Splash container */
 #splash{
   position:fixed;
   inset:0;
+  width:100%;
+  height:100%;
   overflow:hidden;
   z-index:10;
 }
 
-/* Canvas fills the screen */
+/* Canvas MUST fill screen */
 #ocean{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
+  display:block;
 }
 
-/* Realistic GOD RAYS layer (your example style) */
+/* Rays */
 .rayLayer{
   position:absolute;
   inset:-60%;
@@ -31,21 +36,20 @@ body{background:#000;}
     );
   filter: blur(1.2px);
   mix-blend-mode: screen;
-  opacity: 0.75;
+  opacity: 0.85;
   animation: raysDrift 5.5s ease-in-out infinite alternate;
 }
 
-/* Vignette to add depth */
 .vignette{
   position:absolute;
   inset:0;
   background:
-    radial-gradient(circle at 50% 10%, rgba(255,255,255,0.10), transparent 55%),
-    radial-gradient(circle at 50% 55%, transparent 35%, rgba(0,10,25,0.45) 88%);
+    radial-gradient(circle at 50% 10%, rgba(255,255,255,0.12), transparent 55%),
+    radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,10,25,0.55) 85%);
   pointer-events:none;
 }
 
-/* Logo floats */
+/* Logo */
 .logo{
   position:absolute;
   left:50%;
@@ -57,7 +61,7 @@ body{background:#000;}
   filter: drop-shadow(0 30px 55px rgba(0,0,0,0.55));
 }
 
-/* Bottom text */
+/* Text */
 .splash-text{
   position:absolute;
   left:50%;
@@ -70,27 +74,18 @@ body{background:#000;}
   width:90%;
 }
 
-.splash-text h1{
-  font-size:48px;
-  letter-spacing:4px;
-}
-.splash-text p{
-  margin-top:12px;
-  font-size:18px;
-  opacity:0.95;
-}
+.splash-text h1{font-size:48px;letter-spacing:4px;}
+.splash-text p{margin-top:12px;font-size:18px;opacity:0.95;}
 
 @keyframes raysDrift{
   0%{ transform: translate(-2%,-3%) rotate(-1.4deg) scale(1.02); }
   100%{ transform: translate(2%,3%) rotate(1.4deg) scale(1.05); }
 }
-
 @keyframes logoFloat{
   0%{transform:translate(-50%,-50%) translateY(0);}
   50%{transform:translate(-50%,-50%) translateY(-16px);}
   100%{transform:translate(-50%,-50%) translateY(0);}
 }
-
 @keyframes textFloat{
   0%{transform:translateX(-50%) translateY(0);}
   50%{transform:translateX(-50%) translateY(-10px);}
