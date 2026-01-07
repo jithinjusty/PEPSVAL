@@ -1,12 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("ocean");
   const ctx = canvas.getContext("2d", { alpha: false });
-
   const splash = document.getElementById("splash");
-  const app = document.getElementById("app");
-
-  // Hide app until splash ends (prevents login flash)
-  app.style.display = "none";
 
   let w = 0, h = 0, t = 0;
   const particles = [];
@@ -14,8 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function resize() {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    w = canvas.clientWidth;
-    h = canvas.clientHeight;
+    w = canvas.clientWidth || window.innerWidth;
+    h = canvas.clientHeight || window.innerHeight;
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -31,30 +26,30 @@ document.addEventListener("DOMContentLoaded", () => {
         y: rand(0, h),
         r: rand(0.6, 2.2),
         v: rand(0.08, 0.35),
-        a: rand(0.12, 0.40)
+        a: rand(0.10, 0.32)
       });
     }
   }
 
   function drawBackground() {
-    // Depth gradient: bright top -> deep blue
+    // Lighter underwater gradient (matches our final direction)
     const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0.0, "#6fe0ff");
-    g.addColorStop(0.22, "#167fc9");
-    g.addColorStop(1.0, "#041a2b");
+    g.addColorStop(0.0, "#d8f6ff");
+    g.addColorStop(0.40, "#bfe9f4");
+    g.addColorStop(1.0, "#7fc7d8");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   }
 
   function drawSurfaceWaves() {
-    // Soft ripples near the top to hint "surface"
+    // Soft ripples near the top to hint surface light
     ctx.save();
-    ctx.globalAlpha = 0.18;
+    ctx.globalAlpha = 0.12;
     ctx.fillStyle = "#ffffff";
     const y0 = h * 0.12;
     for (let i = 0; i < 4; i++) {
       ctx.beginPath();
-      const amp = 10 + i * 6;
+      const amp = 8 + i * 5;
       const freq = 0.008 + i * 0.002;
       ctx.moveTo(0, y0 + i * 14);
       for (let x = 0; x <= w; x += 10) {
@@ -70,23 +65,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawLightRays() {
-    // Procedural rays: multiple rotating gradients
+    // Procedural rays (subtle, plus your CSS rayLayer on top)
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = 0.18;
 
     const cx = w * 0.5;
     const cy = -h * 0.1;
 
     for (let i = 0; i < 6; i++) {
-      const angle = (i * 0.35) + Math.sin(t * 0.35 + i) * 0.12;
+      const angle = (i * 0.35) + Math.sin(t * 0.35 + i) * 0.10;
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle);
 
       const rg = ctx.createLinearGradient(0, 0, 0, h * 1.2);
-      rg.addColorStop(0.0, "rgba(255,255,255,0.55)");
-      rg.addColorStop(0.25, "rgba(255,255,255,0.12)");
+      rg.addColorStop(0.0, "rgba(255,255,255,0.35)");
+      rg.addColorStop(0.30, "rgba(255,255,255,0.10)");
       rg.addColorStop(1.0, "rgba(255,255,255,0)");
 
       ctx.fillStyle = rg;
@@ -97,12 +92,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawCaustics() {
-    // Moving caustics pattern using layered sin fields
     ctx.save();
     ctx.globalCompositeOperation = "overlay";
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.16;
 
-    const step = 28;
+    const step = 30;
     for (let y = 0; y < h; y += step) {
       for (let x = 0; x < w; x += step) {
         const n =
@@ -110,8 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
           Math.cos((y * 0.013) - (t * 1.0)) +
           Math.sin(((x + y) * 0.01) + (t * 0.7));
 
-        const v = (n + 3) / 6; // normalize 0..1
-        const a = Math.max(0, v - 0.55) * 0.9;
+        const v = (n + 3) / 6; // 0..1
+        const a = Math.max(0, v - 0.55) * 0.8;
 
         if (a > 0.02) {
           ctx.fillStyle = `rgba(255,255,255,${a})`;
@@ -145,13 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function frame() {
     t += 0.016;
-
     drawBackground();
     drawSurfaceWaves();
     drawLightRays();
     drawCaustics();
     drawParticles();
-
     requestAnimationFrame(frame);
   }
 
@@ -165,13 +157,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   frame();
 
-  // Splash timing (3s) then fade to app
+  // Keep splash for 3s, then fade and go to new login page
   setTimeout(() => {
-    splash.style.opacity = "0";
     splash.style.transition = "opacity 0.6s ease";
+    splash.style.opacity = "0";
     setTimeout(() => {
-      splash.style.display = "none";
-      app.style.display = "flex";
+      window.location.href = "/auth/login.html";
     }, 600);
   }, 3000);
 });
