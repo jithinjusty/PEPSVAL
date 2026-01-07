@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const lastName = document.getElementById("lastName");
   const email = document.getElementById("email");
   const password = document.getElementById("password");
+  const confirmPassword = document.getElementById("confirmPassword");
 
   function showError(msg) {
     errorBox.textContent = msg;
@@ -24,16 +25,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const fn = firstName.value.trim();
     const ln = lastName.value.trim();
     const em = email.value.trim();
-    const pw = password.value;
+    const pw = password.value || "";
+    const cpw = confirmPassword.value || "";
 
     if (!fn) return showError("Please enter your first name.");
     if (!ln) return showError("Please enter your last name.");
     if (!em) return showError("Please enter your email.");
     if (!pw) return showError("Please create a password.");
     if (pw.length < 6) return showError("Password must be at least 6 characters.");
+    if (!cpw) return showError("Please confirm your password.");
+    if (pw !== cpw) return showError("Passwords do not match.");
 
     // For now: simulate account creation success
-    // Next step will connect Supabase
+    // Next step: connect Supabase signup here
     window.location.href = "/profile-setup.html";
   });
 });
