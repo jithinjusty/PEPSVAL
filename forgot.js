@@ -1,3 +1,5 @@
+import { supabase } from "./js/supabase.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("forgotForm");
   const email = document.getElementById("email");
@@ -18,16 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
     errorBox.textContent = "";
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const em = (email.value || "").trim();
     if (!em) return showError("Please enter your email.");
 
-    // UI only for now. Next step: Supabase resetPasswordForEmail()
-    showSuccess("If an account exists for this email, a reset link will be sent.");
+    const { error } = await supabase.auth.resetPasswordForEmail(em, {
+      redirectTo: window.location.origin + "/reset.html"
+    });
 
-    // clear field (optional)
-    // email.value = "";
+    if (error) return showError(error.message);
+    showSuccess("If an account exists for this email, a reset link will be sent.");
   });
 });
