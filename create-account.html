@@ -44,10 +44,17 @@
           <input id="email" type="email" placeholder="you@example.com" required />
         </label>
 
-        <label class="field">
-          <span class="label">Password</span>
-          <input id="password" type="password" placeholder="Create a password" minlength="6" required />
-        </label>
+        <div class="row">
+          <label class="field">
+            <span class="label">Password</span>
+            <input id="password" type="password" placeholder="Create a password" minlength="6" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Confirm password</span>
+            <input id="confirmPassword" type="password" placeholder="Re-enter password" minlength="6" required />
+          </label>
+        </div>
 
         <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
 
@@ -58,35 +65,8 @@
         </div>
       </form>
 
-      <hr class="divider" />
-
-      <!-- Sea service section -->
-      <h2 class="subTitle">Sea service</h2>
-      <p class="subHint">Add your sea service entries below.</p>
-
-      <div class="tableWrap" role="region" aria-label="Sea service table">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Vessel</th>
-              <th>Company</th>
-              <th>Rank</th>
-              <th>From</th>
-              <th>To</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="seaServiceBody">
-            <tr>
-              <td colspan="6" class="empty">No entries yet.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- NOTE ONLY under table -->
-      <div class="note noteLock">
-        Sea service becomes locked once verified by an employer or peer.
+      <div class="footerHint">
+        Sea service will be added inside your personal profile after account creation.
       </div>
     </section>
   </main>
