@@ -125,4 +125,53 @@ body{
   padding:14px;
   box-shadow: 0 10px 24px rgba(10,40,60,.08);
 }
-.postHead{display:flex;gap:10px;align-items:center;margin
+.postHead{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.miniAvatar{
+  width:36px;height:36px;border-radius:999px;
+  background:rgba(31,111,134,.12);
+  display:grid;place-items:center;
+  font-weight:800;color:var(--brand);
+}
+.postName{font-weight:800}
+.postSub{font-size:12px;color:var(--muted);margin-top:2px}
+.postBody{color:var(--text);line-height:1.5}
+
+.bottomNav{
+  position:fixed; left:0; right:0; bottom:0;
+  background: rgba(255,255,255,.92);
+  border-top:1px solid var(--line);
+  backdrop-filter: blur(10px);
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  padding:10px 8px;
+  z-index:60;
+}
+
+.navItem{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  font-size:11px;
+  color:var(--muted);
+  text-decoration:none;
+  width:54px;
+}
+.navItem .navIcon{font-size:18px}
+.navItem.active{color:var(--brand); font-weight:700}
+
+.navPlus{
+  width:54px;height:54px;
+  border-radius:18px;
+  border:0;
+  background:var(--brand);
+  color:#fff;
+  font-size:30px;
+  line-height:0;
+  display:grid;
+  place-items:center;
+  box-shadow: 0 12px 26px rgba(31,111,134,.35);
+  cursor:pointer;
+}
+.navPlus:active{transform:scale(.98)}
