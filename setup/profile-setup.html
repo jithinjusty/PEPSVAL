@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Profile Setup</title>
+  <link rel="stylesheet" href="./profile-setup.css?v=1" />
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="card">
+
+      <header class="head">
+        <div class="brand">
+          <div class="logoWord">PEPSVAL</div>
+          <div class="tagline">connect, hire and grow</div>
+        </div>
+        <h1 class="title">Complete your basics</h1>
+      </header>
+
+      <!-- Profile photo (required) -->
+      <section class="photoSection">
+        <div class="lblRow">
+          <div class="lbl">Profile photo <span class="req">*</span></div>
+        </div>
+
+        <div class="avatarWrap">
+          <div class="avatar" id="avatarPreview">
+            <span class="avatarHint">Add photo</span>
+          </div>
+        </div>
+
+        <div class="photoActions">
+          <input id="photoInput" type="file" accept="image/*" />
+          <button type="button" class="btnGhost" id="removePhotoBtn">Remove</button>
+        </div>
+      </section>
+
+      <form id="setupForm" class="form" novalidate>
+        <div class="field">
+          <label class="lbl">Account type <span class="req">*</span></label>
+          <select id="accountType" required>
+            <option value="" selected disabled>Select</option>
+            <option value="seafarer">Seafarer</option>
+            <option value="employer">Employer</option>
+            <option value="shore">Shore Staff</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field hidden" id="accountTypeOtherWrap">
+          <label class="lbl">Specify account type <span class="req">*</span></label>
+          <input id="accountTypeOther" type="text" placeholder="e.g., Training institute / Agent / Manning office" />
+        </div>
+
+        <div class="field">
+          <label class="lbl">Full name</label>
+          <input id="fullName" type="text" placeholder="Your full name" />
+        </div>
+
+        <!-- Rank (Seafarer only) -->
+        <div class="field hidden" id="rankWrap">
+          <label class="lbl">Rank <span class="req">*</span></label>
+          <input id="rankInput" list="rankList" placeholder="Type to search rank…" autocomplete="off" />
+          <datalist id="rankList"></datalist>
+
+          <div class="field hidden" id="rankOtherWrap" style="margin-top:10px;">
+            <label class="lbl">Other rank <span class="req">*</span></label>
+            <input id="rankOther" type="text" placeholder="Write your rank" />
+          </div>
+
+          <div class="help">Tip: start typing “Chief”, “2nd”, “AB”, “ETO”, etc.</div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Nationality <span class="req">*</span></label>
+          <input id="nationalityInput" list="countryList" placeholder="Type to search country…" autocomplete="off" />
+          <datalist id="countryList"></datalist>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Mobile number <span class="req">*</span></label>
+          <div class="phoneRow">
+            <input id="dialCodeInput" list="dialList" class="dial" placeholder="+91" autocomplete="off" />
+            <datalist id="dialList"></datalist>
+
+            <input id="phoneInput" class="phone" type="tel" placeholder="Your number" inputmode="tel" />
+          </div>
+          <div class="help">Choose your country code, then enter your number.</div>
+        </div>
+
+        <div id="errorBox" class="error" style="display:none;"></div>
+
+        <button id="saveBtn" class="btnPrimary" type="submit" disabled>Save & Continue</button>
+      </form>
+
+    </section>
+  </main>
+
+  <script type="module" src="./profile-setup.js?v=1"></script>
+</body>
+</html>
