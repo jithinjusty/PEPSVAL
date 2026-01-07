@@ -1,57 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PEPSVAL</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Dashboard</title>
 
-<link rel="stylesheet" href="./dashboard.css" />
+  <link rel="stylesheet" href="./dashboard.css?v=2" />
 </head>
 
 <body>
-
-<!-- Top Bar -->
-<header class="topbar">
-  <div class="logo">
-    <strong>PEPSVAL</strong>
-    <span>connect, hire and grow</span>
-  </div>
-
-  <div class="avatarWrap">
-    <img id="avatarImg" />
-    <div id="avatarFallback">P</div>
-  </div>
-
-  <!-- Dropdown -->
-  <div id="profileMenu" class="menu">
-    <div class="menuUser">
-      <div id="menuName">Loading…</div>
-      <div id="menuEmail"></div>
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandName">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
     </div>
-    <a href="/setup/profile-setup.html">Profile</a>
-    <a href="#">Settings</a>
-    <button id="logoutBtn">Log out</button>
-  </div>
-</header>
 
-<!-- Feed -->
-<main class="feed">
-  <div class="card">
-    <strong>Welcome to PEPSVAL</strong>
-    <p>Your maritime network starts here.</p>
-  </div>
-</main>
+    <div class="topRight">
+      <!-- Avatar -->
+      <button class="avatarBtn" id="avatarBtn" type="button" aria-label="Open profile menu" aria-expanded="false">
+        <img id="avatarImg" alt="Profile" />
+        <span id="avatarFallback" class="avatarFallback">P</span>
+      </button>
 
-<!-- Bottom Navigation -->
-<nav class="bottomNav">
-  <a class="active">Feed</a>
-  <a>Jobs</a>
-  <button id="createBtn">+</button>
-  <a>Search</a>
-  <a>Messages</a>
-  <a>Profile</a>
-</nav>
+      <!-- Dropdown (Instagram style) -->
+      <div class="menu" id="profileMenu" aria-hidden="true">
+        <div class="menuHeader">
+          <div class="menuName" id="menuName">Your profile</div>
+          <div class="menuEmail" id="menuEmail"></div>
+        </div>
 
-<script src="./dashboard.js"></script>
+        <a class="menuItem" href="/setup/profile-setup.html" id="menuProfile">Profile</a>
+        <a class="menuItem" href="/dashboard/settings.html" id="menuSettings">Settings</a>
+
+        <div class="menuDivider"></div>
+        <button class="menuItem danger" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="page">
+    <section class="heroCard">
+      <h1 class="heroTitle">Explore Pepsval</h1>
+      <p class="heroText">
+        Your feed, jobs, and messages will appear here.
+      </p>
+      <div class="heroTip">
+        You can control what you see from <b>Settings</b> (Photos / Text / Video, nationality, company posts, etc).
+      </div>
+    </section>
+
+    <section class="feed" id="feed">
+      <article class="postCard">
+        <div class="postHead">
+          <div class="miniAvatar">P</div>
+          <div class="postMeta">
+            <div class="postName">PEPSVAL</div>
+            <div class="postSub">Welcome aboard</div>
+          </div>
+        </div>
+        <div class="postBody">
+          This is your dashboard. Next we will connect the feed to Supabase posts.
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottomNav">
+    <a class="navItem active" href="/dashboard/" aria-label="Feed">
+      <span class="navIcon">🏠</span><span class="navLabel">Feed</span>
+    </a>
+
+    <a class="navItem" href="javascript:void(0)" id="navJobs" aria-label="Jobs">
+      <span class="navIcon">💼</span><span class="navLabel">Jobs</span>
+    </a>
+
+    <button class="navPlus" id="navPlus" type="button" aria-label="Create Post">＋</button>
+
+    <a class="navItem" href="javascript:void(0)" id="navSearch" aria-label="Search">
+      <span class="navIcon">🔎</span><span class="navLabel">Search</span>
+    </a>
+
+    <a class="navItem" href="javascript:void(0)" id="navMessages" aria-label="Messages">
+      <span class="navIcon">💬</span><span class="navLabel">Messages</span>
+    </a>
+
+    <a class="navItem" href="/setup/profile-setup.html" aria-label="Profile">
+      <span class="navIcon">👤</span><span class="navLabel">Profile</span>
+    </a>
+  </nav>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="./dashboard.js?v=2"></script>
 </body>
 </html>
