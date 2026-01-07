@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Settings</title>
+  <link rel="stylesheet" href="./dashboard.css?v=2" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandName">Settings</div>
+      <div class="brandTag">control your feed visibility</div>
+    </div>
+
+    <a class="menuItem" style="text-decoration:none;font-weight:900;" href="/dashboard/">Done</a>
+  </header>
+
+  <main class="page">
+    <section class="heroCard">
+      <h1 class="heroTitle" style="margin-bottom:6px;">Feed filters</h1>
+      <p class="heroText">Choose what you want to see. Multiple options can be selected.</p>
+    </section>
+
+    <section class="feed">
+      <div class="postCard">
+        <div class="postName" style="font-weight:900;margin-bottom:10px;">Post type</div>
+
+        <label style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+          <input type="checkbox" id="f_text" checked /> Text
+        </label>
+        <label style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+          <input type="checkbox" id="f_photo" checked /> Photos
+        </label>
+        <label style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+          <input type="checkbox" id="f_video" checked /> Videos
+        </label>
+      </div>
+
+      <div class="postCard">
+        <div class="postName" style="font-weight:900;margin-bottom:10px;">Source</div>
+
+        <label style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+          <input type="checkbox" id="f_people" checked /> People posts
+        </label>
+        <label style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+          <input type="checkbox" id="f_company" checked /> Company posts
+        </label>
+      </div>
+
+      <button class="navPlus" id="saveSettings" style="width:100%;border-radius:14px;height:48px;font-size:16px;">
+        Save
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const KEY = "pepsval_feed_filters_v1";
+    const ids = ["f_text","f_photo","f_video","f_people","f_company"];
+
+    function load(){
+      try{
+        const v = JSON.parse(localStorage.getItem(KEY) || "{}");
+        ids.forEach(id=>{
+          if(typeof v[id] === "boolean") document.getElementById(id).checked = v[id];
+        });
+      }catch(e){}
+    }
+    function save(){
+      const v = {};
+      ids.forEach(id=> v[id] = document.getElementById(id).checked);
+      localStorage.setItem(KEY, JSON.stringify(v));
+      alert("Saved ✅");
+      window.location.href = "/dashboard/";
+    }
+
+    load();
+    document.getElementById("saveSettings").addEventListener("click", save);
+  </script>
+</body>
+</html>
