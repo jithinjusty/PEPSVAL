@@ -8,20 +8,24 @@
 </head>
 <body>
 
-<!-- Splash Screen -->
 <div id="splash">
-  <div class="rays"></div>
-  <div class="shimmer"></div>
+  <!-- Procedural ocean -->
+  <canvas id="ocean"></canvas>
 
-  <img src="assets/logo.webp" class="logo">
+  <!-- Extra glow + rays layers (CSS) -->
+  <div class="rayLayer"></div>
+  <div class="vignette"></div>
 
+  <!-- Logo -->
+  <img src="assets/logo.webp" class="logo" alt="PEPSVAL logo">
+
+  <!-- Bottom text (same position) -->
   <div class="splash-text">
     <h1>PEPSVAL</h1>
     <p>connect, hire and grow</p>
   </div>
 </div>
 
-<!-- Main App -->
 <div id="app">
   <div class="login-box">
     <h2>Welcome to Pepsval</h2>
