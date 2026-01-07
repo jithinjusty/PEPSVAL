@@ -5,39 +5,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   const emailEl = document.getElementById("email");
   const passEl = document.getElementById("password");
   const errorBox = document.getElementById("errorBox");
-  const togglePw = document.getElementById("togglePw");
   const loginBtn = document.getElementById("loginBtn");
 
-  function showError(msg) {
+  const showError = (msg) => {
+    if (!errorBox) return alert(msg);
     errorBox.textContent = msg;
     errorBox.style.display = "block";
-  }
-  function clearError() {
+  };
+  const clearError = () => {
+    if (!errorBox) return;
     errorBox.textContent = "";
     errorBox.style.display = "none";
-  }
-  function setLoading(on) {
+  };
+  const setLoading = (on) => {
+    if (!loginBtn) return;
     loginBtn.disabled = on;
     loginBtn.textContent = on ? "Logging in…" : "Log in";
-  }
+  };
 
   // If already logged in, route correctly
   const { data: sessionData } = await supabase.auth.getSession();
   if (sessionData?.session) {
-    await routeAfterLogin(sessionData.session.user.id);
+    await routeAfterAuth(sessionData.session.user.id);
     return;
   }
 
-  togglePw?.addEventListener("click", () => {
-    passEl.type = passEl.type === "password" ? "text" : "password";
-  });
-
-  form.addEventListener("submit", async (e) => {
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearError();
 
-    const email = (emailEl.value || "").trim();
-    const password = passEl.value || "";
+    const email = (emailEl?.value || "").trim();
+    const password = passEl?.value || "";
 
     if (!email) return showError("Please enter your email.");
     if (!password) return showError("Please enter your password.");
@@ -51,24 +49,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       return showError("Incorrect email or password.");
     }
 
-    await routeAfterLogin(data.user.id);
+    await routeAfterAuth(data.user.id);
     setLoading(false);
   });
 
-  async function routeAfterLogin(userId) {
+  async function routeAfterAuth(userId) {
+    // Read profile
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("setup_complete")
       .eq("id", userId)
       .maybeSingle();
 
-    // If no profile or setup not complete => go setup
+    // If no profile row OR setup not complete -> profile setup
     if (error || !profile || profile.setup_complete !== true) {
       window.location.href = "/setup/profile-setup.html";
       return;
     }
 
-    // setup done => dashboard
+    // Otherwise dashboard
     window.location.href = "/dashboard.html";
   }
 });
