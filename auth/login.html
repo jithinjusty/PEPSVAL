@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./login.css" />
 </head>
 <body>
-  <!-- Animated underwater background -->
+  <!-- Animated underwater background (your login css can style this) -->
   <canvas id="seaCanvas" aria-hidden="true"></canvas>
 
   <main class="page">
@@ -67,13 +67,14 @@
 
         <div class="legal">
           By logging in, you agree to our
-          <a href="/terms.html" target="_blank">Terms of Service</a> and
-          <a href="/privacy.html" target="_blank">Privacy Policy</a>.
+          <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a> and
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
         </div>
       </form>
     </section>
   </main>
 
-  <script src="./login.js"></script>
+  <!-- IMPORTANT: module so we can import Supabase -->
+  <script type="module" src="./login.js"></script>
 </body>
 </html>
