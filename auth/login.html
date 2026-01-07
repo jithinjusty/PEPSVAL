@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Login</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- IMPORTANT: we will create these files next -->
+  <link rel="stylesheet" href="./login.css" />
+</head>
+<body>
+  <!-- Animated underwater background -->
+  <canvas id="seaCanvas" aria-hidden="true"></canvas>
+
+  <!-- Page content -->
+  <main class="page">
+    <section class="card" role="region" aria-label="Login">
+      <header class="brand">
+        <div class="logoWord">PEPSVAL</div>
+        <div class="tagline">connect, hire and grow</div>
+      </header>
+
+      <h1 class="title">Log in</h1>
+
+      <form id="loginForm" class="form" autocomplete="on" novalidate>
+        <label class="field">
+          <span class="label">Email</span>
+          <div class="inputWrap">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              inputmode="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+        </label>
+
+        <label class="field">
+          <span class="label">Password</span>
+          <div class="inputWrap">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Your password"
+              autocomplete="current-password"
+              required
+              minlength="6"
+            />
+            <button type="button" id="togglePw" class="iconBtn" aria-label="Show password">
+              👁
+            </button>
+          </div>
+        </label>
+
+        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+
+        <button id="loginBtn" class="primary" type="submit">
+          Log in
+        </button>
+
+        <div class="links">
+          <a class="link" href="../forgot.html">Forgot password?</a>
+          <a class="link strong" href="../create-account.html">Create account</a>
+        </div>
+
+        <p class="hint">Welcome back to PEPSVAL.</p>
+      </form>
+    </section>
+  </main>
+
+  <!-- IMPORTANT: we will create this file next -->
+  <script src="./login.js"></script>
+</body>
+</html>
