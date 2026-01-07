@@ -19,9 +19,22 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  overflow: hidden;
 }
 
+/* Dark mask to hide text in image */
+#splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,40,80,0.45), rgba(0,20,60,0.75));
+  z-index: 1;
+}
+
+/* Splash text */
 .splash-content {
+  position: relative;
+  z-index: 2;
   text-align: center;
   color: white;
   animation: float 3s ease-in-out infinite;
