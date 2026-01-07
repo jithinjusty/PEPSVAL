@@ -24,7 +24,23 @@
       </header>
 
       <h1 class="title">Set up your profile</h1>
-      <p class="subtitle">This helps employers and peers verify your professional history.</p>
+      <p class="subtitle">Choose your account type and complete your basics. You can add sea service after setup.</p>
+
+      <!-- Profile photo -->
+      <div class="section">
+        <h2 class="sectionTitle">Profile photo</h2>
+
+        <div class="photoRow">
+          <div class="avatar" id="avatarPreview" aria-label="Profile photo preview">
+            <span class="avatarText">Add photo</span>
+          </div>
+
+          <div class="photoActions">
+            <input id="photo" type="file" accept="image/*" />
+            <p class="hint">Use a clear face photo. You can change it later.</p>
+          </div>
+        </div>
+      </div>
 
       <!-- Basic profile -->
       <div class="section">
@@ -40,56 +56,87 @@
             </select>
           </label>
 
-          <label class="field">
-            <span class="label">Rank / Role</span>
-            <input id="rank" type="text" placeholder="e.g., Second Officer" />
+          <!-- Seafarer rank -->
+          <label class="field onlySeafarer">
+            <span class="label">Rank</span>
+            <select id="rankSeafarer">
+              <option value="" selected>Select rank</option>
+              <option>Cadet</option>
+              <option>Third Officer</option>
+              <option>Second Officer</option>
+              <option>Chief Officer</option>
+              <option>Master</option>
+              <option>Fourth Engineer</option>
+              <option>Third Engineer</option>
+              <option>Second Engineer</option>
+              <option>Chief Engineer</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <!-- Employer role -->
+          <label class="field onlyEmployer">
+            <span class="label">Role</span>
+            <select id="roleEmployer">
+              <option value="" selected>Select role</option>
+              <option>Recruiter / Crewing</option>
+              <option>HR</option>
+              <option>Fleet / Operations</option>
+              <option>Owner / Management</option>
+              <option>Training / Compliance</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <!-- Shore role -->
+          <label class="field onlyShore">
+            <span class="label">Role</span>
+            <select id="roleShore">
+              <option value="" selected>Select role</option>
+              <option>Marine Superintendent</option>
+              <option>Port Operations</option>
+              <option>Marine Surveyor</option>
+              <option>Training / Instructor</option>
+              <option>Shipping Office Staff</option>
+              <option>Other</option>
+            </select>
           </label>
         </div>
 
         <div class="grid2">
           <label class="field">
             <span class="label">Nationality</span>
-            <input id="nationality" type="text" placeholder="e.g., Indian" />
+            <select id="nationality">
+              <option value="" selected>Select nationality</option>
+              <option>Indian</option>
+              <option>Irish</option>
+              <option>British</option>
+              <option>Filipino</option>
+              <option>Indonesian</option>
+              <option>Chinese</option>
+              <option>Ukrainian</option>
+              <option>Russian</option>
+              <option>Other</option>
+            </select>
           </label>
 
           <label class="field">
-            <span class="label">Phone (optional)</span>
-            <input id="phone" type="tel" placeholder="+91…" />
+            <span class="label">Phone</span>
+            <div class="phoneWrap">
+              <select id="phoneCode" class="phoneCode">
+                <option value="+91">+91 (IN)</option>
+                <option value="+353">+353 (IE)</option>
+                <option value="+44">+44 (UK)</option>
+                <option value="+1">+1 (US)</option>
+                <option value="+65">+65 (SG)</option>
+                <option value="+971">+971 (UAE)</option>
+                <option value="+60">+60 (MY)</option>
+                <option value="+63">+63 (PH)</option>
+                <option value="+62">+62 (ID)</option>
+              </select>
+              <input id="phoneNumber" type="tel" placeholder="Phone number" />
+            </div>
           </label>
-        </div>
-      </div>
-
-      <!-- Sea service -->
-      <div class="section">
-        <div class="sectionHead">
-          <h2 class="sectionTitle">Sea service</h2>
-          <button id="addSeaService" class="smallBtn" type="button">+ Add entry</button>
-        </div>
-
-        <div class="tableWrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Vessel</th>
-                <th>Company</th>
-                <th>Rank</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="seaBody">
-              <tr>
-                <td colspan="7" class="empty">No sea service added yet.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- IMPORTANT NOTE (only under sea service table) -->
-        <div class="note">
-          Sea service becomes locked once verified by an employer or peer.
         </div>
       </div>
 
