@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
-  <link rel="stylesheet" href="/css/dashboard.css?v=1" />
+  <link rel="stylesheet" href="/css/dashboard.css?v=2" />
 </head>
 <body>
 
@@ -15,8 +15,19 @@
       <div class="tagline">connect, hire and grow</div>
     </div>
 
-    <div class="topActions">
-      <button id="signOutBtn" class="btnGhost" type="button">Sign out</button>
+    <!-- Right: avatar + menu -->
+    <div class="profileArea">
+      <button id="profileBtn" class="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">
+        <img id="profileAvatar" class="avatarImg" src="/assets/default-avatar.png" alt="Profile" />
+      </button>
+
+      <div id="profileMenu" class="menu hidden" role="menu" aria-label="Profile menu">
+        <a class="menuItem" href="/profile.html" role="menuitem">Profile</a>
+        <a class="menuItem" href="/settings.html" role="menuitem">Settings</a>
+        <a class="menuItem" href="/auth/change-password.html" role="menuitem">Change password</a>
+        <div class="menuSep"></div>
+        <button id="signOutBtn" class="menuItem danger" type="button" role="menuitem">Sign out</button>
+      </div>
     </div>
   </header>
 
@@ -36,7 +47,7 @@
     </section>
   </main>
 
-  <!-- Bottom Nav (placeholder UI) -->
+  <!-- Bottom Nav -->
   <nav class="bottomNav">
     <a href="/feed.html">Feed</a>
     <a href="/jobs.html">Jobs</a>
@@ -46,6 +57,6 @@
     <a href="/profile.html">Profile</a>
   </nav>
 
-  <script type="module" src="/js/dashboard.js?v=1"></script>
+  <script type="module" src="/js/dashboard.js?v=2"></script>
 </body>
 </html>
