@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PEPSVAL</title>
+
+<link rel="stylesheet" href="./dashboard.css" />
+</head>
+
+<body>
+
+<!-- Top Bar -->
+<header class="topbar">
+  <div class="logo">
+    <strong>PEPSVAL</strong>
+    <span>connect, hire and grow</span>
+  </div>
+
+  <div class="avatarWrap">
+    <img id="avatarImg" />
+    <div id="avatarFallback">P</div>
+  </div>
+
+  <!-- Dropdown -->
+  <div id="profileMenu" class="menu">
+    <div class="menuUser">
+      <div id="menuName">Loading…</div>
+      <div id="menuEmail"></div>
+    </div>
+    <a href="/setup/profile-setup.html">Profile</a>
+    <a href="#">Settings</a>
+    <button id="logoutBtn">Log out</button>
+  </div>
+</header>
+
+<!-- Feed -->
+<main class="feed">
+  <div class="card">
+    <strong>Welcome to PEPSVAL</strong>
+    <p>Your maritime network starts here.</p>
+  </div>
+</main>
+
+<!-- Bottom Navigation -->
+<nav class="bottomNav">
+  <a class="active">Feed</a>
+  <a>Jobs</a>
+  <button id="createBtn">+</button>
+  <a>Search</a>
+  <a>Messages</a>
+  <a>Profile</a>
+</nav>
+
+<script src="./dashboard.js"></script>
+</body>
+</html>
