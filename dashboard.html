@@ -4,59 +4,147 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
-  <link rel="stylesheet" href="/css/dashboard.css?v=2" />
-</head>
-<body>
 
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1" />
+</head>
+
+<body>
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="logoWord">PEPSVAL</div>
-      <div class="tagline">connect, hire and grow</div>
+      <div class="brandName">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
     </div>
 
-    <!-- Right: avatar + menu -->
-    <div class="profileArea">
-      <button id="profileBtn" class="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">
-        <img id="profileAvatar" class="avatarImg" src="/assets/default-avatar.png" alt="Profile" />
+    <div class="rightTools">
+      <button class="avatarBtn" id="avatarBtn" aria-label="Open menu">
+        <img id="avatarImg" alt="Profile" />
+        <span id="avatarFallback" class="avatarFallback">P</span>
       </button>
 
-      <div id="profileMenu" class="menu hidden" role="menu" aria-label="Profile menu">
-        <a class="menuItem" href="/profile.html" role="menuitem">Profile</a>
-        <a class="menuItem" href="/settings.html" role="menuitem">Settings</a>
-        <a class="menuItem" href="/auth/change-password.html" role="menuitem">Change password</a>
-        <div class="menuSep"></div>
-        <button id="signOutBtn" class="menuItem danger" type="button" role="menuitem">Sign out</button>
+      <!-- Dropdown -->
+      <div class="menu" id="menu" aria-hidden="true">
+        <div class="menuHead">
+          <div class="menuName" id="menuName">Your profile</div>
+          <div class="menuEmail" id="menuEmail">—</div>
+        </div>
+
+        <a class="menuItem" href="/profile/index.html" id="goProfile">Profile</a>
+        <a class="menuItem" href="/settings/index.html" id="goSettings">Settings</a>
+        <button class="menuItem danger" id="logoutBtn" type="button">Log out</button>
       </div>
     </div>
   </header>
 
   <!-- Main -->
-  <main class="dashWrap">
-    <section class="dashCard">
-      <h1 class="dashTitle">Explore Pepsval</h1>
-      <p class="dashSub">Your feed, jobs, and messages will appear here.</p>
+  <main class="main">
 
-      <div class="quickGrid">
-        <a class="q" href="/feed.html">Feed</a>
-        <a class="q" href="/jobs.html">Jobs</a>
-        <a class="q" href="/search.html">Search</a>
-        <a class="q" href="/messages.html">Messages</a>
-        <a class="q" href="/profile.html">Profile</a>
+    <!-- Welcome banner -->
+    <section class="hero" id="hero">
+      <div class="heroTitle" id="heroTitle">Explore Pepsval</div>
+      <div class="heroSub" id="heroSub">
+        Your feed, jobs, and messages will appear here.
+      </div>
+
+      <div class="heroActions">
+        <a class="btnGhost" href="/setup/profile-setup.html" id="completeProfileBtn">Complete profile</a>
+        <a class="btnPrimary" href="#create" id="createPostBtnTop">Create post</a>
       </div>
     </section>
+
+    <!-- Feed -->
+    <section class="feed" id="feed">
+      <!-- Example skeleton cards -->
+      <article class="card">
+        <div class="cardTop">
+          <div class="miniAvatar">P</div>
+          <div>
+            <div class="cardName">PEPSVAL</div>
+            <div class="cardMeta">Welcome aboard</div>
+          </div>
+        </div>
+        <div class="cardBody">
+          This is your dashboard feed. Soon you’ll see posts from seafarers, employers, and shore staff based on your preferences.
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="cardTop">
+          <div class="miniAvatar">⚓</div>
+          <div>
+            <div class="cardName">Tips</div>
+            <div class="cardMeta">Filters</div>
+          </div>
+        </div>
+        <div class="cardBody">
+          You’ll be able to filter what you see (photos, text, video, nationality, company posts) from Settings.
+        </div>
+      </article>
+    </section>
+
   </main>
 
-  <!-- Bottom Nav -->
+  <!-- Bottom Navigation -->
   <nav class="bottomNav">
-    <a href="/feed.html">Feed</a>
-    <a href="/jobs.html">Jobs</a>
-    <a href="/post.html">+</a>
-    <a href="/search.html">Search</a>
-    <a href="/messages.html">Messages</a>
-    <a href="/profile.html">Profile</a>
+    <a class="navItem active" href="/dashboard/" aria-label="Feed">
+      <span class="icon">🏠</span>
+      <span class="txt">Feed</span>
+    </a>
+
+    <a class="navItem" href="/jobs/index.html" aria-label="Jobs">
+      <span class="icon">💼</span>
+      <span class="txt">Jobs</span>
+    </a>
+
+    <button class="navItem plus" id="plusBtn" type="button" aria-label="Create post">
+      <span class="plusCircle">＋</span>
+    </button>
+
+    <a class="navItem" href="/search/index.html" aria-label="Search">
+      <span class="icon">🔎</span>
+      <span class="txt">Search</span>
+    </a>
+
+    <a class="navItem" href="/messages/index.html" aria-label="Messages">
+      <span class="icon">💬</span>
+      <span class="txt">Messages</span>
+    </a>
+
+    <a class="navItem" href="/profile/index.html" aria-label="Profile">
+      <span class="icon">👤</span>
+      <span class="txt">Profile</span>
+    </a>
   </nav>
 
-  <script type="module" src="/js/dashboard.js?v=2"></script>
+  <!-- Create Post Modal -->
+  <div class="modalOverlay" id="modalOverlay" hidden></div>
+  <section class="modal" id="postModal" hidden>
+    <div class="modalHead">
+      <div class="modalTitle">Create post</div>
+      <button class="modalClose" id="closeModalBtn" type="button">✕</button>
+    </div>
+
+    <div class="modalBody">
+      <label class="lbl">Post type</label>
+      <select id="postType">
+        <option value="text">Text</option>
+        <option value="photo">Photo</option>
+        <option value="video">Video</option>
+      </select>
+
+      <label class="lbl" style="margin-top:12px;">Caption</label>
+      <textarea id="postText" rows="5" placeholder="Write something…"></textarea>
+
+      <div class="hint">
+        Posting will be connected to Supabase later. For now, this is UI only.
+      </div>
+
+      <button class="btnPrimary" id="publishBtn" type="button">Publish</button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="/dashboard/dashboard.js?v=1"></script>
 </body>
 </html>
