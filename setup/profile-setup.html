@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
 
-  <!-- FORCE correct CSS path + force reload -->
-  <link rel="stylesheet" href="/setup/profile-setup.css?v=999" />
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=300" />
 </head>
 
 <body>
   <main class="wrap">
     <section class="card">
-
       <header class="head">
         <div class="brand">
-          <div class="logoWord">PEPSVAL</div>
-          <div class="tagline">connect, hire and grow</div>
+          <div class="brandName">PEPSVAL</div>
+          <div class="brandTag">connect, hire and grow</div>
         </div>
         <h1 class="title">Complete your basics</h1>
+        <p class="sub">You can edit everything later.</p>
       </header>
 
+      <!-- PHOTO (NOT mandatory) -->
       <section class="photoSection">
         <div class="lblRow">
-          <div class="lbl">Profile photo <span class="req">*</span></div>
+          <div class="lbl">Profile photo <span class="opt">(optional)</span></div>
         </div>
 
         <div class="avatarWrap">
@@ -39,6 +39,7 @@
       </section>
 
       <form id="setupForm" class="form" novalidate>
+        <!-- Account type (required) -->
         <div class="field">
           <label class="lbl">Account type <span class="req">*</span></label>
           <select id="accountType" required>
@@ -60,6 +61,7 @@
           <input id="fullName" type="text" placeholder="Your full name" />
         </div>
 
+        <!-- Rank (only required for seafarer) -->
         <div class="field hidden" id="rankWrap">
           <label class="lbl">Rank <span class="req">*</span></label>
 
@@ -74,9 +76,10 @@
             <input id="rankOther" type="text" placeholder="Write your rank" />
           </div>
 
-          <div class="help">Type to search or scroll and choose.</div>
+          <div class="help">Type to search, or scroll to choose.</div>
         </div>
 
+        <!-- Nationality (required) -->
         <div class="field">
           <label class="lbl">Nationality <span class="req">*</span></label>
 
@@ -87,8 +90,9 @@
           </div>
         </div>
 
+        <!-- Phone (NOT mandatory) -->
         <div class="field">
-          <label class="lbl">Mobile number <span class="req">*</span></label>
+          <label class="lbl">Mobile number <span class="opt">(optional)</span></label>
 
           <div class="phoneRow">
             <div class="combo dialCombo" data-combo="dial">
@@ -97,21 +101,19 @@
               <div class="comboList" id="dialList"></div>
             </div>
 
-            <input id="phoneInput" class="phone" type="tel" placeholder="Your number" inputmode="tel" />
+            <input id="phoneInput" class="phone" type="tel" placeholder="Your number (optional)" inputmode="tel" />
           </div>
 
-          <div class="help">Choose your country code, then enter your number.</div>
+          <div class="help">If you add a country, we’ll auto-select the dial code (you can change it).</div>
         </div>
 
         <div id="errorBox" class="error" style="display:none;"></div>
 
-        <button id="saveBtn" class="btnPrimary" type="submit" disabled>Save & Continue</button>
+        <button id="saveBtn" class="btnPrimary" type="submit">Save & Continue</button>
       </form>
-
     </section>
   </main>
 
-  <!-- FORCE correct JS path + force reload -->
-  <script type="module" src="/setup/profile-setup.js?v=999"></script>
+  <script type="module" src="/setup/profile-setup.js?v=300"></script>
 </body>
 </html>
