@@ -5,76 +5,54 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Login</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="./login.css" />
+  <!-- Use your existing CSS if you have one -->
+  <link rel="stylesheet" href="./login.css?v=10" />
 </head>
-<body>
-  <!-- Animated underwater background (your login css can style this) -->
-  <canvas id="seaCanvas" aria-hidden="true"></canvas>
 
-  <main class="page">
-    <section class="card" role="region" aria-label="Login">
-      <header class="brand">
-        <div class="logoWord">PEPSVAL</div>
-        <div class="tagline">connect, hire and grow</div>
+<body>
+  <main class="wrap">
+    <section class="card">
+
+      <header class="head">
+        <div class="brand">
+          <div class="brandName">PEPSVAL</div>
+          <div class="brandTag">connect, hire and grow</div>
+        </div>
+        <h1 class="title">Welcome back</h1>
+        <p class="sub">Log in to continue</p>
       </header>
 
-      <h1 class="title">Log in</h1>
+      <form id="loginForm" class="form" novalidate>
+        <label class="lbl" for="email">Email</label>
+        <input id="email" type="email" placeholder="you@email.com" autocomplete="email" required />
 
-      <form id="loginForm" class="form" autocomplete="on" novalidate>
-        <label class="field">
-          <span class="label">Email</span>
-          <div class="inputWrap">
-            <input
-              id="email"
-              name="email"
-              type="email"
-              inputmode="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              required
-            />
-          </div>
-        </label>
+        <label class="lbl" for="password">Password</label>
+        <div class="pwRow">
+          <input id="password" type="password" placeholder="Your password" autocomplete="current-password" required />
+          <button id="togglePw" class="pwBtn" type="button" aria-label="Toggle password">Show</button>
+        </div>
 
-        <label class="field">
-          <span class="label">Password</span>
-          <div class="inputWrap">
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Your password"
-              autocomplete="current-password"
-              required
-              minlength="6"
-            />
-            <button type="button" id="togglePw" class="iconBtn" aria-label="Show password">👁</button>
-          </div>
-        </label>
+        <div id="errorBox" class="error" style="display:none;"></div>
 
-        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
-
-        <button id="loginBtn" class="primary" type="submit">Log in</button>
+        <button id="loginBtn" class="btnPrimary" type="submit">Log in</button>
 
         <div class="links">
-          <a class="link" href="/forgot.html">Forgot password?</a>
-          <a class="link strong" href="/create-account.html">Create account</a>
+          <a href="/auth/forgot.html">Forgot password?</a>
+          <a href="/auth/create-account.html">Create account</a>
         </div>
 
-        <div class="legal">
-          By logging in, you agree to our
-          <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a> and
-          <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-        </div>
+        <p class="legal">
+          By continuing, you agree to our
+          <a href="/legal/terms.html">Terms</a>
+          and
+          <a href="/legal/privacy.html">Privacy Policy</a>.
+        </p>
       </form>
+
     </section>
   </main>
 
-  <!-- IMPORTANT: module so we can import Supabase -->
-  <script type="module" src="./login.js"></script>
+  <!-- FULL logic is in this file -->
+  <script type="module" src="./login.js?v=10"></script>
 </body>
 </html>
