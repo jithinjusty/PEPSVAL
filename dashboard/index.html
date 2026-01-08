@@ -1,127 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>PEPSVAL – Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Dashboard</title>
 
-<link rel="stylesheet" href="/dashboard/dashboard.css" />
-
-<style>
-/* top bar */
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:14px 18px;
-  background:#f7fbff;
-  border-bottom:1px solid #e3eef6;
-}
-.logo{
-  font-weight:700;
-  letter-spacing:.05em;
-  color:#1f6f86;
-}
-
-/* avatar */
-.avatarBtn{
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:#1f6f86;
-  color:white;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  background-size:cover;
-  background-position:center;
-}
-
-/* dropdown */
-.avatarMenu{
-  position:absolute;
-  top:70px;
-  right:20px;
-  background:white;
-  border-radius:12px;
-  box-shadow:0 20px 40px rgba(0,0,0,.1);
-  width:220px;
-  overflow:hidden;
-  display:none;
-  z-index:999;
-}
-.avatarMenu .name{
-  padding:14px;
-  font-weight:600;
-  border-bottom:1px solid #eee;
-}
-.avatarMenu a{
-  display:block;
-  padding:12px 14px;
-  text-decoration:none;
-  color:#333;
-}
-.avatarMenu a:hover{
-  background:#f0f7fb;
-}
-
-/* bottom nav */
-.nav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  display:flex;
-  border-top:1px solid #e3eef6;
-  background:white;
-}
-.nav a{
-  flex:1;
-  text-align:center;
-  padding:10px;
-  text-decoration:none;
-  color:#1f6f86;
-  font-size:14px;
-}
-</style>
-
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1" />
 </head>
 
 <body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandName">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
+    </div>
 
-<div class="topbar">
-  <div class="logo">PEPSVAL</div>
+    <div class="right">
+      <button class="avatarBtn" id="avatarBtn" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatarFallback" id="avatarFallback">P</span>
+        <img id="avatarImg" class="avatarImg" alt="Profile" />
+      </button>
 
-  <!-- Avatar button -->
-  <div id="avatarBtn" class="avatarBtn">P</div>
-</div>
+      <div class="menu" id="avatarMenu" role="menu" aria-hidden="true">
+        <div class="menuHead">
+          <div class="menuAvatar">
+            <span class="menuAvatarFallback" id="menuAvatarFallback">P</span>
+            <img id="menuAvatarImg" class="menuAvatarImg" alt="Profile" />
+          </div>
+          <div class="menuInfo">
+            <div class="menuName" id="menuName">Your profile</div>
+            <div class="menuSmall" id="menuSmall">Welcome aboard</div>
+          </div>
+        </div>
 
-<!-- Dropdown -->
-<div id="avatarMenu" class="avatarMenu">
-  <div id="avatarName" class="name">Profile</div>
-  <a href="/setup/profile-setup.html">Profile</a>
-  <a href="/dashboard/settings.html">Settings</a>
-  <a href="#" id="logoutBtn">Log out</a>
-</div>
+        <div class="menuList">
+          <button class="menuItem" id="goProfile" role="menuitem">Profile</button>
+          <button class="menuItem" id="goSettings" role="menuitem">Settings</button>
+          <div class="menuDivider"></div>
+          <button class="menuItem danger" id="doLogout" role="menuitem">Log out</button>
+        </div>
+      </div>
+    </div>
+  </header>
 
-<main style="padding:20px;">
-  <h2>Explore Pepsval</h2>
-  <p>Your feed, jobs and messages will appear here.</p>
-</main>
+  <main class="page">
+    <section class="card">
+      <h1 class="title">Explore Pepsval</h1>
+      <p class="muted">
+        Your feed will appear here. Soon you’ll see posts from seafarers, employers, and shore staff based on your preferences.
+      </p>
 
-<!-- Bottom nav -->
-<div class="nav">
-  <a href="#">Feed</a>
-  <a href="#">Jobs</a>
-  <a href="#">+</a>
-  <a href="#">Search</a>
-  <a href="#">Messages</a>
-  <a href="#">Profile</a>
-</div>
+      <div class="hintBox">
+        <div class="hintTitle">Filters</div>
+        <div class="hintText">
+          You’ll be able to filter what you see (photos, text, video, nationality, company posts) from Settings.
+        </div>
+      </div>
+    </section>
+  </main>
 
-<script type="module" src="/dashboard/dashboard.js"></script>
+  <nav class="bottomNav">
+    <a class="navItem active" href="/dashboard/index.html" aria-current="page">Feed</a>
+    <a class="navItem" href="/dashboard/index.html#jobs">Jobs</a>
+    <button class="navItem plus" id="openCreate">+</button>
+    <a class="navItem" href="/dashboard/index.html#search">Search</a>
+    <a class="navItem" href="/dashboard/index.html#messages">Messages</a>
+    <a class="navItem" href="/setup/profile-setup.html">Profile</a>
+  </nav>
 
+  <script type="module" src="/dashboard/dashboard.js?v=1"></script>
 </body>
 </html>
