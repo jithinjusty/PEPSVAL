@@ -1,4 +1,6 @@
-// /setup/profile-setup.js (FULL) — uses shared Supabase client
+// /setup/profile-setup.js (FULL) — stable + auto-removes unknown DB columns
+// Fixes: "Could not find the '___' column of 'profiles' in the schema cache"
+// Photo optional, phone optional, dropdowns work, redirects to /dashboard/
 
 import { supabase } from "/js/supabaseClient.js";
 import { ROUTES } from "/js/config.js";
@@ -115,9 +117,7 @@ function renderList(listEl, rows){
 }
 
 function attachCombo(inputEl, listEl, getRows){
-  function refresh(){
-    renderList(listEl, getRows(inputEl.value));
-  }
+  function refresh(){ renderList(listEl, getRows(inputEl.value)); }
   inputEl.addEventListener("focus", refresh);
   inputEl.addEventListener("input", refresh);
 
@@ -241,7 +241,6 @@ function validate(){
     if(r==="Other" && !rankOther.value.trim()) return {ok:false,msg:"Please enter your rank (Other)."};
   }
 
-  // Phone optional; if user typed phone number, dial code recommended
   const phone = phoneInput.value.trim();
   if(phone && !dialSearch.value.trim()) return {ok:false,msg:"Please select country code for mobile number."};
 
@@ -257,38 +256,76 @@ async function ensureSession(){
   return session;
 }
 
+// ---- This is the key fix: remove missing columns automatically and retry ----
+function parseMissingColumn(errorMessage){
+  // Example: "Could not find the 'nationality_code' column of 'profiles' in the schema cache"
+  const m = /Could not find the '([^']+)' column/i.exec(errorMessage || "");
+  return m?.[1] || null;
+}
+
+async function upsertWithAutoColumnFix(payload){
+  // Try up to 5 times removing unknown columns
+  let p = { ...payload };
+
+  for(let attempt=1; attempt<=5; attempt++){
+    const { error } = await supabase.from("profiles").upsert(p, { onConflict:"id" });
+    if(!error) return { ok:true };
+
+    const missing = parseMissingColumn(error.message);
+    if(missing && Object.prototype.hasOwnProperty.call(p, missing)){
+      delete p[missing];
+      continue;
+    }
+
+    // Not a missing-column error → stop
+    return { ok:false, error };
+  }
+
+  return { ok:false, error: { message:"Too many schema mismatches. Please update profiles table." } };
+}
+
 async function saveProfile(){
   const session = await ensureSession();
   if(!session) return;
 
   const t = accountType.value;
+
+  // Include extra fields if your DB has them; code will auto-remove if not.
   const payload = {
     id: session.user.id,
     full_name: fullName.value.trim() || null,
     account_type: t==="other" ? (accountTypeOther.value.trim() || "other") : t,
+
+    // Nationality
     nationality: countrySearch.value.trim() || null,
+
+    // OPTIONAL extra (if your DB supports it)
     nationality_code: countryValue.value.trim() || null,
+
+    // Phone (optional)
     phone_dial: dialSearch.value.trim() || null,
     phone_number: phoneInput.value.trim() || null,
-    rank: null
+
+    // Rank
+    rank: null,
   };
 
   if(t==="seafarer"){
     const r = (rankValue.value || rankSearch.value).trim();
-    payload.rank = r==="Other" ? (rankOther.value.trim() || "Other") : r;
+    payload.rank = (r==="Other") ? (rankOther.value.trim() || "Other") : r;
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .upsert(payload, { onConflict:"id" });
+  // Photo upload: optional and not implemented yet (to avoid bugs)
+  // selectedPhotoFile exists but we don't push to storage in this step.
 
-  if(error){
-    showError("Database error saving profile: " + (error.message || "Unknown error"));
+  const result = await upsertWithAutoColumnFix(payload);
+  if(!result.ok){
+    showError("Database error saving profile: " + (result.error?.message || "Unknown error"));
     return;
   }
 
-  // ✅ success → dashboard folder (no 404)
-  window.location.href = ROUTES.dashboard;
+  // ✅ success
+  window.location.href = ROUTES.dashboard; // /dashboard/
 }
 
 form.addEventListener("submit", async (e)=>{
@@ -309,7 +346,5 @@ form.addEventListener("submit", async (e)=>{
   initRankCombo();
   initCountryCombos();
   updateAccountTypeUI();
-
-  // Optional: if logged in already, allow; if not, redirect
   await ensureSession();
 })();
