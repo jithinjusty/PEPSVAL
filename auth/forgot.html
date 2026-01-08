@@ -3,54 +3,57 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Reset Password</title>
-
-  <!-- CSS is inside /auth/ folder -->
-  <link rel="stylesheet" href="/auth/login.css?v=20" />
+  <title>PEPSVAL • Reset password</title>
+  <link rel="stylesheet" href="/auth/forgot.css" />
 </head>
 
 <body>
-  <main class="authWrap">
-    <section class="authCard">
+  <main class="page">
+    <div class="bg"></div>
 
-      <header class="authHead">
-        <div class="brand">
-          <div class="logoWord">PEPSVAL</div>
-          <div class="tagline">connect, hire and grow</div>
+    <section class="card" aria-label="Reset password">
+      <header class="brand">
+        <div class="logoWrap">
+          <img class="logo" src="/assets/logo.webp" alt="PEPSVAL logo" />
         </div>
-
-        <h1 class="authTitle">Reset your password</h1>
-        <p class="authSub">Enter your email. We’ll send a secure reset link.</p>
+        <div class="brandText">
+          <h1>PEPSVAL</h1>
+          <p>connect, hire and grow</p>
+        </div>
       </header>
 
-      <form id="forgotForm" class="authForm" novalidate>
-        <div class="field">
-          <label class="lbl" for="email">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+      <div class="title">
+        <h2>Reset your password</h2>
+        <p>Enter your email. We’ll send a secure reset link.</p>
+      </div>
+
+      <div id="msg" class="msg" role="status" aria-live="polite" hidden></div>
+
+      <form id="forgotForm" class="form" novalidate>
+        <label class="field">
+          <span>Email</span>
+          <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </label>
+
+        <button id="submitBtn" class="primaryBtn" type="submit">
+          <span class="btnText">Send reset link</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="rowLinks">
+          <a href="/auth/login.html">Back to login</a>
+          <a href="/auth/create-account.html">Create account</a>
         </div>
 
-        <div id="errorBox" class="msg error" style="display:none;"></div>
-        <div id="successBox" class="msg ok" style="display:none;"></div>
-
-        <button id="sendBtn" class="btnPrimary" type="submit">Send reset link</button>
-
-        <div class="authLinksRow">
-          <a class="link" href="/auth/login.html">Back to login</a>
-          <!-- IMPORTANT: create account is in ROOT -->
-          <a class="link" href="/create-account.html">Create account</a>
-        </div>
-
-        <div class="authLegal">
-          <a class="link" href="/legal/privacy.html">Privacy</a>
-          <span class="dot">·</span>
-          <a class="link" href="/legal/terms.html">Terms</a>
+        <div class="legal">
+          <a href="/legal/privacy.html">Privacy</a>
+          <span>·</span>
+          <a href="/legal/terms.html">Terms</a>
         </div>
       </form>
-
     </section>
   </main>
 
-  <!-- forgot.js is in root as per your repo -->
-  <script type="module" src="/forgot.js?v=20"></script>
+  <script type="module" src="/auth/forgot.js"></script>
 </body>
 </html>
