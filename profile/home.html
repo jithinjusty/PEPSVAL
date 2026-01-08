@@ -80,6 +80,7 @@
       </aside>
 
       <section class="mainRail">
+        <!-- ABOUT -->
         <div id="tab_about" class="tabPane">
           <div class="paneCard">
             <h2 class="paneTitle">About</h2>
@@ -106,6 +107,7 @@
           </div>
         </div>
 
+        <!-- POSTS -->
         <div id="tab_posts" class="tabPane hidden">
           <div class="paneCard">
             <div class="postsHead">
@@ -118,6 +120,7 @@
           </div>
         </div>
 
+        <!-- DOCUMENTS -->
         <div id="tab_documents" class="tabPane hidden">
           <div class="paneCard">
             <div class="paneTopRow">
@@ -175,6 +178,7 @@
           </div>
         </div>
 
+        <!-- SEA SERVICE -->
         <div id="tab_sea" class="tabPane hidden">
           <div class="paneCard">
             <div class="paneTopRow">
@@ -191,6 +195,12 @@
               </div>
 
               <div class="field">
+                <label class="lbl">IMO number <span class="req">*</span></label>
+                <input id="imoNumber" type="text" inputmode="numeric" placeholder="7 digits (e.g., 9732456)" required />
+                <div class="help">IMO is required to match crewmates on the same vessel.</div>
+              </div>
+
+              <div class="field">
                 <label class="lbl">Vessel type</label>
                 <input id="vesselType" type="text" placeholder="e.g., Tanker / Container / Drillship" />
               </div>
@@ -202,7 +212,7 @@
 
               <div class="field">
                 <label class="lbl">Company</label>
-                <input id="seaCompany" type="text" placeholder="Optional" />
+                <input id="seaCompany" type="text" placeholder="e.g., Owner/Manager/Manning agency" />
               </div>
 
               <div class="field">
@@ -240,6 +250,7 @@
           </div>
         </div>
 
+        <!-- JOBS -->
         <div id="tab_jobs" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Jobs</h2>
@@ -247,6 +258,7 @@
           </div>
         </div>
 
+        <!-- MEDIA -->
         <div id="tab_media" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Media</h2>
@@ -260,3 +272,4 @@
   <script type="module" src="/profile/profile.js?v=20260108"></script>
 </body>
 </html>
+```0
