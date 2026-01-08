@@ -1,91 +1,197 @@
 import { supabase } from "/js/supabase.js";
 
-const $ = (id) => document.getElementById(id);
+/* -----------------------
+  Helpers
+------------------------ */
+const $ = (q) => document.querySelector(q);
+const $$ = (q) => Array.from(document.querySelectorAll(q));
+const show = (el) => el && el.classList.remove("hidden");
+const hide = (el) => el && el.classList.add("hidden");
 
-async function getMyProfile(userId){
+/* -----------------------
+  Auth
+------------------------ */
+async function requireUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    window.location.href = "/auth/login.html";
+    return null;
+  }
+  return data.user;
+}
+
+/* -----------------------
+  Profile load
+------------------------ */
+async function loadProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("full_name, first_name, last_name, avatar_url")
+    .select("*")
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) return { name: "Profile", avatar_url: "" };
-
-  const name =
-    (data?.full_name || "").trim() ||
-    [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim() ||
-    "Profile";
-
-  return { name, avatar_url: data?.avatar_url || "" };
+  if (error) return null;
+  return data || null;
 }
 
-function wireBottomNav(){
-  // Your bottom nav ids may differ; we support common ones.
-  const profileBtn =
-    $("navProfile") ||
-    $("tabProfile") ||
-    document.querySelector('[data-nav="profile"]') ||
-    document.querySelector('a[href*="profile"]');
+/* -----------------------
+  Avatar
+------------------------ */
+function setAvatar(imgUrl, fallbackText = "P") {
+  // Support both: image + circle fallback
+  const avatarImg = $("#topAvatarImg");
+  const avatarCircle = $("#topAvatarCircle");
 
-  if (profileBtn) {
-    // Always go to NEW profile page
-    profileBtn.href = "/profile/home.html";
+  if (avatarImg && imgUrl) {
+    avatarImg.src = imgUrl;
+    show(avatarImg);
+    hide(avatarCircle);
+    return;
   }
+
+  if (avatarCircle) {
+    avatarCircle.textContent = fallbackText;
+    show(avatarCircle);
+  }
+  hide(avatarImg);
 }
 
-function wireAvatarMenu({ name, avatar_url }){
-  const avatarBtn = $("avatarBtn");
-  const avatarImg = $("avatarImg");
-  const menu = $("avatarMenu");
-  const menuName = $("avatarMenuName");
+/* -----------------------
+  Avatar menu
+------------------------ */
+function wireAvatarMenu(profile) {
+  const btn = $("#topAvatarBtn");
+  const menu = $("#avatarMenu");
+  const nameEl = $("#avatarMenuName");
 
-  if (menuName) menuName.textContent = name;
-  if (avatarImg && avatar_url) avatarImg.src = avatar_url;
+  if (nameEl) nameEl.textContent = profile?.full_name || "Profile";
 
-  // Toggle menu
-  avatarBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    menu?.classList.toggle("open");
+  if (!btn || !menu) return;
+
+  const openMenu = () => show(menu);
+  const closeMenu = () => hide(menu);
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (menu.classList.contains("hidden")) openMenu();
+    else closeMenu();
   });
 
-  // Close when click outside
-  document.addEventListener("click", (e) => {
-    if (!menu || !avatarBtn) return;
-    const inside = menu.contains(e.target) || avatarBtn.contains(e.target);
-    if (!inside) menu.classList.remove("open");
-  });
+  document.addEventListener("click", () => closeMenu());
 
-  // Menu links
-  const mProfile = $("menuProfile");
-  const mSettings = $("menuSettings");
-  const mLogout = $("menuLogout");
+  const mProfile = $("#menuProfile");
+  const mSettings = $("#menuSettings");
+  const mLogout = $("#menuLogout");
 
-  // NEW profile page
-  if (mProfile) mProfile.href = "/profile/home.html";
-
-  // Old basic setup page should be only in Settings
-  if (mSettings) mSettings.href = "/setup/profile-setup.html";
-
-  mLogout?.addEventListener("click", async (e) => {
-    e.preventDefault();
+  mProfile?.addEventListener("click", () => (window.location.href = "/profile/index.html"));
+  mSettings?.addEventListener("click", () => (window.location.href = "/setup/profile-setup.html"));
+  mLogout?.addEventListener("click", async () => {
     await supabase.auth.signOut();
     window.location.href = "/auth/login.html";
   });
 }
 
-async function init(){
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user;
+/* -----------------------
+  Navigation wiring
+  (safe: does nothing if element not found)
+------------------------ */
+function wireNav() {
+  // Messages
+  const msgBtn =
+    $("#navMessages") ||
+    $('[data-nav="messages"]') ||
+    $('a[href*="messages"]');
 
-  if (!user) {
-    window.location.href = "/auth/login.html";
-    return;
+  if (msgBtn) {
+    msgBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.location.href = "/messages/index.html";
+    });
   }
 
-  wireBottomNav();
+  // Profile
+  const profileBtn =
+    $("#navProfile") ||
+    $('[data-nav="profile"]') ||
+    $('a[href*="/profile"]');
 
-  const me = await getMyProfile(user.id);
-  wireAvatarMenu(me);
+  if (profileBtn) {
+    profileBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.location.href = "/profile/index.html";
+    });
+  }
+}
+
+/* -----------------------
+  Badge counts
+  Total badge on Messages tab = unread notifications + unread messages
+------------------------ */
+async function getUnreadNotificationsCount(userId) {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("recipient_id", userId)
+    .eq("is_read", false);
+
+  if (error) return 0;
+  return count || 0;
+}
+
+// Not implemented yet (DM tables not built). Keep 0 for now.
+async function getUnreadMessagesCount() {
+  return 0;
+}
+
+function setMessagesBadge(total) {
+  // Support multiple possible badge locations safely
+  const badgeEls = [
+    $("#messagesBadge"),
+    $("#msgBadge"),
+    $('[data-badge="messages"]'),
+    $("#navMessages .badge")
+  ].filter(Boolean);
+
+  badgeEls.forEach((el) => {
+    el.textContent = String(total);
+    if (total > 0) show(el);
+    else hide(el);
+  });
+}
+
+async function refreshBadges(userId) {
+  const noti = await getUnreadNotificationsCount(userId);
+  const msg = await getUnreadMessagesCount();
+  const total = noti + msg;
+  setMessagesBadge(total);
+}
+
+/* -----------------------
+  Boot
+------------------------ */
+async function init() {
+  const user = await requireUser();
+  if (!user) return;
+
+  const profile = await loadProfile(user.id);
+
+  // Avatar fallback letter
+  const fallbackLetter = (profile?.full_name || user.email || "P")
+    .trim()
+    .slice(0, 1)
+    .toUpperCase();
+
+  setAvatar(profile?.avatar_url || null, fallbackLetter);
+
+  // Avatar menu
+  wireAvatarMenu(profile);
+
+  // Nav
+  wireNav();
+
+  // Badge refresh
+  await refreshBadges(user.id);
+  setInterval(() => refreshBadges(user.id).catch(() => {}), 10000);
 }
 
 init();
