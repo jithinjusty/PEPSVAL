@@ -1,76 +1,39 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Create account</title>
-
-  <!-- keep your existing file names -->
-  <link rel="stylesheet" href="create-account.css?v=1" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PEPSVAL — Create account</title>
+<link rel="stylesheet" href="/auth/create-account.css?v=2" />
 </head>
 
 <body>
-  <main class="wrap">
-    <section class="card">
+<main class="wrap">
+<section class="card">
 
-      <header class="head">
-        <div class="brand">
-          <div class="logoWord">PEPSVAL</div>
-          <div class="tagline">connect, hire and grow</div>
-        </div>
-        <h1 class="title">Create account</h1>
-        <p class="sub">Your data is private. Nothing is shared without your permission.</p>
-      </header>
+<h1>Create account</h1>
 
-      <form id="createForm" class="form" novalidate>
-        <div class="row">
-          <div class="field">
-            <label class="lbl">First name</label>
-            <input id="firstName" type="text" placeholder="First name" autocomplete="given-name" />
-          </div>
+<form id="createForm">
+  <input id="email" type="email" placeholder="Email" required />
+  <input id="password" type="password" placeholder="Password" required />
+  <input id="confirmPassword" type="password" placeholder="Confirm Password" required />
 
-          <div class="field">
-            <label class="lbl">Last name</label>
-            <input id="lastName" type="text" placeholder="Last name" autocomplete="family-name" />
-          </div>
-        </div>
+  <div id="errorBox" class="error"></div>
 
-        <div class="field">
-          <label class="lbl">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
-        </div>
+  <button id="createBtn">Create</button>
+</form>
 
-        <div class="row">
-          <div class="field">
-            <label class="lbl">Password</label>
-            <input id="password" type="password" placeholder="••••••••" autocomplete="new-password" />
-          </div>
+<p>
+  By continuing you agree to
+  <a href="/legal/terms.html">Terms</a> &
+  <a href="/legal/privacy.html">Privacy</a>
+</p>
 
-          <div class="field">
-            <label class="lbl">Confirm password</label>
-            <input id="confirmPassword" type="password" placeholder="••••••••" autocomplete="new-password" />
-          </div>
-        </div>
+<p><a href="/auth/login.html">Back to login</a></p>
 
-        <div id="errorBox" class="error" style="display:none;"></div>
+</section>
+</main>
 
-        <button id="createBtn" class="btnPrimary" type="submit">Create account</button>
-
-        <div class="links">
-          <a href="/auth/login.html">Back to login</a>
-        </div>
-
-        <p class="legal">
-          By creating an account, you agree to our
-          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms of Service</a>
-          and
-          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-        </p>
-      </form>
-
-    </section>
-  </main>
-
-  <script type="module" src="create-account.js?v=1"></script>
+<script type="module" src="/create-account.js?v=2"></script>
 </body>
 </html>
