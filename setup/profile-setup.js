@@ -1,478 +1,601 @@
-// /setup/profile-setup.js (FULL) — remembers dial code + saves avatar to Supabase Storage
-import { supabase } from "/js/supabaseClient.js";
-import { ROUTES } from "/js/config.js";
+// /setup/profile-setup.js
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-function $(id){ return document.getElementById(id); }
+const SUPABASE_URL = window.SUPABASE_URL || localStorage.getItem("SUPABASE_URL") || "";
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem("SUPABASE_ANON_KEY") || "";
 
-const form = $("setupForm");
-const saveBtn = $("saveBtn");
-const errorBox = $("errorBox");
+const errorBox = document.getElementById("errorBox");
+const setupForm = document.getElementById("setupForm");
+const saveBtn = document.getElementById("saveBtn");
 
-const accountType = $("accountType");
-const accountTypeOtherWrap = $("accountTypeOtherWrap");
-const accountTypeOther = $("accountTypeOther");
+const accountType = document.getElementById("accountType");
+const accountTypeOtherWrap = document.getElementById("accountTypeOtherWrap");
+const accountTypeOther = document.getElementById("accountTypeOther");
 
-const fullName = $("fullName");
-const dobEl = $("dob");
+const fullName = document.getElementById("fullName");
+const dob = document.getElementById("dob");
 
-const rankWrap = $("rankWrap");
-const rankSearch = $("rankSearch");
-const rankValue = $("rankValue");
-const rankList = $("rankList");
-const rankOtherWrap = $("rankOtherWrap");
-const rankOther = $("rankOther");
+const rankWrap = document.getElementById("rankWrap");
+const rankSearch = document.getElementById("rankSearch");
+const rankValue = document.getElementById("rankValue");
+const rankList = document.getElementById("rankList");
+const rankOtherWrap = document.getElementById("rankOtherWrap");
+const rankOther = document.getElementById("rankOther");
 
-const countrySearch = $("countrySearch");
-const countryValue = $("countryValue");
-const countryList = $("countryList");
+const countrySearch = document.getElementById("countrySearch");
+const countryValue = document.getElementById("countryValue");
+const countryList = document.getElementById("countryList");
 
-const dialSearch = $("dialSearch");
-const dialValue = $("dialValue");
-const dialList = $("dialList");
-const phoneInput = $("phoneInput");
+const dialSearch = document.getElementById("dialSearch");
+const dialValue = document.getElementById("dialValue");
+const dialList = document.getElementById("dialList");
 
-// Photo
-const photoInput = $("photoInput");
-const avatarPreview = $("avatarPreview");
-const removePhotoBtn = $("removePhotoBtn");
-let selectedPhotoFile = null;
-let existingAvatarUrl = null; // loaded from DB/local if present
+const phoneInput = document.getElementById("phoneInput");
 
-function showError(msg){
+const photoInput = document.getElementById("photoInput");
+const removePhotoBtn = document.getElementById("removePhotoBtn");
+const avatarPreview = document.getElementById("avatarPreview");
+
+let supabase = null;
+let user = null;
+
+let countries = [];
+let ranks = [];
+
+// local backup keys (useful if Supabase read fails temporarily)
+const LS_PROFILE = "pepsval_profile_cache_v1";
+
+function showError(msg) {
   errorBox.style.display = "block";
   errorBox.textContent = msg;
 }
-function clearError(){
+
+function clearError() {
   errorBox.style.display = "none";
   errorBox.textContent = "";
 }
-function busy(b){
-  saveBtn.disabled = b;
-  saveBtn.textContent = b ? "Saving..." : "Save & Continue";
+
+function isConfigured() {
+  return SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
 }
 
-// ---- ranks (same as before, you can add more later) ----
-const RANKS = [
-  "Master / Captain","Staff Captain","Chief Officer / C/O","Chief Mate",
-  "Second Officer / 2/O","Second Mate","Third Officer / 3/O","Third Mate",
-  "Safety Officer","Training Officer","Deck Cadet",
-  "Bosun (Boatswain)","Able Seaman (AB)","Ordinary Seaman (OS)","Deck Fitter",
-
-  "Chief Engineer / C/E","First Engineer","Second Engineer / 2/E","Third Engineer / 3/E",
-  "Fourth Engineer / 4/E","Fifth Engineer","Junior Engineer / Trainee Engineer",
-  "Engine Cadet","Motorman","Oiler","Wiper","Fitter","Welder","Pumpman (Tanker)","Reefer Engineer",
-
-  "ETO (Electro-Technical Officer)","Electrician","Electronics Technician","IT Officer / IT Support","Radio Officer",
-
-  "Chief Cook","Cook","Chief Steward","Steward","Messman","Cabin Steward",
-
-  "Offshore Installation Manager (OIM)","Barge Master","Tow Master",
-  "DPO (Dynamic Positioning Operator)","Senior DPO","Junior DPO / Trainee DPO",
-  "DP Maintenance / DP Technician","Rigger","Crane Operator","Roustabout","Deck Foreman",
-  "Fast Rescue Craft Coxswain","ROV Pilot Technician","ROV Supervisor","Subsea Engineer","Subsea Supervisor",
-  "Diving Supervisor","Saturation Diver","Air Diver",
-
-  "Toolpusher","Driller","Assistant Driller","Derrickman","Floorman","Roughneck",
-  "Mud Engineer","Mud Logger","Wellsite Supervisor","Well Test Operator","BOP Technician",
-  "Mechanical Technician (Rig)","Electrical Technician (Rig)","Instrument Technician (Rig)",
-
-  "Hydrographic Surveyor","Survey Party Chief","Geophysicist","Marine Scientist","Research Technician","Party Chief (Survey)",
-
-  "Harbour Master","Tug Master","Pilot (Marine)","Coxswain","Workboat Master",
-
-  "Marine Superintendent","Technical Superintendent","Crewing / Manning Staff","HSEQ Officer","Trainer / Instructor",
-
-  "Other"
-];
-
-let COUNTRIES = [];
-async function loadCountries(){
-  try{
-    const res = await fetch("/countries.json?v=1", { cache:"no-store" });
-    if(!res.ok) throw new Error("countries.json not found");
-    const data = await res.json();
-    if(!Array.isArray(data)) throw new Error("countries.json invalid");
-    COUNTRIES = data.map(c => ({
-      name: (c.name||"").trim(),
-      dial_code: (c.dial_code||"").toString().replace(/\s+/g,""),
-      code: (c.code||"").trim()
-    })).filter(x=>x.name);
-  } catch(e){
-    COUNTRIES = [
-      { name:"India", dial_code:"+91", code:"IN" },
-      { name:"Ireland", dial_code:"+353", code:"IE" },
-      { name:"United Kingdom", dial_code:"+44", code:"GB" },
-      { name:"Singapore", dial_code:"+65", code:"SG" }
-    ];
-  }
+function normalizeDial(d) {
+  if (!d) return "";
+  return String(d).replace(/\s+/g, "").trim();
 }
 
-// Dropdown helpers
-function closeList(listEl){ listEl.classList.remove("show"); }
-function renderList(listEl, rows){
-  listEl.innerHTML = "";
-  if(!rows.length){
-    const d=document.createElement("div");
-    d.className="comboEmpty";
-    d.textContent="No results";
-    listEl.appendChild(d);
-    listEl.classList.add("show");
+function setAvatarFromUrl(url) {
+  avatarPreview.innerHTML = "";
+  if (!url) {
+    avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+    avatarPreview.style.backgroundImage = "";
     return;
   }
-  rows.forEach(r => listEl.appendChild(r));
-  listEl.classList.add("show");
+  avatarPreview.style.backgroundImage = `url("${url}")`;
+  avatarPreview.style.backgroundSize = "cover";
+  avatarPreview.style.backgroundPosition = "center";
 }
-function attachCombo(inputEl, listEl, getRows){
-  const refresh=()=>renderList(listEl, getRows(inputEl.value));
-  inputEl.addEventListener("focus", refresh);
-  inputEl.addEventListener("input", refresh);
 
-  document.addEventListener("click", (e)=>{
-    if(listEl.contains(e.target) || inputEl.contains(e.target)) return;
-    closeList(listEl);
+function setAvatarFromFile(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  setAvatarFromUrl(url);
+}
+
+async function loadCountries() {
+  // you said countries.json committed (likely inside /data/)
+  const tryUrls = ["/data/countries.json", "/countries.json", "/data/country-codes.json"];
+  for (const url of tryUrls) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length) return data;
+    } catch {}
+  }
+  return [];
+}
+
+function buildRanks() {
+  // Broad list (Deck + Engine + Offshore/Drilling + Catering + Shore/Office)
+  // You can expand anytime by adding more strings.
+  return [
+    // Deck (merchant)
+    "Master / Captain",
+    "Chief Officer / C/O",
+    "First Officer / 1/O",
+    "Second Officer / 2/O",
+    "Third Officer / 3/O",
+    "Deck Cadet",
+    "Bosun / Boatswain",
+    "AB / Able Seaman",
+    "OS / Ordinary Seaman",
+    "Deck Fitter",
+    "Deck Trainee",
+    "Pilot",
+    "Harbour Master",
+    // Engine (merchant)
+    "Chief Engineer / C/E",
+    "Second Engineer / 2/E",
+    "Third Engineer / 3/E",
+    "Fourth Engineer / 4/E",
+    "Junior Engineer",
+    "Engine Cadet",
+    "Motorman / Oiler",
+    "Wiper",
+    "Fitter",
+    "Electrician / ETO",
+    "Electro-Technical Officer (ETO)",
+    "Electro-Technical Rating (ETR)",
+    "Reefer Engineer",
+    // Offshore / DP
+    "DPO / Dynamic Positioning Operator",
+    "Senior DPO",
+    "Junior DPO",
+    "DP Trainee",
+    "Offshore Installation Manager (OIM)",
+    "Barge Master",
+    "Chief Mate (Offshore)",
+    "Cargo Supervisor",
+    "Ballast Control Operator (BCO)",
+    "Crane Operator",
+    "Roustabout",
+    "Able Seafarer Deck (ASD)",
+    "Able Seafarer Engine (ASE)",
+    // Drilling / Rig
+    "Toolpusher",
+    "Driller",
+    "Assistant Driller",
+    "Derrickman",
+    "Floorman / Roughneck",
+    "Mud Engineer",
+    "Subsea Engineer",
+    "Maintenance Supervisor",
+    "Mechanical Technician",
+    "Electrical Technician",
+    "Instrument Technician",
+    "HSE Officer",
+    "Medic / Offshore Paramedic",
+    // Tanker / specialized
+    "Chief Officer (Tanker)",
+    "Cargo Officer (Tanker)",
+    "Gas Engineer",
+    "Pumpman",
+    // Catering / hotel
+    "Chief Cook",
+    "Second Cook",
+    "Cook",
+    "Steward",
+    "Chief Steward",
+    "Messman",
+    // Shore / office roles (for “Shore Staff”)
+    "Marine Superintendent",
+    "Technical Superintendent",
+    "Crewing Officer",
+    "Recruiter",
+    "Port Captain",
+    "HSQE Manager",
+    "Operations Manager",
+    "Training Coordinator",
+    "Agent",
+    "Surveyor",
+    "Class Inspector",
+    // Other
+    "Other"
+  ];
+}
+
+/** ---------- Simple combo dropdown helpers ---------- */
+function createOptions(list, makeLabel, onPick) {
+  return list.map(item => {
+    const div = document.createElement("div");
+    div.className = "comboItem";
+    div.textContent = makeLabel(item);
+    div.addEventListener("click", () => onPick(item));
+    return div;
   });
 }
 
-function initRankCombo(){
-  attachCombo(rankSearch, rankList, (q)=>{
-    const t=(q||"").toLowerCase().trim();
-    const list = !t ? RANKS : RANKS.filter(r=>r.toLowerCase().includes(t));
-    return list.slice(0,100).map(r=>{
-      const row=document.createElement("div");
-      row.className="comboItem";
-      row.innerHTML = `<strong>${r}</strong>`;
-      row.onclick=()=>{
-        rankSearch.value=r;
-        rankValue.value=r;
-        closeList(rankList);
+function filterList(list, query, makeHaystack) {
+  const q = (query || "").toLowerCase().trim();
+  if (!q) return list;
+  return list.filter(item => makeHaystack(item).toLowerCase().includes(q));
+}
 
-        if(r==="Other") rankOtherWrap.classList.remove("hidden");
-        else { rankOtherWrap.classList.add("hidden"); rankOther.value=""; }
-      };
-      return row;
+function openList(el) {
+  el.style.display = "block";
+}
+
+function closeList(el) {
+  el.style.display = "none";
+}
+
+function wireCombo({ inputEl, listEl, sourceList, makeLabel, makeHaystack, onPick }) {
+  function render(query) {
+    listEl.innerHTML = "";
+    const filtered = filterList(sourceList(), query, makeHaystack).slice(0, 80);
+    const nodes = createOptions(filtered, makeLabel, (item) => {
+      onPick(item);
+      closeList(listEl);
+      validate();
     });
+    nodes.forEach(n => listEl.appendChild(n));
+    openList(listEl);
+  }
+
+  inputEl.addEventListener("focus", () => render(inputEl.value));
+  inputEl.addEventListener("input", () => render(inputEl.value));
+
+  document.addEventListener("click", (e) => {
+    if (!listEl.contains(e.target) && e.target !== inputEl) {
+      closeList(listEl);
+    }
   });
 }
 
-function initCountryCombos(){
-  attachCombo(countrySearch, countryList, (q)=>{
-    const t=(q||"").toLowerCase().trim();
-    const list = !t ? COUNTRIES : COUNTRIES.filter(c=>c.name.toLowerCase().includes(t));
-    return list.slice(0,100).map(c=>{
-      const row=document.createElement("div");
-      row.className="comboItem";
-      row.innerHTML = `<strong>${c.name}</strong> <span style="color:#5d7a88;">(${c.code})</span>`;
-      row.onclick=()=>{
-        countrySearch.value=c.name;
-        countryValue.value=c.code || c.name;
-        closeList(countryList);
-
-        // Always set dial code when a country is picked
-        if(c.dial_code){
-          dialSearch.value=c.dial_code;
-          dialValue.value=c.dial_code;
-        }
-      };
-      return row;
-    });
-  });
-
-  attachCombo(dialSearch, dialList, (q)=>{
-    const t=(q||"").toLowerCase().trim();
-    const base = COUNTRIES.filter(c=>c.dial_code).map(c=>({name:c.name, dial_code:c.dial_code, code:c.code}));
-    const list = !t ? base : base.filter(c=>c.dial_code.toLowerCase().includes(t) || c.name.toLowerCase().includes(t));
-    return list.slice(0,100).map(c=>{
-      const row=document.createElement("div");
-      row.className="comboItem";
-      row.innerHTML = `<strong>${c.dial_code}</strong> <span style="color:#5d7a88;">${c.name}</span>`;
-      row.onclick=()=>{
-        dialSearch.value=c.dial_code;
-        dialValue.value=c.dial_code;
-        closeList(dialList);
-
-        // set country too (nice)
-        if(c.code){
-          countrySearch.value=c.name;
-          countryValue.value=c.code;
-        }
-      };
-      return row;
-    });
-  });
-}
-
-function updateAccountTypeUI(){
+/** ---------- Behavior rules ---------- */
+function updateAccountTypeUI() {
   const t = accountType.value;
 
-  if(t==="other") accountTypeOtherWrap.classList.remove("hidden");
+  // show "other account type" textbox
+  if (t === "other") accountTypeOtherWrap.classList.remove("hidden");
   else accountTypeOtherWrap.classList.add("hidden");
 
-  if(t==="seafarer") rankWrap.classList.remove("hidden");
-  else {
-    rankWrap.classList.add("hidden");
-    rankSearch.value=""; rankValue.value="";
-    rankOtherWrap.classList.add("hidden"); rankOther.value="";
-  }
-}
-accountType.addEventListener("change", updateAccountTypeUI);
+  // rank only for seafarer
+  if (t === "seafarer") rankWrap.classList.remove("hidden");
+  else rankWrap.classList.add("hidden");
 
-// Avatar UI helper
-function setAvatar(url){
-  if(url){
-    existingAvatarUrl = url;
-    avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo" />`;
-  } else {
-    existingAvatarUrl = null;
-    avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+  // reset rank if not seafarer
+  if (t !== "seafarer") {
+    rankSearch.value = "";
+    rankValue.value = "";
+    rankOther.value = "";
+    rankOtherWrap.classList.add("hidden");
   }
+
+  validate();
 }
 
-// Photo preview (cannot persist file, only URL can persist)
-photoInput.addEventListener("change", ()=>{
-  const f = photoInput.files?.[0] || null;
-  selectedPhotoFile = f;
-  if(!f){
-    if(existingAvatarUrl) setAvatar(existingAvatarUrl);
-    else setAvatar(null);
+function updateRankOtherUI() {
+  const v = (rankValue.value || "").toLowerCase();
+  if (v === "other") rankOtherWrap.classList.remove("hidden");
+  else rankOtherWrap.classList.add("hidden");
+  validate();
+}
+
+function validate() {
+  clearError();
+
+  // required: account type
+  if (!accountType.value) {
+    saveBtn.disabled = true;
     return;
   }
-  const url = URL.createObjectURL(f);
-  avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo" />`;
-});
 
-removePhotoBtn.addEventListener("click", ()=>{
-  selectedPhotoFile=null;
-  photoInput.value="";
-  setAvatar(null);
-});
-
-// Validation (DOB required; photo+phone optional)
-function validate(){
-  clearError();
-  const t = accountType.value;
-  if(!t) return {ok:false,msg:"Please select account type."};
-  if(t==="other" && !accountTypeOther.value.trim()) return {ok:false,msg:"Please specify account type."};
-
-  const dob = (dobEl.value || "").trim();
-  if(!dob) return {ok:false,msg:"Please select date of birth."};
-
-  if(!countrySearch.value.trim()) return {ok:false,msg:"Please select nationality."};
-
-  if(t==="seafarer"){
-    const r = (rankValue.value || rankSearch.value).trim();
-    if(!r) return {ok:false,msg:"Please select your rank."};
-    if(r==="Other" && !rankOther.value.trim()) return {ok:false,msg:"Please enter your rank (Other)."};
+  // required: specify account type if "other"
+  if (accountType.value === "other" && !accountTypeOther.value.trim()) {
+    saveBtn.disabled = true;
+    return;
   }
 
-  // phone optional
-  const phone = phoneInput.value.trim();
-  if(phone && !dialSearch.value.trim()) return {ok:false,msg:"Please select country code for mobile number."};
-
-  return {ok:true};
-}
-
-async function ensureSession(){
-  const { data:{ session } } = await supabase.auth.getSession();
-  if(!session?.user){
-    window.location.href = ROUTES.login;
-    return null;
-  }
-  return session;
-}
-
-// Missing column auto-fix
-function parseMissingColumn(msg){
-  const m = /Could not find the '([^']+)' column/i.exec(msg || "");
-  return m?.[1] || null;
-}
-async function upsertWithAutoColumnFix(payload){
-  let p = { ...payload };
-  for(let attempt=1; attempt<=8; attempt++){
-    const { error } = await supabase.from("profiles").upsert(p, { onConflict:"id" });
-    if(!error) return { ok:true, saved:p };
-
-    const missing = parseMissingColumn(error.message);
-    if(missing && Object.prototype.hasOwnProperty.call(p, missing)){
-      delete p[missing];
-      continue;
-    }
-    return { ok:false, error };
-  }
-  return { ok:false, error:{ message:"Schema mismatch. Please update profiles table." } };
-}
-
-// Local backup (so dial code and fields always restore)
-const LS_KEY = "pepsval_profile_local_v3";
-function saveLocalProfile(obj){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }catch(_){}
-}
-function loadLocalProfile(){
-  try{ return JSON.parse(localStorage.getItem(LS_KEY) || "null"); }catch(_){ return null; }
-}
-
-function applyToUI(p){
-  if(!p) return;
-
-  if(p.account_type){
-    const v = String(p.account_type).toLowerCase();
-    if(["seafarer","employer","shore","other"].includes(v)){
-      accountType.value = v;
-    } else {
-      accountType.value = "other";
-      accountTypeOther.value = p.account_type;
-    }
+  // required: nationality
+  if (!countryValue.value) {
+    saveBtn.disabled = true;
+    return;
   }
 
-  fullName.value = p.full_name || "";
-  if(p.dob) dobEl.value = p.dob;
-
-  if(p.nationality) countrySearch.value = p.nationality;
-
-  // ✅ Always restore dial code & phone if we have it (DB or local)
-  if(p.phone_dial){
-    dialSearch.value = p.phone_dial;
-    dialValue.value = p.phone_dial;
-  }
-  if(p.phone_number) phoneInput.value = p.phone_number;
-
-  if(p.rank){
-    rankSearch.value = p.rank;
-    rankValue.value = p.rank;
-    if(p.rank === "Other"){
-      rankOtherWrap.classList.remove("hidden");
-      rankOther.value = p.rank_other || "";
-    }
-  }
-
-  // ✅ Restore avatar
-  if(p.avatar_url){
-    setAvatar(p.avatar_url);
-  }
-
-  updateAccountTypeUI();
-}
-
-async function prefillFromDBOrLocal(userId){
-  // DB first
-  try{
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if(!error && data){
-      applyToUI(data);
-      saveLocalProfile(data);
+  // required: rank only for seafarer
+  if (accountType.value === "seafarer") {
+    if (!rankValue.value) {
+      saveBtn.disabled = true;
       return;
     }
-  }catch(_){}
+    if (rankValue.value.toLowerCase() === "other" && !rankOther.value.trim()) {
+      saveBtn.disabled = true;
+      return;
+    }
+  }
 
-  // Local fallback
-  const local = loadLocalProfile();
-  if(local) applyToUI(local);
+  // photo and phone are OPTIONAL now ✅
+  saveBtn.disabled = false;
 }
 
-// -------- Avatar upload to Supabase Storage (bucket: avatars) --------
-async function uploadAvatarIfNeeded(userId){
-  if(!selectedPhotoFile) return existingAvatarUrl; // no new file chosen
+/** ---------- Supabase profile load/save ---------- */
+async function getProfile() {
+  // assumes profiles table uses user.id as primary key "id"
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  const file = selectedPhotoFile;
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const safeExt = ext.replace(/[^a-z0-9]/g,"") || "jpg";
-  const path = `${userId}/avatar_${Date.now()}.${safeExt}`;
-
-  // Upload
-  const { error: upErr } = await supabase
-    .storage
-    .from("avatars")
-    .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
-
-  if(upErr){
-    // Don't block saving profile; just show warning
-    showError("Photo upload failed (profile saved without photo): " + upErr.message);
-    return existingAvatarUrl;
-  }
-
-  // Get public URL
-  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-  const publicUrl = data?.publicUrl || null;
-
-  if(publicUrl){
-    existingAvatarUrl = publicUrl;
-    setAvatar(publicUrl);
-  }
-  return publicUrl;
+  if (error) throw error;
+  return data || null;
 }
 
-async function saveProfile(){
-  const session = await ensureSession();
-  if(!session) return;
+async function upsertProfile(payload) {
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(payload, { onConflict: "id" });
 
-  const userId = session.user.id;
-  const t = accountType.value;
+  if (error) throw error;
+}
 
-  // Upload avatar (optional)
-  const avatarUrl = await uploadAvatarIfNeeded(userId);
+async function uploadAvatar(file) {
+  // optional: if you created a storage bucket called "avatars"
+  // if not present, we just skip upload gracefully
+  try {
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
-  const payload = {
-    id: userId,
-    full_name: fullName.value.trim() || null,
-    account_type: t==="other" ? (accountTypeOther.value.trim() || "other") : t,
-    dob: (dobEl.value || "").trim(),
-    nationality: countrySearch.value.trim() || null,
+    const { error: upErr } = await supabase
+      .storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
 
-    // optional phone
-    phone_dial: dialSearch.value.trim() || null,
-    phone_number: phoneInput.value.trim() || null,
+    if (upErr) throw upErr;
 
-    // optional avatar url
-    avatar_url: avatarUrl || null,
+    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    return data?.publicUrl || "";
+  } catch {
+    // bucket not configured
+    return "";
+  }
+}
 
-    // rank
-    rank: null
-  };
+function saveLocalCache(obj) {
+  try {
+    localStorage.setItem(LS_PROFILE, JSON.stringify(obj));
+  } catch {}
+}
 
-  if(t==="seafarer"){
-    const r = (rankValue.value || rankSearch.value).trim();
-    payload.rank = (r==="Other") ? (rankOther.value.trim() || "Other") : r;
+function loadLocalCache() {
+  try {
+    const raw = localStorage.getItem(LS_PROFILE);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function applyProfileToUI(p) {
+  if (!p) return;
+
+  // account
+  if (p.account_type) accountType.value = p.account_type;
+  if (p.account_type_other) accountTypeOther.value = p.account_type_other;
+
+  // name/dob
+  if (p.full_name) fullName.value = p.full_name;
+  if (p.dob) dob.value = p.dob;
+
+  // rank
+  if (p.rank) {
+    rankValue.value = p.rank;
+    rankSearch.value = p.rank;
+  }
+  if (p.rank_other) rankOther.value = p.rank_other;
+
+  // nationality
+  if (p.nationality) {
+    countryValue.value = p.nationality;
+    countrySearch.value = p.nationality;
   }
 
-  const res = await upsertWithAutoColumnFix(payload);
-  if(!res.ok){
-    showError("Database error saving profile: " + (res.error?.message || "Unknown error"));
-    // still store local backup so reopen works
-    saveLocalProfile(payload);
+  // phone (IMPORTANT FIX: do NOT default to +91)
+  const savedDial = normalizeDial(p.phone_dial);
+  if (savedDial) {
+    dialValue.value = savedDial;
+    dialSearch.value = savedDial;
+  } else {
+    // if dial missing but nationality exists, auto-pick from nationality
+    autoPickDialFromNationality();
+  }
+
+  if (p.phone_number) phoneInput.value = p.phone_number;
+
+  // avatar
+  if (p.avatar_url) setAvatarFromUrl(p.avatar_url);
+
+  updateAccountTypeUI();
+  updateRankOtherUI();
+  validate();
+}
+
+function autoPickDialFromNationality() {
+  const nat = (countryValue.value || "").trim();
+  if (!nat || !countries.length) return;
+
+  const match = countries.find(c => (c.name || "").toLowerCase() === nat.toLowerCase());
+  const dial = normalizeDial(match?.dial_code || "");
+  if (!dial) return;
+
+  // only set if user doesn't already have a dial selected
+  if (!dialValue.value) {
+    dialValue.value = dial;
+    dialSearch.value = dial;
+  }
+}
+
+/** ---------- init ---------- */
+async function init() {
+  if (!isConfigured()) {
+    showError("Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY.");
+    saveBtn.disabled = true;
     return;
   }
 
-  // local backup (ensures dial code persists even if DB columns missing)
-  saveLocalProfile(payload);
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  window.location.href = ROUTES.dashboard;
+  // auth
+  const { data: authData, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !authData?.user) {
+    // not logged in -> send to login
+    window.location.href = "/login.html";
+    return;
+  }
+  user = authData.user;
+
+  // load data files
+  countries = await loadCountries();
+  ranks = buildRanks();
+
+  /** wire rank combo */
+  wireCombo({
+    inputEl: rankSearch,
+    listEl: rankList,
+    sourceList: () => ranks,
+    makeLabel: (r) => r,
+    makeHaystack: (r) => r,
+    onPick: (r) => {
+      rankSearch.value = r;
+      rankValue.value = r;
+      updateRankOtherUI();
+    }
+  });
+
+  /** wire country combo */
+  wireCombo({
+    inputEl: countrySearch,
+    listEl: countryList,
+    sourceList: () => countries,
+    makeLabel: (c) => c.name,
+    makeHaystack: (c) => `${c.name} ${c.code} ${c.dial_code}`,
+    onPick: (c) => {
+      countrySearch.value = c.name;
+      countryValue.value = c.name;
+
+      // IMPORTANT: auto-pick dial from nationality selection
+      const dial = normalizeDial(c.dial_code);
+      if (dial) {
+        dialValue.value = dial;
+        dialSearch.value = dial;
+      }
+
+      validate();
+    }
+  });
+
+  /** wire dial combo */
+  wireCombo({
+    inputEl: dialSearch,
+    listEl: dialList,
+    sourceList: () => countries.filter(c => c.dial_code),
+    makeLabel: (c) => `${normalizeDial(c.dial_code)} — ${c.name}`,
+    makeHaystack: (c) => `${c.name} ${c.code} ${c.dial_code}`,
+    onPick: (c) => {
+      const dial = normalizeDial(c.dial_code);
+      dialSearch.value = dial;
+      dialValue.value = dial;
+      validate();
+    }
+  });
+
+  // photo preview
+  photoInput.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (file) setAvatarFromFile(file);
+    validate();
+  });
+
+  removePhotoBtn.addEventListener("click", () => {
+    photoInput.value = "";
+    setAvatarFromUrl("");
+    validate();
+  });
+
+  // account type changes
+  accountType.addEventListener("change", updateAccountTypeUI);
+  accountTypeOther.addEventListener("input", validate);
+
+  // fields
+  fullName.addEventListener("input", validate);
+  dob.addEventListener("change", validate);
+  rankOther.addEventListener("input", validate);
+  phoneInput.addEventListener("input", validate);
+
+  // initial UI
+  updateAccountTypeUI();
+  validate();
+
+  // Load profile (Supabase first, fallback to local cache)
+  try {
+    const profile = await getProfile();
+    if (profile) {
+      applyProfileToUI(profile);
+      saveLocalCache(profile);
+    } else {
+      const cached = loadLocalCache();
+      if (cached) applyProfileToUI(cached);
+    }
+  } catch (e) {
+    // fallback to local cache if Supabase read fails
+    const cached = loadLocalCache();
+    if (cached) applyProfileToUI(cached);
+  }
+
+  // submit handler
+  setupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearError();
+    saveBtn.disabled = true;
+
+    try {
+      // optional avatar upload
+      let avatarUrl = "";
+      const file = photoInput.files?.[0];
+      if (file) {
+        avatarUrl = await uploadAvatar(file);
+      }
+
+      // build payload with columns that are safe & simple
+      // (avoid nationality_code / schema-cache issues)
+      const payload = {
+        id: user.id,
+        account_type: accountType.value,
+        account_type_other: accountType.value === "other" ? accountTypeOther.value.trim() : null,
+        full_name: fullName.value.trim() || null,
+        dob: dob.value || null,
+        rank: accountType.value === "seafarer" ? (rankValue.value || null) : null,
+        rank_other: (accountType.value === "seafarer" && (rankValue.value || "").toLowerCase() === "other")
+          ? (rankOther.value.trim() || null)
+          : null,
+        nationality: countryValue.value || null,
+        phone_dial: dialValue.value ? normalizeDial(dialValue.value) : null,
+        phone_number: phoneInput.value.trim() || null,
+      };
+
+      if (avatarUrl) payload.avatar_url = avatarUrl;
+
+      await upsertProfile(payload);
+
+      // cache
+      saveLocalCache(payload);
+
+      // go dashboard
+      window.location.href = "/dashboard/";
+    } catch (err) {
+      const msg = String(err?.message || err || "Unknown error");
+
+      // helpful message if schema cache complains about missing columns
+      if (msg.toLowerCase().includes("schema cache") || msg.toLowerCase().includes("could not find the")) {
+        showError(
+          "Database schema missing columns. Add these columns in Supabase 'profiles' table:\n" +
+          "- account_type (text)\n- account_type_other (text)\n- full_name (text)\n- dob (date)\n" +
+          "- rank (text)\n- rank_other (text)\n- nationality (text)\n- phone_dial (text)\n" +
+          "- phone_number (text)\n- avatar_url (text)\n\n" +
+          "Then refresh and try again."
+        );
+      } else {
+        showError("Database error saving profile: " + msg);
+      }
+
+      saveBtn.disabled = false;
+      return;
+    }
+
+    saveBtn.disabled = false;
+  });
 }
 
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const v = validate();
-  if(!v.ok) return showError(v.msg);
-
-  busy(true);
-  try{
-    await saveProfile();
-  } finally {
-    busy(false);
-  }
-});
-
-(async function boot(){
-  await loadCountries();
-  initRankCombo();
-  initCountryCombos();
-  updateAccountTypeUI();
-
-  const session = await ensureSession();
-  if(session?.user){
-    await prefillFromDBOrLocal(session.user.id);
-  }
-})();
+init();
