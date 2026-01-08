@@ -3,55 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Set New Password</title>
+  <title>PEPSVAL — Reset password</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="./reset.css" />
+  <!-- If you already have reset.css, keep it. If not, this still looks clean. -->
+  <link rel="stylesheet" href="/auth/forgot.css?v=20" />
 </head>
+
 <body>
-  <main class="page">
-    <section class="card" role="region" aria-label="Set new password">
-      <header class="brand">
-        <div class="logoWord">PEPSVAL</div>
-        <div class="tagline">connect, hire and grow</div>
-      </header>
+  <div class="bgFX" aria-hidden="true"></div>
 
-      <h1 class="title">Set new password</h1>
-      <p class="subtitle">Enter your new password below.</p>
+  <main class="wrap">
+    <section class="card">
 
-      <div id="infoBox" class="info" role="status" aria-live="polite"></div>
+      <div class="brand">
+        <div class="name">PEPSVAL</div>
+        <div class="tag">connect, hire and grow</div>
+      </div>
 
-      <form id="resetForm" class="form" novalidate>
-        <label class="field">
-          <span class="label">New password</span>
-          <input id="password" type="password" placeholder="New password" minlength="6" autocomplete="new-password" required />
-        </label>
+      <h1 class="title">Set a new password</h1>
+      <p class="sub">Enter your new password to finish resetting your account.</p>
 
-        <label class="field">
-          <span class="label">Confirm new password</span>
-          <input id="confirmPassword" type="password" placeholder="Confirm new password" minlength="6" autocomplete="new-password" required />
-        </label>
+      <form id="resetForm" novalidate>
+        <div class="field">
+          <div class="label"><span>New password</span></div>
+          <input id="newPassword" type="password" placeholder="New password" autocomplete="new-password" required />
+        </div>
 
-        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
-        <div id="successBox" class="success" role="status" aria-live="polite"></div>
+        <div class="field">
+          <div class="label"><span>Confirm password</span></div>
+          <input id="confirmPassword" type="password" placeholder="Confirm new password" autocomplete="new-password" required />
+        </div>
 
-        <button class="primary" type="submit">Update password</button>
+        <div id="errorBox" class="msg error" style="display:none;"></div>
+        <div id="successBox" class="msg success" style="display:none;"></div>
+
+        <button class="btn" id="saveBtn" type="submit">Update password</button>
 
         <div class="links">
-          <a class="link" href="/auth/login.html">Back to login</a>
+          <a href="/auth/login.html">Back to login</a>
+          <a href="/auth/create-account.html">Create account</a>
         </div>
 
         <div class="legal">
-          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> ·
-          <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
+          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy</a>
+          ·
+          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms</a>
         </div>
       </form>
+
     </section>
   </main>
 
-  <script type="module" src="./reset.js"></script>
+  <!-- Keep your existing reset.js if you already have it -->
+  <script type="module" src="/reset.js?v=20"></script>
 </body>
 </html>
