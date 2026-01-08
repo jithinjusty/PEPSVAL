@@ -1,98 +1,93 @@
-// create-account.js
 import { supabase } from "/js/supabase.js";
 
 const form = document.getElementById("createForm");
-const firstName = document.getElementById("firstName");
-const lastName = document.getElementById("lastName");
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const confirmPassword = document.getElementById("confirmPassword");
-const createBtn = document.getElementById("createBtn");
+const msg = document.getElementById("msg");
 
-const errorBox = document.getElementById("errorBox");
-const successBox = document.getElementById("successBox");
+const emailEl = document.getElementById("email");
+const pwEl = document.getElementById("password");
+const confirmEl = document.getElementById("confirm");
 
+const submitBtn = document.getElementById("submitBtn");
 const togglePw = document.getElementById("togglePw");
-const togglePw2 = document.getElementById("togglePw2");
+const toggleConfirm = document.getElementById("toggleConfirm");
 
-function showError(msg) {
-  successBox.style.display = "none";
-  errorBox.textContent = msg;
-  errorBox.style.display = "block";
+function setMsg(type, text) {
+  msg.hidden = false;
+  msg.className = `msg ${type}`;
+  msg.textContent = text;
 }
 
-function showSuccess(msg) {
-  errorBox.style.display = "none";
-  successBox.textContent = msg;
-  successBox.style.display = "block";
+function clearMsg() {
+  msg.hidden = true;
+  msg.className = "msg";
+  msg.textContent = "";
 }
 
 function setLoading(isLoading) {
-  createBtn.disabled = isLoading;
-  createBtn.textContent = isLoading ? "Creating..." : "Create account";
+  submitBtn.disabled = isLoading;
+  submitBtn.classList.toggle("loading", isLoading);
 }
 
-function toggleInputType(input, btn) {
+function togglePassword(input, btn) {
   const isPw = input.type === "password";
   input.type = isPw ? "text" : "password";
   btn.textContent = isPw ? "Hide" : "Show";
+  btn.setAttribute("aria-label", isPw ? "Hide password" : "Show password");
 }
 
-togglePw?.addEventListener("click", () => toggleInputType(password, togglePw));
-togglePw2?.addEventListener("click", () => toggleInputType(confirmPassword, togglePw2));
+togglePw.addEventListener("click", () => togglePassword(pwEl, togglePw));
+toggleConfirm.addEventListener("click", () => togglePassword(confirmEl, toggleConfirm));
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  clearMsg();
 
-  errorBox.style.display = "none";
-  successBox.style.display = "none";
+  const email = (emailEl.value || "").trim().toLowerCase();
+  const password = pwEl.value || "";
+  const confirm = confirmEl.value || "";
 
-  const e1 = (email.value || "").trim();
-  const p1 = password.value || "";
-  const p2 = confirmPassword.value || "";
-
-  if (!e1) return showError("Please enter your email.");
-  if (!p1 || p1.length < 6) return showError("Password must be at least 6 characters.");
-  if (p1 !== p2) return showError("Passwords do not match.");
+  if (!email) return setMsg("err", "Please enter your email.");
+  if (!password || password.length < 6) return setMsg("err", "Password must be at least 6 characters.");
+  if (password !== confirm) return setMsg("err", "Passwords do not match.");
 
   setLoading(true);
 
   try {
-    const redirectTo = `${window.location.origin}/auth/login.html`;
+    // Important: send user back to login after email confirmation
+    const emailRedirectTo = `${location.origin}/auth/login.html`;
 
     const { data, error } = await supabase.auth.signUp({
-      email: e1,
-      password: p1,
-      options: {
-        emailRedirectTo: redirectTo,
-        data: {
-          first_name: (firstName.value || "").trim(),
-          last_name: (lastName.value || "").trim(),
-        },
-      },
+      email,
+      password,
+      options: { emailRedirectTo }
     });
 
-    if (error) {
-      const msg = (error.message || "").toLowerCase();
-
-      // Common Supabase messages across settings
-      if (msg.includes("user already registered") || msg.includes("already registered")) {
-        return showError("This email is already registered with Pepsval. Please log in.");
-      }
-      if (msg.includes("email rate limit")) {
-        return showError("Too many requests. Please try again in a few minutes.");
-      }
-      return showError(error.message || "Could not create account. Please try again.");
+    // Supabase behaviour:
+    // - New email: user.identities usually has 1 identity (created)
+    // - Existing email: often returns a user with identities = [] (no new identity)
+    const identities = data?.user?.identities;
+    if (data?.user && Array.isArray(identities) && identities.length === 0) {
+      setMsg("err", "This email is already registered with PEPSVAL. Please login or reset your password.");
+      setLoading(false);
+      return;
     }
 
-    // IMPORTANT:
-    // Depending on your Supabase auth settings, Supabase may return a user even if already existing.
-    // If identities exist, user will be null or confirmation required.
-    // We always show a safe success message.
-    showSuccess("Account created. Please check your email to confirm.");
+    if (error) {
+      const m = (error.message || "").toLowerCase();
+      if (m.includes("already") || m.includes("registered") || m.includes("exists")) {
+        setMsg("err", "This email is already registered with PEPSVAL. Please login or reset your password.");
+      } else {
+        setMsg("err", error.message || "Could not create account. Please try again.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    // If email confirmation is ON, user may be created but session null until confirmed.
+    setMsg("ok", "Account created! Please check your email to confirm, then come back and login.");
     form.reset();
   } catch (err) {
-    showError("Something went wrong. Please try again.");
+    setMsg("err", err?.message || "Something went wrong. Please try again.");
   } finally {
     setLoading(false);
   }
