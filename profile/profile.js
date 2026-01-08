@@ -1,25 +1,18 @@
 import { supabase } from "/js/supabase.js";
 
 /* -----------------------------
-  Tiny helpers (safe)
+  Helpers
 ------------------------------ */
 const $ = (id) => document.getElementById(id);
+const show = (el) => el && el.classList.remove("hidden");
+const hide = (el) => el && el.classList.add("hidden");
 
-function show(el) { if (el) el.classList.remove("hidden"); }
-function hide(el) { if (el) el.classList.add("hidden"); }
-
-function setText(id, txt) {
-  const el = $(id);
-  if (el) el.textContent = txt ?? "";
-}
+function setText(id, txt) { const el = $(id); if (el) el.textContent = txt ?? ""; }
 
 function escapeHtml(s) {
   return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
 function formatDate(d) {
@@ -27,10 +20,8 @@ function formatDate(d) {
   try {
     const dt = new Date(d);
     if (Number.isNaN(dt.getTime())) return String(d);
-    return dt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
-  } catch {
-    return String(d);
-  }
+    return dt.toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
+  } catch { return String(d); }
 }
 
 function getAccountTypeLabel(type) {
@@ -45,21 +36,29 @@ function getAccountTypeLabel(type) {
 function fillDatalist(datalistId, items) {
   const dl = $(datalistId);
   if (!dl) return;
-  const uniq = Array.from(new Set((items || []).map(x => String(x || "").trim()).filter(Boolean)));
+  const uniq = Array.from(new Set((items || []).map(x => String(x||"").trim()).filter(Boolean)));
   dl.innerHTML = uniq.map(v => `<option value="${escapeHtml(v)}"></option>`).join("");
 }
 
 function parseIMO(val) {
   const raw = String(val ?? "").trim();
-  if (!raw) return { ok: false, err: "IMO number is required (7 digits)." };
-  if (!/^\d{7}$/.test(raw)) return { ok: false, err: "IMO must be exactly 7 digits." };
+  if (!raw) return { ok:false, err:"IMO number is required (7 digits)." };
+  if (!/^\d{7}$/.test(raw)) return { ok:false, err:"IMO must be exactly 7 digits." };
   const num = parseInt(raw, 10);
-  if (!(num >= 1000000 && num <= 9999999)) return { ok: false, err: "IMO must be 7 digits (1000000–9999999)." };
-  return { ok: true, imo: num };
+  if (!(num >= 1000000 && num <= 9999999)) return { ok:false, err:"IMO must be 7 digits (1000000–9999999)." };
+  return { ok:true, imo:num };
+}
+
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  const A1 = new Date(aStart).getTime();
+  const A2 = new Date(aEnd || "9999-12-31").getTime();
+  const B1 = new Date(bStart).getTime();
+  const B2 = new Date(bEnd || "9999-12-31").getTime();
+  return A1 <= B2 && B1 <= A2;
 }
 
 /* -----------------------------
-  Dropdown seeds (static)
+  Seeds (safe v1 lists)
 ------------------------------ */
 const VESSEL_TYPES = [
   "Container Ship","Bulk Carrier","General Cargo","Ro-Ro","Car Carrier (PCTC)","Reefer",
@@ -99,7 +98,7 @@ let currentUser = null;
 let currentProfile = null;
 
 /* -----------------------------
-  Tabs (safe)
+  Tabs
 ------------------------------ */
 function initTabs() {
   const tabButtons = Array.from(document.querySelectorAll(".tab"));
@@ -122,9 +121,9 @@ function initTabs() {
     });
 
     if (key === "sea") {
-      // refresh dropdown list + data whenever Sea tab opened
       loadCompaniesIntoDropdown().catch(()=>{});
       loadSeaService().catch(()=>{});
+      loadCrewmateMatches().catch(()=>{});
     }
   }
 
@@ -133,7 +132,7 @@ function initTabs() {
 }
 
 /* -----------------------------
-  Auth + Profile load
+  Auth + Profile
 ------------------------------ */
 async function requireUserOrRedirect() {
   const { data, error } = await supabase.auth.getUser();
@@ -150,7 +149,6 @@ async function loadMyProfile(userId) {
     .select("*")
     .eq("id", userId)
     .maybeSingle();
-
   if (error) throw error;
   return data || null;
 }
@@ -166,14 +164,21 @@ function applyProfileToUI(profile) {
   const badge = $("accountBadge");
   if (badge) { badge.textContent = getAccountTypeLabel(profile?.account_type); show(badge); }
 
-  const avatarImg = $("avatarImg");
-  if (avatarImg && profile?.avatar_url) avatarImg.src = profile.avatar_url;
+  // Avatar
+  const img = $("avatarImg");
+  const fb = $("avatarFallback");
+  if (img && profile?.avatar_url) {
+    img.src = profile.avatar_url;
+    show(img); hide(fb);
+  } else {
+    if (fb) { fb.textContent = (name || "P").trim().slice(0,1).toUpperCase(); show(fb); }
+    hide(img);
+  }
 
   setText("miniNationality", profile?.nationality || profile?.nationality_name || "—");
   setText("miniType", getAccountTypeLabel(profile?.account_type));
   setText("miniSince", profile?.created_at ? formatDate(profile.created_at) : "—");
 
-  setText("aboutText", "Your profile is your identity on Pepsval. Keep it updated to increase visibility and trust.");
   setText("aboutName", name);
   setText("aboutDob", profile?.dob ? formatDate(profile.dob) : "—");
   setText("aboutPhone", profile?.phone ? "Saved" : "Hidden");
@@ -192,14 +197,13 @@ function applyProfileToUI(profile) {
 }
 
 /* -----------------------------
-  Companies dropdown (dynamic)
+  Companies dropdown
 ------------------------------ */
 async function loadCompaniesIntoDropdown() {
-  // Companies table may be large; load plenty for suggestions
   const { data, error } = await supabase
     .from("companies")
     .select("name")
-    .order("name", { ascending: true })
+    .order("name", { ascending:true })
     .limit(5000);
 
   if (error) return;
@@ -209,24 +213,18 @@ async function loadCompaniesIntoDropdown() {
 async function saveCompanyIfNew(name) {
   const n = String(name || "").trim();
   if (!n) return;
-
-  // Insert. If duplicate, ignore.
   const { error } = await supabase.from("companies").insert({ name: n });
   if (!error) return;
-
-  // Ignore unique conflicts
-  if (String(error.code) === "23505") return;
+  if (String(error.code) === "23505") return; // unique conflict ok
 }
 
 /* -----------------------------
-  Sea Service (your schema)
-  Columns:
-  vessel_name, imo_number, company_name, rank, vessel_type, sign_on_date, sign_off_date
+  Sea Service load/save
 ------------------------------ */
 async function loadSeaService() {
   const rows = $("seaRows");
   const status = $("seaStatus");
-  const errBox = $("seaError");
+  const errBox = $("seaError2");
 
   if (!rows) return;
 
@@ -237,7 +235,7 @@ async function loadSeaService() {
     const { data, error } = await supabase
       .from("sea_service")
       .select("*")
-      .order("sign_on_date", { ascending: false });
+      .order("sign_on_date", { ascending:false });
 
     if (error) throw error;
 
@@ -297,7 +295,10 @@ function wireSeaDeletes() {
       try {
         const { error } = await supabase.from("sea_service").delete().eq("id", id);
         if (error) throw error;
+
+        // Refresh list + matches (because matches depend on sea_service)
         await loadSeaService();
+        await loadCrewmateMatches();
       } catch {
         alert("Delete failed.");
       } finally {
@@ -308,7 +309,6 @@ function wireSeaDeletes() {
 }
 
 function initSeaForm() {
-  // Populate static dropdowns (works only if your home.html has these datalists)
   fillDatalist("vesselTypeOptions", VESSEL_TYPES);
   fillDatalist("rankOptions", RANKS);
 
@@ -319,16 +319,10 @@ function initSeaForm() {
   const saveBtn = $("seaSaveBtn");
   const clearBtn = $("seaClearBtn");
 
-  // Support BOTH id styles (in case your home.html differs)
-  const signOnEl = $("signOnDate") || $("signOn");
-  const signOffEl = $("signOffDate") || $("signOff");
-
   clearBtn?.addEventListener("click", () => {
-    ["vesselName","imoNumber","vesselType","seaRank","seaCompany"].forEach(id => {
+    ["vesselName","imoNumber","vesselType","seaRank","seaCompany","signOnDate","signOffDate"].forEach(id => {
       const el = $(id); if (el) el.value = "";
     });
-    if (signOnEl) signOnEl.value = "";
-    if (signOffEl) signOffEl.value = "";
     errBox && hide(errBox);
   });
 
@@ -341,9 +335,8 @@ function initSeaForm() {
     const vesselType = $("vesselType")?.value?.trim() || null;
     const rank = $("seaRank")?.value?.trim() || null;
     const company = $("seaCompany")?.value?.trim() || null;
-
-    const signOnDate = signOnEl?.value || "";
-    const signOffDate = signOffEl?.value || null;
+    const signOnDate = $("signOnDate")?.value || "";
+    const signOffDate = $("signOffDate")?.value || null;
 
     if (!vesselName) {
       if (errBox) { errBox.textContent = "Vessel name is required."; show(errBox); }
@@ -364,7 +357,6 @@ function initSeaForm() {
     try {
       saveBtn && (saveBtn.disabled = true);
 
-      // Auto-save company into companies table (ignore duplicates)
       if (company) await saveCompanyIfNew(company);
 
       const payload = {
@@ -374,18 +366,18 @@ function initSeaForm() {
         company_name: company,
         rank: rank,
         vessel_type: vesselType,
-        sign_on_date: signOnDate,   // ✅ your column
-        sign_off_date: signOffDate  // ✅ your column
+        sign_on_date: signOnDate,
+        sign_off_date: signOffDate
       };
 
       const { error } = await supabase.from("sea_service").insert(payload);
       if (error) throw error;
 
-      // Refresh company dropdown suggestions
       await loadCompaniesIntoDropdown();
 
       clearBtn?.click();
       await loadSeaService();
+      await loadCrewmateMatches(); // ✅ after save, update matches
     } catch (e2) {
       if (errBox) {
         errBox.textContent = "Save failed: " + (e2?.message || "Unknown error");
@@ -398,13 +390,139 @@ function initSeaForm() {
 }
 
 /* -----------------------------
+  Crewmate Matches (NEW)
+  Logic: same IMO + overlapping dates
+------------------------------ */
+async function loadCrewmateMatches() {
+  const status = $("crewmateStatus");
+  const list = $("crewmateList");
+  const err = $("crewmateError");
+
+  if (!status || !list) return;
+
+  status.textContent = "Finding matches…";
+  list.innerHTML = "";
+  err && hide(err);
+
+  try {
+    // Load MY sea service (limit for performance)
+    const { data: mySea, error: e1 } = await supabase
+      .from("sea_service")
+      .select("id, imo_number, vessel_name, sign_on_date, sign_off_date")
+      .order("sign_on_date", { ascending: false })
+      .limit(30);
+
+    if (e1) throw e1;
+
+    if (!mySea || mySea.length === 0) {
+      status.textContent = "Add sea service to find crewmates.";
+      return;
+    }
+
+    // For each IMO, fetch other sea_service rows (limited), then overlap filter client-side
+    const byUser = new Map(); // other_user_id -> best match info
+
+    for (const entry of mySea) {
+      if (!entry.imo_number) continue;
+
+      const { data: others, error: e2 } = await supabase
+        .from("sea_service")
+        .select("id, user_id, imo_number, vessel_name, sign_on_date, sign_off_date")
+        .eq("imo_number", entry.imo_number)
+        .neq("user_id", currentUser.id)
+        .order("sign_on_date", { ascending: false })
+        .limit(250);
+
+      if (e2) continue;
+
+      for (const o of (others || [])) {
+        if (!overlaps(entry.sign_on_date, entry.sign_off_date, o.sign_on_date, o.sign_off_date)) continue;
+
+        // Save the first/best match per user
+        if (!byUser.has(o.user_id)) {
+          byUser.set(o.user_id, {
+            other_user_id: o.user_id,
+            imo_number: entry.imo_number,
+            vessel_name: entry.vessel_name || o.vessel_name || "Vessel",
+            my_period: `${formatDate(entry.sign_on_date)} → ${formatDate(entry.sign_off_date)}`,
+            other_period: `${formatDate(o.sign_on_date)} → ${formatDate(o.sign_off_date)}`
+          });
+        }
+      }
+    }
+
+    const userIds = Array.from(byUser.keys());
+    if (userIds.length === 0) {
+      status.textContent = "No matches yet (same IMO + overlapping dates).";
+      return;
+    }
+
+    // Fetch profile cards
+    const { data: profs, error: e3 } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, account_type, nationality")
+      .in("id", userIds)
+      .limit(200);
+
+    if (e3) throw e3;
+
+    const profiles = new Map((profs || []).map(p => [p.id, p]));
+    status.textContent = `${userIds.length} match(es) found.`;
+
+    // Render cards
+    for (const uid of userIds) {
+      const p = profiles.get(uid);
+      const m = byUser.get(uid);
+
+      const name = (p?.full_name || "Pepsval user").trim();
+      const type = getAccountTypeLabel(p?.account_type);
+      const nat = p?.nationality || "—";
+
+      const card = document.createElement("div");
+      card.className = "matchCard";
+
+      const photo = p?.avatar_url
+        ? `<img class="matchAvatar" src="${escapeHtml(p.avatar_url)}" alt="avatar" />`
+        : `<div class="matchAvatar fallback">${escapeHtml(name.slice(0,1).toUpperCase())}</div>`;
+
+      card.innerHTML = `
+        <div class="matchLeft">
+          ${photo}
+          <div class="matchInfo">
+            <div class="matchName">${escapeHtml(name)}</div>
+            <div class="matchMeta">${escapeHtml(type)} • ${escapeHtml(nat)}</div>
+            <div class="matchMini">
+              <div><b>Vessel:</b> ${escapeHtml(m.vessel_name)}</div>
+              <div><b>IMO:</b> ${escapeHtml(String(m.imo_number))}</div>
+              <div><b>Your dates:</b> ${escapeHtml(m.my_period)}</div>
+              <div><b>Their dates:</b> ${escapeHtml(m.other_period)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="matchActions">
+          <a class="btnPrimary small" href="/profile/user.html?id=${encodeURIComponent(uid)}">View</a>
+          <a class="btnGhost small" href="/messages/index.html">Message</a>
+        </div>
+      `;
+
+      list.appendChild(card);
+    }
+  } catch (e) {
+    status.textContent = "Could not load crewmate matches.";
+    if (err) {
+      err.textContent = "Crewmate matches error: " + (e?.message || "Unknown error");
+      show(err);
+    }
+  }
+}
+
+/* -----------------------------
   Boot
 ------------------------------ */
 async function init() {
   initTabs();
   initSeaForm();
-
-  // Load companies list early (for dropdown)
   loadCompaniesIntoDropdown().catch(()=>{});
 
   currentUser = await requireUserOrRedirect();
@@ -417,7 +535,7 @@ async function init() {
       return;
     }
     applyProfileToUI(currentProfile);
-  } catch (e) {
+  } catch {
     setText("profileName", "Profile");
   }
 }
