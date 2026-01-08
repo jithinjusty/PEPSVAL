@@ -3,68 +3,49 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Reset Password</title>
+  <title>PEPSVAL — Forgot password</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="./forgot.css" />
+  <link rel="stylesheet" href="forgot.css?v=1" />
 </head>
+
 <body>
-  <main class="page">
-    <section class="card" role="region" aria-label="Reset password">
-      <header class="brand">
-        <div class="logoWord">PEPSVAL</div>
-        <div class="tagline">connect, hire and grow</div>
+  <main class="wrap">
+    <section class="card">
+
+      <header class="head">
+        <div class="brand">
+          <div class="logoWord">PEPSVAL</div>
+          <div class="tagline">connect, hire and grow</div>
+        </div>
+        <h1 class="title">Forgot password</h1>
+        <p class="sub">Enter your email and we’ll send a reset link.</p>
       </header>
 
-      <h1 class="title">Reset your password</h1>
-      <p class="subtitle">Enter your email and we’ll send a reset link.</p>
-
-      <!-- DEBUG BOX (shows JS errors on the page) -->
-      <div id="debugBox" class="error" style="display:none;"></div>
-
       <form id="forgotForm" class="form" novalidate>
-        <label class="field">
-          <span class="label">Email</span>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-        </label>
+        <div class="field">
+          <label class="lbl">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
 
-        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
-        <div id="successBox" class="success" role="status" aria-live="polite"></div>
+        <div id="errorBox" class="error" style="display:none;"></div>
+        <div id="successBox" class="success" style="display:none;"></div>
 
-        <button class="primary" type="submit">Send reset link</button>
+        <button id="sendBtn" class="btnPrimary" type="submit">Send reset link</button>
 
         <div class="links">
-          <a class="link" href="/auth/login.html">Back to login</a>
+          <a href="/auth/login.html">Back to login</a>
         </div>
 
-        <div class="legal">
-          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> ·
-          <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
-        </div>
+        <p class="legal">
+          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+          ·
+          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms of Service</a>
+        </p>
       </form>
+
     </section>
   </main>
 
-  <!-- Catch JS errors and show them on screen -->
-  <script>
-    window.addEventListener("error", (e) => {
-      const box = document.getElementById("debugBox");
-      if (!box) return;
-      box.style.display = "block";
-      box.textContent = "JS Error: " + (e.message || "Unknown error");
-    });
-    window.addEventListener("unhandledrejection", (e) => {
-      const box = document.getElementById("debugBox");
-      if (!box) return;
-      box.style.display = "block";
-      box.textContent = "Promise Error: " + (e.reason?.message || String(e.reason));
-    });
-  </script>
-
-  <!-- IMPORTANT: module -->
-  <script type="module" src="./forgot.js"></script>
+  <script type="module" src="forgot.js?v=1"></script>
 </body>
 </html>
