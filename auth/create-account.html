@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Create account</title>
 
-  <link rel="stylesheet" href="/auth/create-account.css?v=9999" />
+  <link rel="stylesheet" href="/auth/create-account.css?v=10001" />
 </head>
 
 <body>
@@ -31,13 +31,16 @@
           <div class="label"><span>Password</span></div>
           <div class="inputRow">
             <input id="password" type="password" placeholder="Create a password" autocomplete="new-password" required />
-            <button type="button" class="toggleBtn" id="togglePw">Show</button>
+            <button type="button" class="toggleBtn" id="togglePw1">Show</button>
           </div>
         </div>
 
         <div class="field">
           <div class="label"><span>Confirm password</span></div>
-          <input id="confirmPassword" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
+          <div class="inputRow">
+            <input id="confirmPassword" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
+            <button type="button" class="toggleBtn" id="togglePw2">Show</button>
+          </div>
         </div>
 
         <div id="errorBox" class="msg error" style="display:none;"></div>
@@ -61,13 +64,18 @@
   </main>
 
   <script>
-    const pw = document.getElementById("password");
-    const tbtn = document.getElementById("togglePw");
-    tbtn.addEventListener("click", () => {
-      const isPw = pw.type === "password";
-      pw.type = isPw ? "text" : "password";
-      tbtn.textContent = isPw ? "Hide" : "Show";
-    });
+    // Show/Hide for BOTH password inputs
+    function wireToggle(inputId, btnId){
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      btn.addEventListener("click", () => {
+        const isPw = input.type === "password";
+        input.type = isPw ? "text" : "password";
+        btn.textContent = isPw ? "Hide" : "Show";
+      });
+    }
+    wireToggle("password", "togglePw1");
+    wireToggle("confirmPassword", "togglePw2");
   </script>
 
   <script type="module">
