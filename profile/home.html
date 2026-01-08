@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=20260108" />
+  <link rel="stylesheet" href="/profile/profile.css?v=20260108fix2" />
 </head>
 
 <body>
@@ -39,7 +39,6 @@
           </div>
 
           <div id="primaryLine" class="primaryLine"></div>
-
           <div class="btnRow" id="headerButtons"></div>
         </div>
       </div>
@@ -47,11 +46,9 @@
       <div class="tabs" role="tablist" aria-label="Profile tabs">
         <button class="tab active" data-tab="about" role="tab">About</button>
         <button class="tab" data-tab="posts" role="tab">Posts</button>
-
         <button class="tab hidden" data-tab="documents" role="tab" id="tabDocuments">Documents</button>
         <button class="tab hidden" data-tab="sea" role="tab" id="tabSea">Sea Service</button>
         <button class="tab hidden" data-tab="jobs" role="tab" id="tabJobs">Jobs</button>
-
         <button class="tab" data-tab="media" role="tab">Media</button>
       </div>
     </section>
@@ -73,7 +70,7 @@
             <ul class="tips">
               <li>Keep your profile updated for top visibility.</li>
               <li>Add posts to build your reputation.</li>
-              <li>Seafarers can add documents and sea service anytime.</li>
+              <li>Sea service becomes locked once verified.</li>
             </ul>
           </div>
         </div>
@@ -120,65 +117,15 @@
           </div>
         </div>
 
-        <!-- DOCUMENTS -->
+        <!-- DOCUMENTS (placeholder) -->
         <div id="tab_documents" class="tabPane hidden">
           <div class="paneCard">
-            <div class="paneTopRow">
-              <h2 class="paneTitle">Documents</h2>
-              <div class="muted smallNote">No file upload. Only dates & issuer.</div>
-            </div>
-
-            <form id="docForm" class="formGrid" autocomplete="off">
-              <div class="field">
-                <label class="lbl">Document type <span class="req">*</span></label>
-                <input id="docType" type="text" placeholder="e.g., Passport / COC / Medical / STCW" required />
-              </div>
-
-              <div class="field">
-                <label class="lbl">Document number</label>
-                <input id="docNumber" type="text" placeholder="Optional" />
-              </div>
-
-              <div class="field">
-                <label class="lbl">Issued by</label>
-                <input id="docIssuedBy" type="text" placeholder="e.g., Govt of India / DG Shipping" />
-              </div>
-
-              <div class="field">
-                <label class="lbl">Issue date</label>
-                <input id="docIssueDate" type="date" />
-              </div>
-
-              <div class="field">
-                <label class="lbl">Expiry date</label>
-                <input id="docExpiryDate" type="date" />
-              </div>
-
-              <div class="field actions">
-                <button id="docSaveBtn" class="btn btnPrimary" type="submit">Add document</button>
-                <button id="docClearBtn" class="btn btnGhost" type="button">Clear</button>
-              </div>
-            </form>
-
-            <div id="docError" class="errorBox hidden"></div>
-
-            <div class="tableWrap">
-              <div class="tableHead">
-                <div class="th">Type</div>
-                <div class="th">Issued by</div>
-                <div class="th">Issue</div>
-                <div class="th">Expiry</div>
-                <div class="th">Status</div>
-                <div class="th" style="text-align:right;">Action</div>
-              </div>
-              <div id="docRows" class="tableBody"></div>
-            </div>
-
-            <div id="docStatus" class="status muted">Open this tab to load documents…</div>
+            <h2 class="paneTitle">Documents</h2>
+            <p class="muted">Documents tab available for seafarers.</p>
           </div>
         </div>
 
-        <!-- SEA SERVICE -->
+        <!-- SEA SERVICE (DROPDOWNS FIXED) -->
         <div id="tab_sea" class="tabPane hidden">
           <div class="paneCard">
             <div class="paneTopRow">
@@ -187,6 +134,11 @@
                 Sea service becomes locked once verified by an employer or peer.
               </div>
             </div>
+
+            <!-- ✅ datalists for dropdown -->
+            <datalist id="vesselTypeOptions"></datalist>
+            <datalist id="rankOptions"></datalist>
+            <datalist id="companyOptions"></datalist>
 
             <form id="seaForm" class="formGrid" autocomplete="off">
               <div class="field">
@@ -202,27 +154,29 @@
 
               <div class="field">
                 <label class="lbl">Vessel type</label>
-                <input id="vesselType" type="text" placeholder="e.g., Tanker / Container / Drillship" />
+                <input id="vesselType" type="text" list="vesselTypeOptions" placeholder="Choose or type…" />
               </div>
 
               <div class="field">
                 <label class="lbl">Rank</label>
-                <input id="seaRank" type="text" placeholder="e.g., 2/O" />
+                <input id="seaRank" type="text" list="rankOptions" placeholder="Choose or type…" />
               </div>
 
               <div class="field">
                 <label class="lbl">Company</label>
-                <input id="seaCompany" type="text" placeholder="e.g., Owner/Manager/Manning agency" />
+                <input id="seaCompany" type="text" list="companyOptions" placeholder="Start typing…" />
+                <div class="help">Dropdown grows as users add company names.</div>
               </div>
 
               <div class="field">
-                <label class="lbl">Sign on</label>
-                <input id="signOn" type="date" />
+                <label class="lbl">Sign on <span class="req">*</span></label>
+                <!-- ✅ required because DB sign_on_date is NOT NULL -->
+                <input id="signOnDate" type="date" required />
               </div>
 
               <div class="field">
                 <label class="lbl">Sign off</label>
-                <input id="signOff" type="date" />
+                <input id="signOffDate" type="date" />
               </div>
 
               <div class="field actions">
@@ -269,7 +223,6 @@
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=20260108"></script>
+  <script type="module" src="/profile/profile.js?v=20260108fix2"></script>
 </body>
 </html>
-```0
