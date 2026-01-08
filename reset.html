@@ -3,56 +3,68 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Reset password</title>
-
-  <link rel="stylesheet" href="/auth/forgot.css?v=21" />
+  <title>PEPSVAL • Set a new password</title>
+  <link rel="stylesheet" href="/reset.css" />
 </head>
 
 <body>
-  <div class="bgFX" aria-hidden="true"></div>
+  <main class="page">
+    <div class="bg"></div>
 
-  <main class="wrap">
-    <section class="card">
+    <section class="card" aria-label="Set a new password">
+      <header class="brand">
+        <div class="logoWrap">
+          <img class="logo" src="/assets/logo.webp" alt="PEPSVAL logo" />
+        </div>
+        <div class="brandText">
+          <h1>PEPSVAL</h1>
+          <p>connect, hire and grow</p>
+        </div>
+      </header>
 
-      <div class="brand">
-        <div class="name">PEPSVAL</div>
-        <div class="tag">connect, hire and grow</div>
+      <div class="title">
+        <h2>Set a new password</h2>
+        <p>Enter your new password to finish resetting your account.</p>
       </div>
 
-      <h1 class="title">Set a new password</h1>
-      <p class="sub">Enter your new password to finish resetting your account.</p>
+      <div id="msg" class="msg" role="status" aria-live="polite" hidden></div>
 
-      <form id="resetForm" novalidate>
-        <div class="field">
-          <div class="label"><span>New password</span></div>
-          <input id="newPassword" type="password" placeholder="New password" autocomplete="new-password" required />
-        </div>
+      <form id="resetForm" class="form" novalidate>
+        <label class="field">
+          <span>New password</span>
+          <div class="pwRow">
+            <input id="password" type="password" autocomplete="new-password" placeholder="New password" required />
+            <button class="iconBtn" type="button" id="togglePw">Show</button>
+          </div>
+        </label>
 
-        <div class="field">
-          <div class="label"><span>Confirm password</span></div>
-          <input id="confirmPassword" type="password" placeholder="Confirm new password" autocomplete="new-password" required />
-        </div>
+        <label class="field">
+          <span>Confirm password</span>
+          <div class="pwRow">
+            <input id="confirm" type="password" autocomplete="new-password" placeholder="Confirm password" required />
+            <button class="iconBtn" type="button" id="toggleConfirm">Show</button>
+          </div>
+        </label>
 
-        <div id="errorBox" class="msg error" style="display:none;"></div>
-        <div id="successBox" class="msg success" style="display:none;"></div>
+        <button id="submitBtn" class="primaryBtn" type="submit">
+          <span class="btnText">Update password</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
 
-        <button class="btn" id="saveBtn" type="submit">Update password</button>
-
-        <div class="links">
+        <div class="rowLinks">
           <a href="/auth/login.html">Back to login</a>
           <a href="/auth/create-account.html">Create account</a>
         </div>
 
         <div class="legal">
-          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy</a>
-          ·
-          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms</a>
+          <a href="/legal/privacy.html">Privacy</a>
+          <span>·</span>
+          <a href="/legal/terms.html">Terms</a>
         </div>
       </form>
-
     </section>
   </main>
 
-  <script type="module" src="/reset.js?v=21"></script>
+  <script type="module" src="/reset.js"></script>
 </body>
 </html>
