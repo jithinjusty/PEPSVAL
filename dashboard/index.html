@@ -5,69 +5,56 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260108" />
 </head>
 
 <body>
+  <!-- Top bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brandName">PEPSVAL</div>
+      <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
     </div>
 
-    <div class="right">
-      <button class="avatarBtn" id="avatarBtn" aria-haspopup="menu" aria-expanded="false">
-        <span class="avatarFallback" id="avatarFallback">P</span>
-        <img id="avatarImg" class="avatarImg" alt="Profile" />
+    <!-- Avatar + menu -->
+    <div class="avatarWrap">
+      <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Open menu">
+        <!-- Image (hidden if not loaded) -->
+        <img id="avatarImg" class="avatarImg" alt="Profile photo" />
+        <!-- Fallback letter -->
+        <span id="avatarFallback" class="avatarFallback">P</span>
       </button>
 
-      <div class="menu" id="avatarMenu" role="menu" aria-hidden="true">
-        <div class="menuHead">
-          <div class="menuAvatar">
-            <span class="menuAvatarFallback" id="menuAvatarFallback">P</span>
-            <img id="menuAvatarImg" class="menuAvatarImg" alt="Profile" />
-          </div>
-          <div class="menuInfo">
-            <div class="menuName" id="menuName">Your profile</div>
-            <div class="menuSmall" id="menuSmall">Welcome aboard</div>
-          </div>
+      <div id="avatarMenu" class="avatarMenu" role="menu" aria-label="Account menu">
+        <div class="avatarMenuHeader">
+          <div id="avatarMenuName" class="avatarMenuName">Profile</div>
         </div>
 
-        <div class="menuList">
-          <button class="menuItem" id="goProfile" role="menuitem">Profile</button>
-          <button class="menuItem" id="goSettings" role="menuitem">Settings</button>
-          <div class="menuDivider"></div>
-          <button class="menuItem danger" id="doLogout" role="menuitem">Log out</button>
-        </div>
+        <a id="menuProfile" class="menuItem" href="/profile/home.html" role="menuitem">Profile</a>
+        <a id="menuSettings" class="menuItem" href="/setup/profile-setup.html" role="menuitem">Settings</a>
+        <a id="menuLogout" class="menuItem danger" href="#" role="menuitem">Log out</a>
       </div>
     </div>
   </header>
 
+  <!-- Main content (sample layout – keep your existing feed layout if you want) -->
   <main class="page">
     <section class="card">
-      <h1 class="title">Explore Pepsval</h1>
-      <p class="muted">
-        Your feed will appear here. Soon you’ll see posts from seafarers, employers, and shore staff based on your preferences.
-      </p>
-
-      <div class="hintBox">
-        <div class="hintTitle">Filters</div>
-        <div class="hintText">
-          You’ll be able to filter what you see (photos, text, video, nationality, company posts) from Settings.
-        </div>
-      </div>
+      <h1 class="h1">Dashboard</h1>
+      <p class="muted">Feed / Jobs / Post / Search / Messages / Profile navigation goes here.</p>
     </section>
   </main>
 
-  <nav class="bottomNav">
-    <a class="navItem active" href="/dashboard/index.html" aria-current="page">Feed</a>
-    <a class="navItem" href="/dashboard/index.html#jobs">Jobs</a>
-    <button class="navItem plus" id="openCreate">+</button>
-    <a class="navItem" href="/dashboard/index.html#search">Search</a>
-    <a class="navItem" href="/dashboard/index.html#messages">Messages</a>
-    <a class="navItem" href="/setup/profile-setup.html">Profile</a>
+  <!-- Bottom nav -->
+  <nav class="bottomNav" aria-label="Bottom navigation">
+    <a class="navItem" href="/dashboard/index.html">Feed</a>
+    <a class="navItem" href="/jobs/index.html">Jobs</a>
+    <a class="navItem plus" href="/post/index.html" aria-label="Create post">+</a>
+    <a class="navItem" href="/search/index.html">Search</a>
+    <a class="navItem" href="/messages/index.html">Messages</a>
+    <a id="navProfile" class="navItem active" href="/profile/home.html">Profile</a>
   </nav>
 
-  <script type="module" src="/dashboard/dashboard.js?v=1"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20260108"></script>
 </body>
 </html>
