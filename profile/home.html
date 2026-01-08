@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Profile</title>
+
+  <link rel="stylesheet" href="/profile/profile.css?v=20260108" />
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="brand" href="/dashboard/index.html" aria-label="Go to dashboard">
+      <span class="brandWord">PEPSVAL</span>
+      <span class="brandTag">connect, hire and grow</span>
+    </a>
+
+    <nav class="topActions">
+      <a class="iconLink" href="/dashboard/index.html">Dashboard</a>
+      <a class="iconLink" href="/setup/profile-setup.html">Edit Basics</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="profileCard" aria-label="Profile header">
+      <div class="cover">
+        <div class="coverGlow"></div>
+      </div>
+
+      <div class="headerRow">
+        <div class="avatarWrap">
+          <img id="avatarImg" class="avatar" src="/assets/logo.webp" alt="Profile photo" />
+        </div>
+
+        <div class="headerText">
+          <div class="nameRow">
+            <h1 id="profileName" class="name">Loading…</h1>
+            <span id="accountBadge" class="badge hidden">—</span>
+          </div>
+
+          <div id="primaryLine" class="primaryLine"></div>
+
+          <div class="btnRow" id="headerButtons"></div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Profile tabs">
+        <button class="tab active" data-tab="about" role="tab">About</button>
+        <button class="tab" data-tab="posts" role="tab">Posts</button>
+
+        <button class="tab hidden" data-tab="documents" role="tab" id="tabDocuments">Documents</button>
+        <button class="tab hidden" data-tab="sea" role="tab" id="tabSea">Sea Service</button>
+        <button class="tab hidden" data-tab="jobs" role="tab" id="tabJobs">Jobs</button>
+
+        <button class="tab" data-tab="media" role="tab">Media</button>
+      </div>
+    </section>
+
+    <section class="contentGrid">
+      <aside class="leftRail">
+        <div class="panel" id="leftPanel">
+          <div class="panelTitle">Profile</div>
+          <div class="panelBody">
+            <div class="miniLine"><span class="k">Nationality</span><span class="v" id="miniNationality">—</span></div>
+            <div class="miniLine"><span class="k">Member since</span><span class="v" id="miniSince">—</span></div>
+            <div class="miniLine"><span class="k">Account</span><span class="v" id="miniType">—</span></div>
+          </div>
+        </div>
+
+        <div class="panel" id="tipsPanel">
+          <div class="panelTitle">Tips</div>
+          <div class="panelBody">
+            <ul class="tips">
+              <li>Keep your profile updated for top visibility.</li>
+              <li>Add posts to build your reputation.</li>
+              <li>Seafarers can add documents and sea service anytime.</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <section class="mainRail">
+        <div id="tab_about" class="tabPane">
+          <div class="paneCard">
+            <h2 class="paneTitle">About</h2>
+            <p class="muted" id="aboutText">Loading…</p>
+
+            <div class="aboutGrid">
+              <div class="aboutItem">
+                <div class="aboutK">Full name</div>
+                <div class="aboutV" id="aboutName">—</div>
+              </div>
+              <div class="aboutItem">
+                <div class="aboutK">Date of birth</div>
+                <div class="aboutV" id="aboutDob">—</div>
+              </div>
+              <div class="aboutItem">
+                <div class="aboutK">Phone</div>
+                <div class="aboutV" id="aboutPhone">Hidden</div>
+              </div>
+              <div class="aboutItem">
+                <div class="aboutK">Account type</div>
+                <div class="aboutV" id="aboutType">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab_posts" class="tabPane hidden">
+          <div class="paneCard">
+            <div class="postsHead">
+              <h2 class="paneTitle">Posts</h2>
+              <a class="smallBtn" href="/dashboard/index.html">Go to Feed</a>
+            </div>
+
+            <div id="postsList" class="postsList"></div>
+            <div id="postsStatus" class="status muted">Scroll to load more…</div>
+          </div>
+        </div>
+
+        <div id="tab_documents" class="tabPane hidden">
+          <div class="paneCard">
+            <div class="paneTopRow">
+              <h2 class="paneTitle">Documents</h2>
+              <div class="muted smallNote">No file upload. Only dates & issuer.</div>
+            </div>
+
+            <form id="docForm" class="formGrid" autocomplete="off">
+              <div class="field">
+                <label class="lbl">Document type <span class="req">*</span></label>
+                <input id="docType" type="text" placeholder="e.g., Passport / COC / Medical / STCW" required />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Document number</label>
+                <input id="docNumber" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Issued by</label>
+                <input id="docIssuedBy" type="text" placeholder="e.g., Govt of India / DG Shipping" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Issue date</label>
+                <input id="docIssueDate" type="date" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Expiry date</label>
+                <input id="docExpiryDate" type="date" />
+              </div>
+
+              <div class="field actions">
+                <button id="docSaveBtn" class="btn btnPrimary" type="submit">Add document</button>
+                <button id="docClearBtn" class="btn btnGhost" type="button">Clear</button>
+              </div>
+            </form>
+
+            <div id="docError" class="errorBox hidden"></div>
+
+            <div class="tableWrap">
+              <div class="tableHead">
+                <div class="th">Type</div>
+                <div class="th">Issued by</div>
+                <div class="th">Issue</div>
+                <div class="th">Expiry</div>
+                <div class="th">Status</div>
+                <div class="th" style="text-align:right;">Action</div>
+              </div>
+              <div id="docRows" class="tableBody"></div>
+            </div>
+
+            <div id="docStatus" class="status muted">Open this tab to load documents…</div>
+          </div>
+        </div>
+
+        <div id="tab_sea" class="tabPane hidden">
+          <div class="paneCard">
+            <div class="paneTopRow">
+              <h2 class="paneTitle">Sea Service</h2>
+              <div class="muted smallNote">
+                Sea service becomes locked once verified by an employer or peer.
+              </div>
+            </div>
+
+            <form id="seaForm" class="formGrid" autocomplete="off">
+              <div class="field">
+                <label class="lbl">Vessel name <span class="req">*</span></label>
+                <input id="vesselName" type="text" placeholder="e.g., MV Atlantic Star" required />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Vessel type</label>
+                <input id="vesselType" type="text" placeholder="e.g., Tanker / Container / Drillship" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Rank</label>
+                <input id="seaRank" type="text" placeholder="e.g., 2/O" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Company</label>
+                <input id="seaCompany" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Sign on</label>
+                <input id="signOn" type="date" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Sign off</label>
+                <input id="signOff" type="date" />
+              </div>
+
+              <div class="field actions">
+                <button id="seaSaveBtn" class="btn btnPrimary" type="submit">Add entry</button>
+                <button id="seaClearBtn" class="btn btnGhost" type="button">Clear</button>
+              </div>
+            </form>
+
+            <div id="seaError" class="errorBox hidden"></div>
+
+            <div class="tableWrap">
+              <div class="tableHead">
+                <div class="th">Vessel</div>
+                <div class="th">Type</div>
+                <div class="th">Rank</div>
+                <div class="th">Company</div>
+                <div class="th">Period</div>
+                <div class="th">Status</div>
+                <div class="th" style="text-align:right;">Action</div>
+              </div>
+              <div id="seaRows" class="tableBody"></div>
+            </div>
+
+            <div id="seaStatus" class="status muted">Open this tab to load sea service…</div>
+          </div>
+        </div>
+
+        <div id="tab_jobs" class="tabPane hidden">
+          <div class="paneCard">
+            <h2 class="paneTitle">Jobs</h2>
+            <p class="muted">Employer job posts will appear here (lazy loaded).</p>
+          </div>
+        </div>
+
+        <div id="tab_media" class="tabPane hidden">
+          <div class="paneCard">
+            <h2 class="paneTitle">Media</h2>
+            <p class="muted">Photos & videos posted by this user will appear here (lazy loaded).</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="/profile/profile.js?v=20260108"></script>
+</body>
+</html>
