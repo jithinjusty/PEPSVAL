@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Messages</title>
+
+  <link rel="stylesheet" href="/messages/messages.css?v=20260109a" />
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="brand" href="/dashboard/index.html" aria-label="Go to dashboard">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
+    </a>
+
+    <button id="backBtn" class="btnGhost" type="button">Back</button>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="headRow">
+        <h1 class="title">Messages</h1>
+
+        <div class="toggle">
+          <button id="tabMessages" class="toggleBtn active" type="button">
+            Messages <span id="msgCount" class="pill">0</span>
+          </button>
+          <button id="tabNotifications" class="toggleBtn" type="button">
+            Notifications <span id="notiCount" class="pill">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="infoBar" class="infoBar hidden"></div>
+
+      <!-- Messages view -->
+      <section id="paneMessages" class="pane">
+        <div class="paneTitle">Inbox</div>
+        <div id="messagesList" class="list"></div>
+        <div id="messagesEmpty" class="empty hidden">
+          No messages yet.
+        </div>
+      </section>
+
+      <!-- Notifications view -->
+      <section id="paneNotifications" class="pane hidden">
+        <div class="paneTitle">Notifications</div>
+
+        <div class="subActions">
+          <button id="markAllReadBtn" class="btnGhost" type="button">Mark all as read</button>
+        </div>
+
+        <div id="notificationsList" class="list"></div>
+        <div id="notificationsEmpty" class="empty hidden">
+          No notifications yet.
+        </div>
+      </section>
+    </section>
+
+    <!-- Bottom nav like dashboard -->
+    <nav class="bottomNav" aria-label="Bottom navigation">
+      <a class="navItem" href="/dashboard/index.html">
+        <span>Feed</span>
+      </a>
+      <a class="navItem" href="/jobs/index.html" onerror="return false;">
+        <span>Jobs</span>
+      </a>
+      <a class="navItem" href="/dashboard/index.html">
+        <span>+</span>
+      </a>
+      <a class="navItem" href="/search/index.html" onerror="return false;">
+        <span>Search</span>
+      </a>
+      <a class="navItem active" href="/messages/index.html">
+        <span>Messages</span>
+        <span id="bottomBadge" class="badge hidden">0</span>
+      </a>
+      <a class="navItem" href="/profile/index.html">
+        <span>Profile</span>
+      </a>
+    </nav>
+  </main>
+
+  <script type="module" src="/messages/messages.js?v=20260109a"></script>
+</body>
+</html>
