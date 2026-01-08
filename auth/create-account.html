@@ -3,102 +3,78 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Create Account</title>
-
-  <!-- Use same modern styling from /auth/login.css -->
-  <link rel="stylesheet" href="/auth/login.css?v=20" />
+  <title>PEPSVAL • Create account</title>
+  <link rel="stylesheet" href="/auth/create-account.css" />
 </head>
 
 <body>
-  <main class="authWrap">
-    <section class="authCard">
+  <main class="page">
+    <div class="bg"></div>
 
-      <header class="authHead">
-        <div class="brand">
-          <div class="logoWord">PEPSVAL</div>
-          <div class="tagline">connect, hire and grow</div>
+    <section class="card" aria-label="Create account">
+      <header class="brand">
+        <div class="logoWrap">
+          <img class="logo" src="/assets/logo.webp" alt="PEPSVAL logo" />
         </div>
-
-        <h1 class="authTitle">Create account</h1>
-        <p class="authSub">Create your Pepsval account to continue.</p>
+        <div class="brandText">
+          <h1>PEPSVAL</h1>
+          <p>connect, hire and grow</p>
+        </div>
       </header>
 
-      <form id="createForm" class="authForm" novalidate>
-        <div class="field">
-          <label class="lbl" for="firstName">First name</label>
-          <input id="firstName" type="text" placeholder="Your first name" autocomplete="given-name" />
-        </div>
+      <div class="title">
+        <h2>Create your account</h2>
+        <p>Use your email and set a password. We’ll send a confirmation email.</p>
+      </div>
 
-        <div class="field">
-          <label class="lbl" for="lastName">Last name</label>
-          <input id="lastName" type="text" placeholder="Your last name" autocomplete="family-name" />
-        </div>
+      <div id="msg" class="msg" role="status" aria-live="polite" hidden></div>
 
-        <div class="field">
-          <label class="lbl" for="email">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-        </div>
+      <form id="createForm" class="form" novalidate>
+        <label class="field">
+          <span>Email</span>
+          <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </label>
 
-        <div class="field">
-          <label class="lbl" for="password">Password</label>
+        <label class="field">
+          <span>Password</span>
           <div class="pwRow">
-            <input id="password" type="password" placeholder="Create a password" autocomplete="new-password" required />
-            <button class="pwToggle" id="togglePw" type="button" aria-label="Show password">Show</button>
+            <input id="password" type="password" autocomplete="new-password" placeholder="Create a strong password" required />
+            <button class="iconBtn" type="button" id="togglePw" aria-label="Show password">Show</button>
           </div>
-        </div>
+          <small class="hint">Min 6 characters. Use letters + numbers for better security.</small>
+        </label>
 
-        <div class="field">
-          <label class="lbl" for="confirmPassword">Confirm password</label>
+        <label class="field">
+          <span>Confirm password</span>
           <div class="pwRow">
-            <input id="confirmPassword" type="password" placeholder="Repeat password" autocomplete="new-password" required />
-            <button class="pwToggle" id="togglePw2" type="button" aria-label="Show password">Show</button>
+            <input id="confirm" type="password" autocomplete="new-password" placeholder="Repeat password" required />
+            <button class="iconBtn" type="button" id="toggleConfirm" aria-label="Show confirm password">Show</button>
           </div>
+        </label>
+
+        <button id="submitBtn" class="primaryBtn" type="submit">
+          <span class="btnText">Create account</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="rowLinks">
+          <a href="/auth/login.html">Back to login</a>
+          <a href="/auth/forgot.html">Forgot password?</a>
         </div>
 
-        <div class="tinyNote">
-          By creating an account, you agree to our
-          <a class="linkInline" href="/legal/terms.html">Terms</a> and
-          <a class="linkInline" href="/legal/privacy.html">Privacy Policy</a>.
-        </div>
-
-        <div id="errorBox" class="msg error" style="display:none;"></div>
-        <div id="successBox" class="msg ok" style="display:none;"></div>
-
-        <button id="createBtn" class="btnPrimary" type="submit">Create account</button>
-
-        <div class="authLinksRow">
-          <a class="link" href="/auth/login.html">Back to login</a>
-          <a class="link" href="/auth/forgot.html">Forgot password</a>
-        </div>
-
-        <div class="authLegal">
-          <a class="link" href="/legal/privacy.html">Privacy</a>
-          <span class="dot">·</span>
-          <a class="link" href="/legal/terms.html">Terms</a>
+        <div class="legal">
+          <a href="/legal/privacy.html">Privacy</a>
+          <span>·</span>
+          <a href="/legal/terms.html">Terms</a>
         </div>
       </form>
 
+      <footer class="footNote">
+        <span>By creating an account, you agree to PEPSVAL’s Terms.</span>
+      </footer>
     </section>
   </main>
 
-  <script type="module" src="/create-account.js?v=20"></script>
-
-  <!-- small styles for password row if login.css doesn't have it -->
-  <style>
-    .pwRow{display:flex;gap:10px;align-items:center}
-    .pwRow input{flex:1}
-    .pwToggle{
-      border:1px solid rgba(31,111,134,.25);
-      background:#fff;
-      color:#1F6F86;
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:600;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .tinyNote{font-size:.92rem;opacity:.85;margin:8px 0 0}
-    .linkInline{color:#1F6F86;text-decoration:underline}
-  </style>
+  <script type="module" src="/auth/create-account.js"></script>
 </body>
 </html>
