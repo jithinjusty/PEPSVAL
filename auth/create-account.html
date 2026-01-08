@@ -1,1 +1,85 @@
-.
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Create Account</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./create-account.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card" role="region" aria-label="Create account">
+
+      <header class="brand">
+        <div class="logoWord">PEPSVAL</div>
+        <div class="tagline">connect, hire and grow</div>
+      </header>
+
+      <!-- Privacy note -->
+      <div class="note notePrivacy">
+        Your data is private. Nothing is shared without your permission.
+      </div>
+
+      <h1 class="title">Create account</h1>
+
+      <form id="createForm" class="form" novalidate>
+
+        <div class="row">
+          <label class="field">
+            <span class="label">First name</span>
+            <input id="firstName" type="text" placeholder="First name" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Last name</span>
+            <input id="lastName" type="text" placeholder="Last name" required />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">Email</span>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        </label>
+
+        <div class="row">
+          <label class="field">
+            <span class="label">Password</span>
+            <input id="password" type="password" placeholder="Create a password" minlength="6" autocomplete="new-password" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Confirm password</span>
+            <input id="confirmPassword" type="password" placeholder="Re-enter password" minlength="6" autocomplete="new-password" required />
+          </label>
+        </div>
+
+        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+
+        <button class="primary" type="submit">Create account</button>
+
+        <div class="links">
+          <a class="link" href="/auth/login.html">Back to login</a>
+        </div>
+
+        <!-- Legal -->
+        <div class="legal">
+          By creating an account, you agree to our
+          <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a>
+          and
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+        </div>
+
+      </form>
+
+    </section>
+  </main>
+
+  <!-- IMPORTANT: module so we can import Supabase -->
+  <script type="module" src="./create-account.js"></script>
+</body>
+</html>
