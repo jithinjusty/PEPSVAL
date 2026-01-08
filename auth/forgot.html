@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Forgot password</title>
 
-  <link rel="stylesheet" href="/auth/forgot.css?v=10" />
+  <link rel="stylesheet" href="/auth/forgot.css?v=9999" />
 </head>
 
 <body>
@@ -46,6 +46,69 @@
     </section>
   </main>
 
-  <script type="module" src="/auth/forgot.js?v=10"></script>
+  <script type="module">
+    const form = document.getElementById("forgotForm");
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
+    const btn = document.getElementById("sendBtn");
+
+    const show = (el, msg) => { el.style.display="block"; el.textContent=msg; };
+    const hide = (el) => { el.style.display="none"; el.textContent=""; };
+
+    window.addEventListener("error", (e) => {
+      hide(successBox);
+      show(errorBox, "JS error: " + (e?.message || "Unknown error"));
+    });
+
+    window.addEventListener("unhandledrejection", (e) => {
+      hide(successBox);
+      show(errorBox, "Promise error: " + (e?.reason?.message || e?.reason || "Unknown error"));
+    });
+
+    let supabase;
+    try {
+      const mod = await import("/js/supabase.js");
+      supabase = mod.supabase;
+      if (!supabase) throw new Error("supabase export missing in /js/supabase.js");
+    } catch (err) {
+      show(errorBox, "Cannot load Supabase: " + (err?.message || err));
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hide(errorBox);
+      hide(successBox);
+
+      if (!supabase) {
+        show(errorBox, "Supabase not ready. Check /js/supabase.js SUPABASE_URL + ANON_KEY.");
+        return;
+      }
+
+      const email = document.getElementById("email").value.trim();
+      if (!email) return show(errorBox, "Please enter your email.");
+
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+
+      try {
+        // MUST be added in Supabase Redirect URLs
+        const redirectTo = `${location.origin}/reset.html`;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+        if (error) {
+          show(errorBox, error.message || "Could not send reset email.");
+          return;
+        }
+
+        show(successBox, "Reset link sent ✅ Check inbox/spam.");
+      } catch (err) {
+        show(errorBox, err?.message || "Unexpected error. Please try again.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Send reset link";
+      }
+    });
+  </script>
 </body>
 </html>
