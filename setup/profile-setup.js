@@ -1,7 +1,4 @@
-// /setup/profile-setup.js (FULL) — stable + auto-removes unknown DB columns
-// Fixes: "Could not find the '___' column of 'profiles' in the schema cache"
-// Photo optional, phone optional, dropdowns work, redirects to /dashboard/
-
+// /setup/profile-setup.js (FULL) — with DOB (required)
 import { supabase } from "/js/supabaseClient.js";
 import { ROUTES } from "/js/config.js";
 
@@ -16,6 +13,7 @@ const accountTypeOtherWrap = $("accountTypeOtherWrap");
 const accountTypeOther = $("accountTypeOther");
 
 const fullName = $("fullName");
+const dobEl = $("dob");
 
 const rankWrap = $("rankWrap");
 const rankSearch = $("rankSearch");
@@ -52,28 +50,37 @@ function busy(b){
   saveBtn.textContent = b ? "Saving..." : "Save & Continue";
 }
 
+// ---- Expanded ranks ----
 const RANKS = [
-  "Master / Captain",
-  "Chief Officer / C/O",
-  "Second Officer / 2/O",
-  "Third Officer / 3/O",
-  "Deck Cadet",
-  "Chief Engineer / C/E",
-  "Second Engineer / 2/E",
-  "Third Engineer / 3/E",
-  "Fourth Engineer / 4/E",
-  "Engine Cadet",
-  "Bosun",
-  "AB (Able Seaman)",
-  "OS (Ordinary Seaman)",
-  "Motorman",
-  "Oiler",
-  "Fitter",
-  "Cook",
-  "Steward",
-  "Electrician / ETO",
-  "Pumpman",
-  "Crane Operator",
+  "Master / Captain","Staff Captain","Chief Officer / C/O","Chief Mate",
+  "Second Officer / 2/O","Second Mate","Third Officer / 3/O","Third Mate",
+  "Safety Officer","Training Officer","Deck Cadet",
+  "Bosun (Boatswain)","Able Seaman (AB)","Ordinary Seaman (OS)","Deck Fitter",
+
+  "Chief Engineer / C/E","First Engineer","Second Engineer / 2/E","Third Engineer / 3/E",
+  "Fourth Engineer / 4/E","Fifth Engineer","Junior Engineer / Trainee Engineer",
+  "Engine Cadet","Motorman","Oiler","Wiper","Fitter","Welder","Pumpman (Tanker)","Reefer Engineer",
+
+  "ETO (Electro-Technical Officer)","Electrician","Electronics Technician","IT Officer / IT Support","Radio Officer",
+
+  "Chief Cook","Cook","Chief Steward","Steward","Messman","Cabin Steward",
+
+  "Offshore Installation Manager (OIM)","Barge Master","Tow Master",
+  "DPO (Dynamic Positioning Operator)","Senior DPO","Junior DPO / Trainee DPO",
+  "DP Maintenance / DP Technician","Rigger","Crane Operator","Roustabout","Deck Foreman",
+  "Fast Rescue Craft Coxswain","ROV Pilot Technician","ROV Supervisor","Subsea Engineer","Subsea Supervisor",
+  "Diving Supervisor","Saturation Diver","Air Diver",
+
+  "Toolpusher","Driller","Assistant Driller","Derrickman","Floorman","Roughneck",
+  "Mud Engineer","Mud Logger","Wellsite Supervisor","Well Test Operator","BOP Technician",
+  "Mechanical Technician (Rig)","Electrical Technician (Rig)","Instrument Technician (Rig)",
+
+  "Hydrographic Surveyor","Survey Party Chief","Geophysicist","Marine Scientist","Research Technician","Party Chief (Survey)",
+
+  "Harbour Master","Tug Master","Pilot (Marine)","Coxswain","Workboat Master",
+
+  "Marine Superintendent","Technical Superintendent","Crewing / Manning Staff","HSEQ Officer","Trainer / Instructor",
+
   "Other"
 ];
 
@@ -100,7 +107,6 @@ async function loadCountries(){
 }
 
 // Dropdown helpers
-function openList(listEl){ listEl.classList.add("show"); }
 function closeList(listEl){ listEl.classList.remove("show"); }
 function renderList(listEl, rows){
   listEl.innerHTML = "";
@@ -109,15 +115,14 @@ function renderList(listEl, rows){
     d.className="comboEmpty";
     d.textContent="No results";
     listEl.appendChild(d);
-    openList(listEl);
+    listEl.classList.add("show");
     return;
   }
   rows.forEach(r => listEl.appendChild(r));
-  openList(listEl);
+  listEl.classList.add("show");
 }
-
 function attachCombo(inputEl, listEl, getRows){
-  function refresh(){ renderList(listEl, getRows(inputEl.value)); }
+  const refresh=()=>renderList(listEl, getRows(inputEl.value));
   inputEl.addEventListener("focus", refresh);
   inputEl.addEventListener("input", refresh);
 
@@ -127,12 +132,11 @@ function attachCombo(inputEl, listEl, getRows){
   });
 }
 
-// Rank combo
 function initRankCombo(){
   attachCombo(rankSearch, rankList, (q)=>{
     const t=(q||"").toLowerCase().trim();
     const list = !t ? RANKS : RANKS.filter(r=>r.toLowerCase().includes(t));
-    return list.slice(0,60).map(r=>{
+    return list.slice(0,90).map(r=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${r}</strong>`;
@@ -149,12 +153,11 @@ function initRankCombo(){
   });
 }
 
-// Country + Dial combos
 function initCountryCombos(){
   attachCombo(countrySearch, countryList, (q)=>{
     const t=(q||"").toLowerCase().trim();
     const list = !t ? COUNTRIES : COUNTRIES.filter(c=>c.name.toLowerCase().includes(t));
-    return list.slice(0,60).map(c=>{
+    return list.slice(0,90).map(c=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${c.name}</strong> <span style="color:#5d7a88;">(${c.code})</span>`;
@@ -176,7 +179,7 @@ function initCountryCombos(){
     const t=(q||"").toLowerCase().trim();
     const base = COUNTRIES.filter(c=>c.dial_code).map(c=>({name:c.name, dial_code:c.dial_code, code:c.code}));
     const list = !t ? base : base.filter(c=>c.dial_code.toLowerCase().includes(t) || c.name.toLowerCase().includes(t));
-    return list.slice(0,60).map(c=>{
+    return list.slice(0,90).map(c=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${c.dial_code}</strong> <span style="color:#5d7a88;">${c.name}</span>`;
@@ -195,9 +198,9 @@ function initCountryCombos(){
   });
 }
 
-// Account type logic
 function updateAccountTypeUI(){
   const t = accountType.value;
+
   if(t==="other") accountTypeOtherWrap.classList.remove("hidden");
   else accountTypeOtherWrap.classList.add("hidden");
 
@@ -227,12 +230,16 @@ removePhotoBtn.addEventListener("click", ()=>{
   avatarPreview.innerHTML=`<span class="avatarHint">Add photo</span>`;
 });
 
-// Validation: photo + phone NOT mandatory
+// Validation (DOB required; photo+phone optional)
 function validate(){
   clearError();
   const t = accountType.value;
   if(!t) return {ok:false,msg:"Please select account type."};
   if(t==="other" && !accountTypeOther.value.trim()) return {ok:false,msg:"Please specify account type."};
+
+  const dob = (dobEl.value || "").trim();
+  if(!dob) return {ok:false,msg:"Please select date of birth."};
+
   if(!countrySearch.value.trim()) return {ok:false,msg:"Please select nationality."};
 
   if(t==="seafarer"){
@@ -256,32 +263,88 @@ async function ensureSession(){
   return session;
 }
 
-// ---- This is the key fix: remove missing columns automatically and retry ----
-function parseMissingColumn(errorMessage){
-  // Example: "Could not find the 'nationality_code' column of 'profiles' in the schema cache"
-  const m = /Could not find the '([^']+)' column/i.exec(errorMessage || "");
+// Missing column auto-fix
+function parseMissingColumn(msg){
+  const m = /Could not find the '([^']+)' column/i.exec(msg || "");
   return m?.[1] || null;
 }
-
 async function upsertWithAutoColumnFix(payload){
-  // Try up to 5 times removing unknown columns
   let p = { ...payload };
-
-  for(let attempt=1; attempt<=5; attempt++){
+  for(let attempt=1; attempt<=7; attempt++){
     const { error } = await supabase.from("profiles").upsert(p, { onConflict:"id" });
-    if(!error) return { ok:true };
+    if(!error) return { ok:true, saved:p };
 
     const missing = parseMissingColumn(error.message);
     if(missing && Object.prototype.hasOwnProperty.call(p, missing)){
       delete p[missing];
       continue;
     }
-
-    // Not a missing-column error → stop
     return { ok:false, error };
   }
+  return { ok:false, error:{ message:"Schema mismatch. Please update profiles table." } };
+}
 
-  return { ok:false, error: { message:"Too many schema mismatches. Please update profiles table." } };
+// Local backup (so user always sees what they saved)
+const LS_KEY = "pepsval_profile_local_v2";
+function saveLocalProfile(obj){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }catch(_){}
+}
+function loadLocalProfile(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY) || "null"); }catch(_){ return null; }
+}
+
+// Prefill UI
+function applyToUI(p){
+  if(!p) return;
+
+  if(p.account_type){
+    const v = String(p.account_type).toLowerCase();
+    if(["seafarer","employer","shore","other"].includes(v)){
+      accountType.value = v;
+    } else {
+      accountType.value = "other";
+      accountTypeOther.value = p.account_type;
+    }
+  }
+
+  fullName.value = p.full_name || "";
+  if(p.dob) dobEl.value = p.dob;
+
+  if(p.nationality) countrySearch.value = p.nationality;
+  if(p.phone_dial){ dialSearch.value = p.phone_dial; dialValue.value = p.phone_dial; }
+  if(p.phone_number) phoneInput.value = p.phone_number;
+
+  if(p.rank){
+    rankSearch.value = p.rank;
+    rankValue.value = p.rank;
+    if(p.rank === "Other"){
+      rankOtherWrap.classList.remove("hidden");
+      rankOther.value = p.rank_other || "";
+    }
+  }
+
+  updateAccountTypeUI();
+}
+
+async function prefillFromDBOrLocal(userId){
+  // DB first
+  try{
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if(!error && data){
+      applyToUI(data);
+      saveLocalProfile(data);
+      return;
+    }
+  }catch(_){}
+
+  // Local fallback
+  const local = loadLocalProfile();
+  if(local) applyToUI(local);
 }
 
 async function saveProfile(){
@@ -290,24 +353,20 @@ async function saveProfile(){
 
   const t = accountType.value;
 
-  // Include extra fields if your DB has them; code will auto-remove if not.
   const payload = {
     id: session.user.id,
     full_name: fullName.value.trim() || null,
     account_type: t==="other" ? (accountTypeOther.value.trim() || "other") : t,
 
-    // Nationality
+    dob: (dobEl.value || "").trim(), // ✅ required
+
     nationality: countrySearch.value.trim() || null,
 
-    // OPTIONAL extra (if your DB supports it)
-    nationality_code: countryValue.value.trim() || null,
-
-    // Phone (optional)
+    // Optional (auto-removed if DB doesn't have them)
     phone_dial: dialSearch.value.trim() || null,
     phone_number: phoneInput.value.trim() || null,
 
-    // Rank
-    rank: null,
+    rank: null
   };
 
   if(t==="seafarer"){
@@ -315,17 +374,17 @@ async function saveProfile(){
     payload.rank = (r==="Other") ? (rankOther.value.trim() || "Other") : r;
   }
 
-  // Photo upload: optional and not implemented yet (to avoid bugs)
-  // selectedPhotoFile exists but we don't push to storage in this step.
+  // Photo upload intentionally not done yet to avoid breaking.
+  // selectedPhotoFile will be used later.
 
-  const result = await upsertWithAutoColumnFix(payload);
-  if(!result.ok){
-    showError("Database error saving profile: " + (result.error?.message || "Unknown error"));
+  const res = await upsertWithAutoColumnFix(payload);
+  if(!res.ok){
+    showError("Database error saving profile: " + (res.error?.message || "Unknown error"));
     return;
   }
 
-  // ✅ success
-  window.location.href = ROUTES.dashboard; // /dashboard/
+  saveLocalProfile(payload);
+  window.location.href = ROUTES.dashboard;
 }
 
 form.addEventListener("submit", async (e)=>{
@@ -346,5 +405,9 @@ form.addEventListener("submit", async (e)=>{
   initRankCombo();
   initCountryCombos();
   updateAccountTypeUI();
-  await ensureSession();
+
+  const session = await ensureSession();
+  if(session?.user){
+    await prefillFromDBOrLocal(session.user.id);
+  }
 })();
