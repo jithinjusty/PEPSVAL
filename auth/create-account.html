@@ -1,39 +1,75 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PEPSVAL — Create account</title>
-<link rel="stylesheet" href="/auth/create-account.css?v=2" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Create account</title>
+
+  <link rel="stylesheet" href="/auth/create-account.css?v=10" />
 </head>
 
 <body>
-<main class="wrap">
-<section class="card">
+  <div class="bgFX" aria-hidden="true"></div>
 
-<h1>Create account</h1>
+  <main class="wrap">
+    <section class="card">
+      <div class="brand">
+        <div class="name">PEPSVAL</div>
+        <div class="tag">connect, hire and grow</div>
+      </div>
 
-<form id="createForm">
-  <input id="email" type="email" placeholder="Email" required />
-  <input id="password" type="password" placeholder="Password" required />
-  <input id="confirmPassword" type="password" placeholder="Confirm Password" required />
+      <h1 class="title">Create your account</h1>
+      <p class="sub">Your data is private. Nothing is shared without your permission.</p>
 
-  <div id="errorBox" class="error"></div>
+      <form id="createForm" novalidate>
+        <div class="field">
+          <div class="label"><span>Email</span></div>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
 
-  <button id="createBtn">Create</button>
-</form>
+        <div class="field">
+          <div class="label"><span>Password</span></div>
+          <div class="inputRow">
+            <input id="password" type="password" placeholder="Create a password" autocomplete="new-password" required />
+            <button type="button" class="toggleBtn" id="togglePw">Show</button>
+          </div>
+        </div>
 
-<p>
-  By continuing you agree to
-  <a href="/legal/terms.html">Terms</a> &
-  <a href="/legal/privacy.html">Privacy</a>
-</p>
+        <div class="field">
+          <div class="label"><span>Confirm password</span></div>
+          <input id="confirmPassword" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
+        </div>
 
-<p><a href="/auth/login.html">Back to login</a></p>
+        <div id="errorBox" class="msg error" style="display:none;"></div>
+        <div id="successBox" class="msg success" style="display:none;"></div>
 
-</section>
-</main>
+        <button class="btn" id="createBtn" type="submit">Create account</button>
 
-<script type="module" src="/create-account.js?v=2"></script>
+        <div class="links">
+          <a href="/auth/login.html">Back to login</a>
+          <a href="/auth/forgot.html">Forgot password?</a>
+        </div>
+
+        <div class="legal">
+          By continuing, you agree to our
+          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms</a>
+          and
+          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const pw = document.getElementById("password");
+    const btn = document.getElementById("togglePw");
+    btn.addEventListener("click", () => {
+      const isPw = pw.type === "password";
+      pw.type = isPw ? "text" : "password";
+      btn.textContent = isPw ? "Hide" : "Show";
+    });
+  </script>
+
+  <script type="module" src="/create-account.js?v=10"></script>
 </body>
 </html>
