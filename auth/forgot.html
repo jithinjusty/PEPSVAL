@@ -5,47 +5,47 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Forgot password</title>
 
-  <link rel="stylesheet" href="forgot.css?v=1" />
+  <link rel="stylesheet" href="/auth/forgot.css?v=10" />
 </head>
 
 <body>
+  <div class="bgFX" aria-hidden="true"></div>
+
   <main class="wrap">
     <section class="card">
+      <div class="brand">
+        <div class="name">PEPSVAL</div>
+        <div class="tag">connect, hire and grow</div>
+      </div>
 
-      <header class="head">
-        <div class="brand">
-          <div class="logoWord">PEPSVAL</div>
-          <div class="tagline">connect, hire and grow</div>
-        </div>
-        <h1 class="title">Forgot password</h1>
-        <p class="sub">Enter your email and we’ll send a reset link.</p>
-      </header>
+      <h1 class="title">Reset your password</h1>
+      <p class="sub">Enter your email. We’ll send a secure reset link.</p>
 
-      <form id="forgotForm" class="form" novalidate>
+      <form id="forgotForm" novalidate>
         <div class="field">
-          <label class="lbl">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+          <div class="label"><span>Email</span></div>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
         </div>
 
-        <div id="errorBox" class="error" style="display:none;"></div>
-        <div id="successBox" class="success" style="display:none;"></div>
+        <div id="errorBox" class="msg error" style="display:none;"></div>
+        <div id="successBox" class="msg success" style="display:none;"></div>
 
-        <button id="sendBtn" class="btnPrimary" type="submit">Send reset link</button>
+        <button class="btn" id="sendBtn" type="submit">Send reset link</button>
 
         <div class="links">
           <a href="/auth/login.html">Back to login</a>
+          <a href="/create-account.html">Create account</a>
         </div>
 
-        <p class="legal">
-          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        <div class="legal">
+          <a href="/legal/privacy.html" target="_blank" rel="noopener">Privacy</a>
           ·
-          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms of Service</a>
-        </p>
+          <a href="/legal/terms.html" target="_blank" rel="noopener">Terms</a>
+        </div>
       </form>
-
     </section>
   </main>
 
-  <script type="module" src="forgot.js?v=1"></script>
+  <script type="module" src="/auth/forgot.js?v=10"></script>
 </body>
 </html>
