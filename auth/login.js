@@ -1,71 +1,50 @@
-// /auth/login.js (FULL) — uses /js/config.js + /js/supabaseClient.js
+// /auth/login.js
+import { supabase } from "/js/supabase.js";
 
-import { supabase } from "/js/supabaseClient.js";
-import { ROUTES } from "/js/config.js";
+const $ = (id) => document.getElementById(id);
 
-function $(id) { return document.getElementById(id); }
-
-const form = $("loginForm");
 const emailEl = $("email");
 const passEl = $("password");
+const form = $("loginForm");
 const errorBox = $("errorBox");
-const loginBtn = $("loginBtn");
-const togglePw = $("togglePw");
 
 function showError(msg) {
+  if (!errorBox) return;
   errorBox.style.display = "block";
   errorBox.textContent = msg;
 }
 function clearError() {
+  if (!errorBox) return;
   errorBox.style.display = "none";
   errorBox.textContent = "";
 }
-function setBusy(busy) {
-  loginBtn.disabled = busy;
-  emailEl.disabled = busy;
-  passEl.disabled = busy;
-  togglePw.disabled = busy;
-  loginBtn.textContent = busy ? "Logging in..." : "Log in";
+
+async function alreadyLoggedInGo() {
+  const { data } = await supabase.auth.getUser();
+  if (data?.user) window.location.href = "/dashboard/";
 }
 
-togglePw?.addEventListener("click", () => {
-  const hidden = passEl.type === "password";
-  passEl.type = hidden ? "text" : "password";
-  togglePw.textContent = hidden ? "Hide" : "Show";
-});
-
-// If already logged in → go dashboard
-(async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) window.location.href = ROUTES.dashboard;
-  } catch (_) {}
-})();
+alreadyLoggedInGo();
 
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearError();
 
-  const email = (emailEl.value || "").trim();
-  const password = passEl.value || "";
+  const email = (emailEl?.value || "").trim();
+  const password = passEl?.value || "";
 
-  if (!email) return showError("Please enter your email.");
-  if (!password) return showError("Please enter your password.");
-
-  setBusy(true);
-
-  try {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setBusy(false);
-      return showError(error.message || "Login failed.");
-    }
-
-    // ✅ Always go dashboard folder (no 404)
-    window.location.href = ROUTES.dashboard;
-  } catch (err) {
-    console.error(err);
-    setBusy(false);
-    showError("Login failed. Please try again.");
+  if (!email || !password) {
+    showError("Please enter email and password.");
+    return;
   }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    showError(error.message);
+    return;
+  }
+
+  // ✅ ALWAYS go to dashboard folder
+  window.location.href = "/dashboard/";
 });
