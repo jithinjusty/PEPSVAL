@@ -24,7 +24,6 @@ function escapeHtml(s) {
 
 function toISODate(d) {
   if (!d) return null;
-  // Accept yyyy-mm-dd from <input type="date">
   return String(d);
 }
 
@@ -57,6 +56,53 @@ function getAccountTypeLabel(type) {
   return type || "—";
 }
 
+function fillDatalist(datalistId, values) {
+  const dl = $(datalistId);
+  if (!dl) return;
+  dl.innerHTML = values
+    .filter(Boolean)
+    .map(v => `<option value="${escapeHtml(v)}"></option>`)
+    .join("");
+}
+
+/* -------------------------
+   Dropdown seeds (static)
+-------------------------- */
+const VESSEL_TYPES = [
+  "Container Ship", "Bulk Carrier", "General Cargo", "Ro-Ro", "Car Carrier (PCTC)", "Reefer",
+  "Crude Oil Tanker", "Product Tanker", "Chemical Tanker", "LPG Carrier", "LNG Carrier",
+  "FPSO", "FSO", "Shuttle Tanker",
+  "Offshore Supply Vessel (OSV)", "Platform Supply Vessel (PSV)", "Anchor Handling Tug Supply (AHTS)",
+  "Crew Boat / Fast Support Vessel", "Utility Vessel", "Multi-Purpose Support Vessel (MPSV)",
+  "Cable Layer", "Pipe Layer", "Construction Vessel", "Survey Vessel", "Seismic Vessel",
+  "Diving Support Vessel (DSV)", "ROV Support Vessel",
+  "Jack-up Rig", "Semi-submersible Rig", "Drillship",
+  "Tug", "Barge", "Dredger", "Research Vessel", "Passenger / Ferry", "Cruise Vessel",
+  "Naval / Coast Guard", "Yacht", "Training Ship", "Other"
+];
+
+const RANKS = [
+  // Deck (merchant)
+  "Master / Captain", "Chief Officer / C/O", "Second Officer / 2/O", "Third Officer / 3/O", "Cadet / Deck Cadet",
+  "Chief Mate", "Trainee Officer", "Bosun", "Able Seaman (AB)", "Ordinary Seaman (OS)", "Deck Fitter",
+  // Engine (merchant)
+  "Chief Engineer", "Second Engineer", "Third Engineer", "Fourth Engineer", "Engine Cadet",
+  "Electrical Officer / ETO", "Motorman / Oiler", "Wiper", "Engine Fitter",
+  // Catering
+  "Chief Cook", "Cook", "Steward", "Messman",
+  // Tanker / special
+  "Cargo Officer", "Safety Officer", "Environmental Officer",
+  // Offshore / DP
+  "DPO (Dynamic Positioning Operator)", "Senior DPO (SDPO)", "Trainee DPO", "DP Maintainer",
+  // Drilling / rig (common)
+  "OIM (Offshore Installation Manager)", "Toolpusher", "Senior Toolpusher", "Driller", "Assistant Driller",
+  "Roughneck", "Roustabout", "Derrickman", "Crane Operator", "Barge Engineer",
+  "Subsea Engineer", "Mud Engineer", "HSE Officer",
+  // Shore (optional future)
+  "Marine Superintendent", "Technical Superintendent", "Port Captain", "Crewing Manager",
+  "Other"
+];
+
 /* -------------------------
    State
 -------------------------- */
@@ -85,21 +131,19 @@ function initTabs() {
       else hide(el);
     });
 
-    // Lazy-load when tab is opened
     if (key === "documents") loadDocuments().catch(() => {});
-    if (key === "sea") loadSeaService().catch(() => {});
+    if (key === "sea") {
+      loadCompaniesIntoDropdown().catch(() => {});
+      loadSeaService().catch(() => {});
+    }
   }
 
-  tabButtons.forEach((b) => {
-    b.addEventListener("click", () => activate(b.dataset.tab));
-  });
-
-  // Default tab
+  tabButtons.forEach((b) => b.addEventListener("click", () => activate(b.dataset.tab)));
   activate("about");
 }
 
 /* -------------------------
-   Load user & profile
+   Auth + Profile
 -------------------------- */
 async function requireUser() {
   const { data, error } = await supabase.auth.getUser();
@@ -127,53 +171,36 @@ function applyProfileToUI(profile) {
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim() ||
     "Profile";
 
-  // Header
   setText("profileName", name);
 
-  // Badge
   const badge = $("accountBadge");
   if (badge) {
-    const label = getAccountTypeLabel(profile?.account_type);
-    badge.textContent = label;
+    badge.textContent = getAccountTypeLabel(profile?.account_type);
     show(badge);
   }
 
-  // Avatar
   const avatarImg = $("avatarImg");
-  if (avatarImg && profile?.avatar_url) {
-    avatarImg.src = profile.avatar_url;
-  }
+  if (avatarImg && profile?.avatar_url) avatarImg.src = profile.avatar_url;
 
-  // Mini panel
   setText("miniNationality", profile?.nationality || profile?.nationality_name || "—");
   setText("miniType", getAccountTypeLabel(profile?.account_type));
-
-  // Member since
   setText("miniSince", profile?.created_at ? formatDate(profile.created_at) : "—");
 
-  // About
   setText("aboutText", "Your profile is your identity on Pepsval. Keep it updated to increase visibility and trust.");
   setText("aboutName", name);
-
-  // DOB (if stored)
   setText("aboutDob", profile?.dob ? formatDate(profile.dob) : "—");
-
-  // Phone (privacy)
   setText("aboutPhone", profile?.phone ? "Saved" : "Hidden");
-
   setText("aboutType", getAccountTypeLabel(profile?.account_type));
 
-  // Show/hide Seafarer tabs
   const isSeafarer = String(profile?.account_type || "").toLowerCase() === "seafarer";
+  const isEmployer = String(profile?.account_type || "").toLowerCase() === "employer";
+
   const tabDocs = $("tabDocuments");
   const tabSea = $("tabSea");
   const tabJobs = $("tabJobs");
 
   if (tabDocs) isSeafarer ? show(tabDocs) : hide(tabDocs);
   if (tabSea) isSeafarer ? show(tabSea) : hide(tabSea);
-
-  // Jobs tab for employers (optional)
-  const isEmployer = String(profile?.account_type || "").toLowerCase() === "employer";
   if (tabJobs) isEmployer ? show(tabJobs) : hide(tabJobs);
 }
 
@@ -184,7 +211,6 @@ async function loadDocuments() {
   const status = $("docStatus");
   const rows = $("docRows");
   const errBox = $("docError");
-
   if (!rows) return;
 
   if (status) status.textContent = "Loading documents…";
@@ -211,8 +237,6 @@ async function loadDocuments() {
       const exp = formatDate(d.expiry_date);
       const st = escapeHtml(d.status || "Self-declared");
 
-      const delBtn = `<button class="rowBtn" data-doc-del="${d.id}">Delete</button>`;
-
       const row = document.createElement("div");
       row.className = "tr";
       row.innerHTML = `
@@ -221,19 +245,16 @@ async function loadDocuments() {
         <div class="td">${issue}</div>
         <div class="td">${exp}</div>
         <div class="td">${st}</div>
-        <div class="td" style="text-align:right;">${delBtn}</div>
+        <div class="td" style="text-align:right;"><button class="rowBtn" data-doc-del="${d.id}">Delete</button></div>
       `;
       rows.appendChild(row);
     }
 
     if (status) status.textContent = "Loaded.";
     wireDocumentRowActions();
-  } catch (e) {
+  } catch {
     if (status) status.textContent = "Could not load documents (table may not exist yet).";
-    if (errBox) {
-      errBox.textContent = "Cannot load documents. You can still continue using other tabs.";
-      show(errBox);
-    }
+    if (errBox) { errBox.textContent = "Cannot load documents. You can still use other tabs."; show(errBox); }
   }
 }
 
@@ -245,13 +266,12 @@ function wireDocumentRowActions() {
     btn.addEventListener("click", async () => {
       const id = btn.getAttribute("data-doc-del");
       if (!id) return;
-
       btn.disabled = true;
       try {
         const { error } = await supabase.from("documents").delete().eq("id", id);
         if (error) throw error;
         await loadDocuments();
-      } catch (e) {
+      } catch {
         alert("Delete failed.");
       } finally {
         btn.disabled = false;
@@ -300,14 +320,10 @@ function initDocumentForm() {
       saveBtn && (saveBtn.disabled = true);
       const { error } = await supabase.from("documents").insert(payload);
       if (error) throw error;
-
       clearBtn?.click();
       await loadDocuments();
-    } catch (e) {
-      if (errBox) {
-        errBox.textContent = "Save failed (documents table may not be created yet).";
-        show(errBox);
-      }
+    } catch {
+      if (errBox) { errBox.textContent = "Save failed (documents table may not be created yet)."; show(errBox); }
     } finally {
       saveBtn && (saveBtn.disabled = false);
     }
@@ -315,12 +331,40 @@ function initDocumentForm() {
 }
 
 /* -------------------------
-   Sea Service + Peer Confirmations
+   Companies dropdown (dynamic)
+-------------------------- */
+async function loadCompaniesIntoDropdown() {
+  // We load a big list for dropdown suggestions
+  const { data, error } = await supabase
+    .from("companies")
+    .select("name")
+    .order("name", { ascending: true })
+    .limit(5000);
+
+  if (error) return; // do not break UI
+
+  const list = (data || []).map(x => x.name).filter(Boolean);
+  fillDatalist("companyOptions", list);
+}
+
+async function saveCompanyIfNew(name) {
+  const n = String(name || "").trim();
+  if (!n) return;
+
+  // Insert. If duplicate (unique name), ignore error.
+  const { error } = await supabase.from("companies").insert({ name: n });
+  if (error) {
+    // Unique violation code is 23505. We ignore it.
+    if (String(error.code) === "23505") return;
+    // Any other error: ignore but don’t crash sea service save.
+  }
+}
+
+/* -------------------------
+   Peer confirmations map
 -------------------------- */
 async function loadPeerConfirmationsMap() {
-  // Map: sea_service_id -> latest status requested by me
   const map = new Map();
-
   const { data, error } = await supabase
     .from("peer_confirmations")
     .select("*")
@@ -330,23 +374,24 @@ async function loadPeerConfirmationsMap() {
 
   for (const r of (data || [])) {
     const key = String(r.sea_service_id);
-    if (!map.has(key)) map.set(key, r); // latest first due to ordering
+    if (!map.has(key)) map.set(key, r);
   }
   return map;
 }
 
+/* -------------------------
+   Sea Service
+-------------------------- */
 async function loadSeaService() {
   const status = $("seaStatus");
   const rows = $("seaRows");
   const errBox = $("seaError");
-
   if (!rows) return;
 
   if (status) status.textContent = "Loading sea service…";
   if (errBox) hide(errBox);
 
   try {
-    // Load sea service
     const { data: sea, error: seaErr } = await supabase
       .from("sea_service")
       .select("*")
@@ -354,16 +399,10 @@ async function loadSeaService() {
 
     if (seaErr) throw seaErr;
 
-    // Load peer confirmations (requested by me / visible to me via RLS)
     let peerMap = new Map();
-    try {
-      peerMap = await loadPeerConfirmationsMap();
-    } catch {
-      // if table exists but RLS blocks, map stays empty
-    }
+    try { peerMap = await loadPeerConfirmationsMap(); } catch { /* ignore */ }
 
     rows.innerHTML = "";
-
     if (!sea || sea.length === 0) {
       if (status) status.textContent = "No sea service entries yet.";
       return;
@@ -373,17 +412,14 @@ async function loadSeaService() {
       const vessel = escapeHtml(s.vessel_name || "—");
       const type = escapeHtml(s.vessel_type || "—");
       const rank = escapeHtml(s.rank || "—");
-      const company = escapeHtml(s.company_name || s.company || "—");
-
+      const company = escapeHtml(s.company_name || "—");
       const period = `${formatDate(s.sign_on)} → ${formatDate(s.sign_off)}`;
       const verified = s.verified ? "Locked (verified)" : "Self-declared";
       const imo = s.imo_number ? `IMO ${s.imo_number}` : "IMO —";
 
-      // Peer status
       const peer = peerMap.get(String(s.id));
       const peerStatus = peer ? `Peer: ${peer.status}` : "Peer: not requested";
 
-      // Actions
       const locked = !!s.verified;
 
       const btnDelete = locked
@@ -417,12 +453,9 @@ async function loadSeaService() {
 
     if (status) status.textContent = "Loaded.";
     wireSeaRowActions();
-  } catch (e) {
+  } catch {
     if (status) status.textContent = "Could not load sea service.";
-    if (errBox) {
-      errBox.textContent = "Cannot load sea service right now.";
-      show(errBox);
-    }
+    if (errBox) { errBox.textContent = "Cannot load sea service right now."; show(errBox); }
   }
 }
 
@@ -430,12 +463,10 @@ function wireSeaRowActions() {
   const rows = $("seaRows");
   if (!rows) return;
 
-  // Delete
   rows.querySelectorAll("[data-sea-del]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.getAttribute("data-sea-del");
       if (!id) return;
-
       if (!confirm("Delete this sea service entry?")) return;
 
       btn.disabled = true;
@@ -443,7 +474,7 @@ function wireSeaRowActions() {
         const { error } = await supabase.from("sea_service").delete().eq("id", id);
         if (error) throw error;
         await loadSeaService();
-      } catch (e) {
+      } catch {
         alert("Delete failed.");
       } finally {
         btn.disabled = false;
@@ -451,7 +482,6 @@ function wireSeaRowActions() {
     });
   });
 
-  // Peer request
   rows.querySelectorAll("[data-peer-request]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const seaId = btn.getAttribute("data-peer-request");
@@ -480,8 +510,8 @@ function wireSeaRowActions() {
 
         alert("Peer confirmation request sent (status: requested).");
         await loadSeaService();
-      } catch (e) {
-        alert("Request failed. (Check RLS or table setup)");
+      } catch {
+        alert("Request failed.");
       } finally {
         btn.disabled = false;
       }
@@ -493,20 +523,19 @@ function initSeaServiceForm() {
   const form = $("seaForm");
   if (!form) return;
 
+  // Fill static dropdown lists once
+  fillDatalist("vesselTypeOptions", VESSEL_TYPES);
+  fillDatalist("rankOptions", RANKS);
+
   const saveBtn = $("seaSaveBtn");
   const clearBtn = $("seaClearBtn");
   const errBox = $("seaError");
 
   clearBtn?.addEventListener("click", () => {
-    ["vesselName", "vesselType", "seaRank", "seaCompany", "signOn", "signOff"].forEach((id) => {
+    ["vesselName", "imoNumber", "vesselType", "seaRank", "seaCompany", "signOn", "signOff"].forEach((id) => {
       const el = $(id);
       if (el) el.value = "";
     });
-
-    // If you have IMO input in your HTML, clear it too:
-    const imoEl = $("imoNumber");
-    if (imoEl) imoEl.value = "";
-
     if (errBox) hide(errBox);
   });
 
@@ -514,9 +543,8 @@ function initSeaServiceForm() {
     e.preventDefault();
     if (errBox) hide(errBox);
 
-    // Required: vessel name + IMO
     const vesselName = $("vesselName")?.value?.trim();
-    const imoVal = $("imoNumber")?.value?.trim(); // IMPORTANT: your HTML must have id="imoNumber"
+    const imoVal = $("imoNumber")?.value?.trim();
 
     if (!vesselName) {
       if (errBox) { errBox.textContent = "Vessel name is required."; show(errBox); }
@@ -529,30 +557,40 @@ function initSeaServiceForm() {
       return;
     }
 
-    const payload = {
-      user_id: currentUser.id,
-      vessel_name: vesselName,
-      vessel_type: $("vesselType")?.value?.trim() || null,
-      rank: $("seaRank")?.value?.trim() || null,
-      company_name: $("seaCompany")?.value?.trim() || null,
-      sign_on: toISODate($("signOn")?.value) || null,
-      sign_off: toISODate($("signOff")?.value) || null,
-      imo_number: imoParsed.imo, // integer
-      verified: false,
-    };
+    const vesselType = $("vesselType")?.value?.trim() || null;
+    const rank = $("seaRank")?.value?.trim() || null;
+    const company = $("seaCompany")?.value?.trim() || null;
 
     try {
       saveBtn && (saveBtn.disabled = true);
 
+      // ✅ Save company into dropdown DB (ignore duplicates)
+      if (company) await saveCompanyIfNew(company);
+
+      // ✅ Insert sea service
+      const payload = {
+        user_id: currentUser.id,
+        vessel_name: vesselName,
+        imo_number: imoParsed.imo,      // integer
+        vessel_type: vesselType,
+        rank: rank,
+        company_name: company,
+        sign_on: toISODate($("signOn")?.value) || null,
+        sign_off: toISODate($("signOff")?.value) || null,
+        verified: false,
+      };
+
       const { error } = await supabase.from("sea_service").insert(payload);
       if (error) throw error;
 
+      // refresh dropdown (company list grows)
+      await loadCompaniesIntoDropdown();
+
       clearBtn?.click();
       await loadSeaService();
-    } catch (e) {
+    } catch (e2) {
       if (errBox) {
-        errBox.textContent =
-          "Save failed: " + (e?.message || "Unknown error");
+        errBox.textContent = "Save failed: " + (e2?.message || "Unknown error");
         show(errBox);
       }
     } finally {
@@ -575,14 +613,11 @@ async function init() {
   try {
     currentProfile = await loadMyProfile(currentUser.id);
     if (!currentProfile) {
-      // If no profile row exists, redirect to setup
       window.location.href = "/setup/profile-setup.html";
       return;
     }
     applyProfileToUI(currentProfile);
-  } catch (e) {
-    // If profile cannot load, still allow page to show
-    console.warn("Profile load failed:", e);
+  } catch {
     setText("profileName", "Profile");
   }
 }
