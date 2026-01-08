@@ -6,7 +6,7 @@ const newPassword = document.getElementById("newPassword");
 const confirmPassword = document.getElementById("confirmPassword");
 const errorBox = document.getElementById("errorBox");
 const successBox = document.getElementById("successBox");
-const saveBtn = document.getElementById("saveBtn");
+const btn = document.getElementById("saveBtn");
 
 function show(el, msg) {
   el.style.display = "block";
@@ -17,8 +17,8 @@ function hide(el) {
   el.textContent = "";
 }
 
-async function ensureRecoverySession() {
-  // 1) PKCE reset link (?code=...)
+async function ensureSessionFromUrl() {
+  // PKCE flow: ?code=...
   const url = new URL(window.location.href);
   const code = url.searchParams.get("code");
   if (code) {
@@ -27,7 +27,7 @@ async function ensureRecoverySession() {
     return data?.session || null;
   }
 
-  // 2) Implicit reset link (#access_token=...&refresh_token=...)
+  // Implicit flow: #access_token=...&refresh_token=...
   const hash = window.location.hash || "";
   if (hash.includes("access_token=") || hash.includes("refresh_token=")) {
     const params = new URLSearchParams(hash.replace("#", ""));
@@ -44,7 +44,7 @@ async function ensureRecoverySession() {
     }
   }
 
-  // 3) Already has session?
+  // already signed in?
   const { data } = await supabase.auth.getSession();
   return data?.session || null;
 }
@@ -52,29 +52,38 @@ async function ensureRecoverySession() {
 async function init() {
   hide(errorBox);
   hide(successBox);
+  btn.disabled = true;
 
   try {
-    if (!supabase) throw new Error("Supabase not initialized.");
-
-    const session = await ensureRecoverySession();
+    const session = await ensureSessionFromUrl();
 
     if (!session) {
       show(
         errorBox,
-        "Reset link is missing or expired. Please go to Forgot Password and request a new reset email."
+        "Reset link expired or invalid. Please go to Forgot Password and request a new reset email."
       );
-      saveBtn.disabled = true;
       return;
     }
 
-    // Clean URL (optional but nice)
+    // confirm we truly have a user in session
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      show(
+        errorBox,
+        "Could not load recovery session. Please request a new reset email."
+      );
+      return;
+    }
+
+    // clean URL (removes tokens from address bar)
     try {
       const clean = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, clean);
     } catch {}
+
+    btn.disabled = false;
   } catch (err) {
     show(errorBox, err?.message || "Could not start reset session.");
-    saveBtn.disabled = true;
   }
 }
 
@@ -90,29 +99,31 @@ form.addEventListener("submit", async (e) => {
   if (p1.length < 6) return show(errorBox, "Password must be at least 6 characters.");
   if (p1 !== p2) return show(errorBox, "Passwords do not match.");
 
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Updating…";
+  btn.disabled = true;
+  btn.textContent = "Updating…";
 
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData?.session) {
-      // try again if session not present for any reason
-      const s = await ensureRecoverySession();
-      if (!s) throw new Error("Reset session expired. Please request a new reset email.");
+    // Must have a valid session here
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      throw new Error("Recovery session missing. Please request a new reset email.");
     }
 
     const { error } = await supabase.auth.updateUser({ password: p1 });
     if (error) throw error;
 
-    show(successBox, "Password updated ✅ You can now login.");
+    // IMPORTANT: sign out so you will test login correctly with the NEW password
+    await supabase.auth.signOut();
+
+    show(successBox, "Password updated ✅ Please login with your new password.");
     setTimeout(() => {
       window.location.href = "/auth/login.html";
     }, 900);
   } catch (err) {
     show(errorBox, err?.message || "Password update failed.");
   } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Update password";
+    btn.disabled = false;
+    btn.textContent = "Update password";
   }
 });
 
