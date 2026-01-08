@@ -1,80 +1,82 @@
-import { supabase } from "./js/supabase.js";
+// forgot.js
+import { supabase } from "/js/supabase.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("forgotForm");
-  const email = document.getElementById("email");
-  const errorBox = document.getElementById("errorBox");
-  const successBox = document.getElementById("successBox");
-  const debugBox = document.getElementById("debugBox");
+const form = document.getElementById("forgotForm");
+const errorBox = document.getElementById("errorBox");
+const successBox = document.getElementById("successBox");
 
-  const btn = form?.querySelector('button[type="submit"]');
+function showError(msg) {
+  if (!errorBox) return;
+  errorBox.style.display = "block";
+  errorBox.textContent = msg;
+}
 
-  // Prove JS is running
-  if (debugBox) {
-    debugBox.style.display = "block";
-    debugBox.textContent = "forgot.js loaded ✅";
-    setTimeout(() => { debugBox.style.display = "none"; }, 1200);
+function hideError() {
+  if (!errorBox) return;
+  errorBox.style.display = "none";
+  errorBox.textContent = "";
+}
+
+function showSuccess(msg) {
+  if (!successBox) {
+    alert(msg);
+    return;
+  }
+  successBox.style.display = "block";
+  successBox.textContent = msg;
+}
+
+function hideSuccess() {
+  if (!successBox) return;
+  successBox.style.display = "none";
+  successBox.textContent = "";
+}
+
+function ensureSupabase() {
+  if (!supabase) {
+    showError("Supabase is not initialized. Check /js/supabase.js");
+    return false;
+  }
+  return true;
+}
+
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideError();
+  hideSuccess();
+
+  if (!ensureSupabase()) return;
+
+  const email = document.getElementById("email")?.value?.trim() || "";
+  if (!email) return showError("Please enter your email.");
+
+  const btn = document.getElementById("sendBtn");
+  const oldText = btn?.textContent;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Sending...";
   }
 
-  function setLoading(isLoading) {
-    if (!btn) return;
-    btn.disabled = isLoading;
-    btn.textContent = isLoading ? "Sending…" : "Send reset link";
-    btn.style.opacity = isLoading ? "0.85" : "1";
-  }
+  try {
+    // This must match a page you already have (you said reset.html exists in root)
+    const redirectTo = `${location.origin}/reset.html`;
 
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = "block";
-    successBox.style.display = "none";
-    successBox.textContent = "";
-  }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
-  function showSuccess(msg) {
-    successBox.textContent = msg;
-    successBox.style.display = "block";
-    errorBox.style.display = "none";
-    errorBox.textContent = "";
-  }
-
-  function showDebug(msg) {
-    if (!debugBox) return;
-    debugBox.style.display = "block";
-    debugBox.textContent = msg;
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    // DO NOT clear the input
-    const em = (email.value || "").trim();
-    if (!em) return showError("Please enter your email.");
-
-    // Immediately show action happened
-    showSuccess("Sending reset link…");
-    setLoading(true);
-
-    try {
-      showDebug("Request: supabase.auth.resetPasswordForEmail()");
-      const { data, error } = await supabase.auth.resetPasswordForEmail(em, {
-        redirectTo: window.location.origin + "/reset.html"
-      });
-
-      if (error) {
-        showDebug("Supabase error: " + error.message);
-        return showError(error.message);
-      }
-
-      showDebug("Success: request accepted by Supabase.");
-      showSuccess("If an account exists for this email, a reset link will be sent.");
-    } catch (err) {
-      const msg = err?.message || String(err);
-
-      // Common fetch/network issues show here
-      showDebug("Network/JS error: " + msg);
-      showError("Network error. Check Supabase URL/key and try again.");
-    } finally {
-      setLoading(false);
+    if (error) {
+      showError(error.message || "Could not send reset email.");
+      return;
     }
-  });
+
+    showSuccess("Reset email sent! Check your inbox (and spam).");
+
+  } catch (err) {
+    showError(err?.message || "Unexpected error. Open console to check.");
+    console.error(err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText || "Send reset link";
+    }
+  }
 });
