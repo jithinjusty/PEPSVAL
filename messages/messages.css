@@ -1,0 +1,59 @@
+body {
+  margin:0;
+  font-family: system-ui, sans-serif;
+  background:#f5f7fa;
+}
+
+.top {
+  background:#0e3b4d;
+  padding:10px;
+}
+
+.toggle {
+  display:flex;
+  gap:10px;
+}
+
+.toggle button {
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  background:#1f6f86;
+  color:white;
+  opacity:.6;
+}
+
+.toggle button.active {
+  opacity:1;
+}
+
+.list {
+  padding:10px;
+}
+
+.item {
+  background:white;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:10px;
+  box-shadow:0 2px 5px rgba(0,0,0,.05);
+}
+
+.item h4 {
+  margin:0 0 4px;
+  font-size:15px;
+}
+
+.item p {
+  margin:0;
+  font-size:13px;
+  color:#444;
+}
+
+.item small {
+  display:block;
+  margin-top:6px;
+  color:#888;
+}
