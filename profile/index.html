@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=2" />
+  <link rel="stylesheet" href="/profile/profile.css?v=20260108" />
 </head>
 
 <body>
-  <!-- Top app bar -->
   <header class="topbar">
     <a class="brand" href="/dashboard/index.html" aria-label="Go to dashboard">
       <span class="brandWord">PEPSVAL</span>
@@ -23,7 +22,6 @@
   </header>
 
   <main class="page">
-    <!-- PROFILE HEADER -->
     <section class="profileCard" aria-label="Profile header">
       <div class="cover">
         <div class="coverGlow"></div>
@@ -46,12 +44,10 @@
         </div>
       </div>
 
-      <!-- Sticky tabs -->
       <div class="tabs" role="tablist" aria-label="Profile tabs">
         <button class="tab active" data-tab="about" role="tab">About</button>
         <button class="tab" data-tab="posts" role="tab">Posts</button>
 
-        <!-- Conditional tabs (JS will show/hide based on account type) -->
         <button class="tab hidden" data-tab="documents" role="tab" id="tabDocuments">Documents</button>
         <button class="tab hidden" data-tab="sea" role="tab" id="tabSea">Sea Service</button>
         <button class="tab hidden" data-tab="jobs" role="tab" id="tabJobs">Jobs</button>
@@ -60,9 +56,7 @@
       </div>
     </section>
 
-    <!-- CONTENT AREA -->
     <section class="contentGrid">
-      <!-- Left rail -->
       <aside class="leftRail">
         <div class="panel" id="leftPanel">
           <div class="panelTitle">Profile</div>
@@ -85,9 +79,7 @@
         </div>
       </aside>
 
-      <!-- Main tab content -->
       <section class="mainRail">
-        <!-- ABOUT -->
         <div id="tab_about" class="tabPane">
           <div class="paneCard">
             <h2 class="paneTitle">About</h2>
@@ -114,7 +106,6 @@
           </div>
         </div>
 
-        <!-- POSTS -->
         <div id="tab_posts" class="tabPane hidden">
           <div class="paneCard">
             <div class="postsHead">
@@ -127,7 +118,6 @@
           </div>
         </div>
 
-        <!-- DOCUMENTS (Seafarer only) -->
         <div id="tab_documents" class="tabPane hidden">
           <div class="paneCard">
             <div class="paneTopRow">
@@ -185,7 +175,6 @@
           </div>
         </div>
 
-        <!-- SEA SERVICE (Seafarer only) -->
         <div id="tab_sea" class="tabPane hidden">
           <div class="paneCard">
             <div class="paneTopRow">
@@ -251,29 +240,23 @@
           </div>
         </div>
 
-        <!-- JOBS -->
         <div id="tab_jobs" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Jobs</h2>
-            <p class="muted">
-              Employer job posts will appear here (lazy loaded).
-            </p>
+            <p class="muted">Employer job posts will appear here (lazy loaded).</p>
           </div>
         </div>
 
-        <!-- MEDIA -->
         <div id="tab_media" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Media</h2>
-            <p class="muted">
-              Photos & videos posted by this user will appear here (lazy loaded).
-            </p>
+            <p class="muted">Photos & videos posted by this user will appear here (lazy loaded).</p>
           </div>
         </div>
       </section>
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=2"></script>
+  <script type="module" src="/profile/profile.js?v=20260108"></script>
 </body>
 </html>
