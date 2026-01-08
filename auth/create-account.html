@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Create account</title>
 
-  <link rel="stylesheet" href="/auth/create-account.css?v=10001" />
+  <link rel="stylesheet" href="/auth/create-account.css?v=10002" />
 </head>
 
 <body>
@@ -64,7 +64,6 @@
   </main>
 
   <script>
-    // Show/Hide for BOTH password inputs
     function wireToggle(inputId, btnId){
       const input = document.getElementById(inputId);
       const btn = document.getElementById(btnId);
@@ -87,23 +86,13 @@
     const show = (el, msg) => { el.style.display="block"; el.textContent=msg; };
     const hide = (el) => { el.style.display="none"; el.textContent=""; };
 
-    window.addEventListener("error", (e) => {
-      hide(successBox);
-      show(errorBox, "JS error: " + (e?.message || "Unknown error"));
-    });
-
-    window.addEventListener("unhandledrejection", (e) => {
-      hide(successBox);
-      show(errorBox, "Promise error: " + (e?.reason?.message || e?.reason || "Unknown error"));
-    });
-
     let supabase;
     try {
       const mod = await import("/js/supabase.js");
       supabase = mod.supabase;
-      if (!supabase) throw new Error("supabase export missing in /js/supabase.js");
+      if (!supabase) throw new Error("supabase export missing");
     } catch (err) {
-      show(errorBox, "Cannot load Supabase: " + (err?.message || err));
+      show(errorBox, "Supabase error: " + (err?.message || err));
     }
 
     form.addEventListener("submit", async (e) => {
@@ -111,10 +100,7 @@
       hide(errorBox);
       hide(successBox);
 
-      if (!supabase) {
-        show(errorBox, "Supabase not ready. Check /js/supabase.js SUPABASE_URL + ANON_KEY.");
-        return;
-      }
+      if (!supabase) return show(errorBox, "Supabase not initialized.");
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
@@ -129,27 +115,32 @@
       btn.textContent = "Creating…";
 
       try {
-        const emailRedirectTo = `${location.origin}/auth/login.html`;
-
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo }
+          options: {
+            emailRedirectTo: `${location.origin}/auth/login.html`
+          }
         });
 
         if (error) {
-          show(errorBox, error.message || "Create account failed.");
+          // Clean friendly message
+          if (error.message.toLowerCase().includes("already")) {
+            show(errorBox, "This email is already registered with Pepsval. Please log in or reset your password.");
+          } else {
+            show(errorBox, error.message);
+          }
           return;
         }
 
         if (!data?.session) {
-          show(successBox, "Account created ✅ Check your email to confirm, then login.");
+          show(successBox, "Account created. Please check your email to confirm.");
           return;
         }
 
         window.location.href = "/setup/profile-setup.html";
       } catch (err) {
-        show(errorBox, err?.message || "Unexpected error. Please try again.");
+        show(errorBox, err?.message || "Unexpected error.");
       } finally {
         btn.disabled = false;
         btn.textContent = "Create account";
