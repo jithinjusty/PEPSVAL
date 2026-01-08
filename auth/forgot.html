@@ -1,1 +1,70 @@
-.
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Reset Password</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./forgot.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card" role="region" aria-label="Reset password">
+      <header class="brand">
+        <div class="logoWord">PEPSVAL</div>
+        <div class="tagline">connect, hire and grow</div>
+      </header>
+
+      <h1 class="title">Reset your password</h1>
+      <p class="subtitle">Enter your email and we’ll send a reset link.</p>
+
+      <!-- DEBUG BOX (shows JS errors on the page) -->
+      <div id="debugBox" class="error" style="display:none;"></div>
+
+      <form id="forgotForm" class="form" novalidate>
+        <label class="field">
+          <span class="label">Email</span>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        </label>
+
+        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+        <div id="successBox" class="success" role="status" aria-live="polite"></div>
+
+        <button class="primary" type="submit">Send reset link</button>
+
+        <div class="links">
+          <a class="link" href="/auth/login.html">Back to login</a>
+        </div>
+
+        <div class="legal">
+          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> ·
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Catch JS errors and show them on screen -->
+  <script>
+    window.addEventListener("error", (e) => {
+      const box = document.getElementById("debugBox");
+      if (!box) return;
+      box.style.display = "block";
+      box.textContent = "JS Error: " + (e.message || "Unknown error");
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const box = document.getElementById("debugBox");
+      if (!box) return;
+      box.style.display = "block";
+      box.textContent = "Promise Error: " + (e.reason?.message || String(e.reason));
+    });
+  </script>
+
+  <!-- IMPORTANT: module -->
+  <script type="module" src="./forgot.js"></script>
+</body>
+</html>
