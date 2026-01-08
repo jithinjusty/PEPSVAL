@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
 
-  <link rel="stylesheet" href="/setup/profile-setup.css?v=300" />
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=301" />
 </head>
 
 <body>
@@ -61,6 +61,13 @@
           <input id="fullName" type="text" placeholder="Your full name" />
         </div>
 
+        <!-- DOB (required) -->
+        <div class="field">
+          <label class="lbl">Date of birth <span class="req">*</span></label>
+          <input id="dob" type="date" required />
+          <div class="help">This helps identity verification and profile trust.</div>
+        </div>
+
         <!-- Rank (only required for seafarer) -->
         <div class="field hidden" id="rankWrap">
           <label class="lbl">Rank <span class="req">*</span></label>
@@ -114,6 +121,6 @@
     </section>
   </main>
 
-  <script type="module" src="/setup/profile-setup.js?v=300"></script>
+  <script type="module" src="/setup/profile-setup.js?v=301"></script>
 </body>
 </html>
