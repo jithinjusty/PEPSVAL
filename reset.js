@@ -1,130 +1,113 @@
-// /reset.js
 import { supabase } from "/js/supabase.js";
 
 const form = document.getElementById("resetForm");
-const newPassword = document.getElementById("newPassword");
-const confirmPassword = document.getElementById("confirmPassword");
-const errorBox = document.getElementById("errorBox");
-const successBox = document.getElementById("successBox");
-const btn = document.getElementById("saveBtn");
+const msg = document.getElementById("msg");
 
-function show(el, msg) {
-  el.style.display = "block";
-  el.textContent = msg;
+const pwEl = document.getElementById("password");
+const confirmEl = document.getElementById("confirm");
+const submitBtn = document.getElementById("submitBtn");
+
+const togglePw = document.getElementById("togglePw");
+const toggleConfirm = document.getElementById("toggleConfirm");
+
+function setMsg(type, text) {
+  msg.hidden = false;
+  msg.className = `msg ${type}`;
+  msg.textContent = text;
 }
-function hide(el) {
-  el.style.display = "none";
-  el.textContent = "";
+function clearMsg() {
+  msg.hidden = true;
+  msg.className = "msg";
+  msg.textContent = "";
+}
+function setLoading(isLoading) {
+  submitBtn.disabled = isLoading;
+  submitBtn.classList.toggle("loading", isLoading);
+}
+function togglePassword(input, btn) {
+  const isPw = input.type === "password";
+  input.type = isPw ? "text" : "password";
+  btn.textContent = isPw ? "Hide" : "Show";
 }
 
-async function ensureSessionFromUrl() {
-  // PKCE flow: ?code=...
-  const url = new URL(window.location.href);
-  const code = url.searchParams.get("code");
+togglePw.addEventListener("click", () => togglePassword(pwEl, togglePw));
+toggleConfirm.addEventListener("click", () => togglePassword(confirmEl, toggleConfirm));
+
+// --- IMPORTANT: Ensure session exists from recovery link ---
+// Supabase reset links may include tokens in URL hash (#access_token=...&refresh_token=...&type=recovery)
+async function ensureRecoverySessionFromUrl() {
+  const hash = (location.hash || "").replace(/^#/, "");
+  const params = new URLSearchParams(hash);
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+  const type = params.get("type");
+
+  if (access_token && refresh_token && type === "recovery") {
+    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+    if (error) {
+      setMsg("err", "This reset link is invalid or expired. Please request a new reset link.");
+      return false;
+    }
+    return true;
+  }
+
+  // Some setups use "code" query param instead of hash
+  const code = new URLSearchParams(location.search).get("code");
   if (code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) throw error;
-    return data?.session || null;
-  }
-
-  // Implicit flow: #access_token=...&refresh_token=...
-  const hash = window.location.hash || "";
-  if (hash.includes("access_token=") || hash.includes("refresh_token=")) {
-    const params = new URLSearchParams(hash.replace("#", ""));
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-
-    if (access_token && refresh_token) {
-      const { data, error } = await supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      });
-      if (error) throw error;
-      return data?.session || null;
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      setMsg("err", "This reset link is invalid or expired. Please request a new reset link.");
+      return false;
     }
+    return true;
   }
 
-  // already signed in?
+  // If user opened reset page directly without link
   const { data } = await supabase.auth.getSession();
-  return data?.session || null;
-}
-
-async function init() {
-  hide(errorBox);
-  hide(successBox);
-  btn.disabled = true;
-
-  try {
-    const session = await ensureSessionFromUrl();
-
-    if (!session) {
-      show(
-        errorBox,
-        "Reset link expired or invalid. Please go to Forgot Password and request a new reset email."
-      );
-      return;
-    }
-
-    // confirm we truly have a user in session
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData?.user) {
-      show(
-        errorBox,
-        "Could not load recovery session. Please request a new reset email."
-      );
-      return;
-    }
-
-    // clean URL (removes tokens from address bar)
-    try {
-      const clean = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, clean);
-    } catch {}
-
-    btn.disabled = false;
-  } catch (err) {
-    show(errorBox, err?.message || "Could not start reset session.");
+  if (!data?.session) {
+    setMsg("err", "Open this page using the reset link sent to your email.");
+    return false;
   }
+  return true;
 }
+
+await ensureRecoverySessionFromUrl();
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  hide(errorBox);
-  hide(successBox);
+  clearMsg();
 
-  const p1 = (newPassword.value || "").trim();
-  const p2 = (confirmPassword.value || "").trim();
+  const password = pwEl.value || "";
+  const confirm = confirmEl.value || "";
 
-  if (!p1) return show(errorBox, "Please enter a new password.");
-  if (p1.length < 6) return show(errorBox, "Password must be at least 6 characters.");
-  if (p1 !== p2) return show(errorBox, "Passwords do not match.");
+  if (!password || password.length < 6) return setMsg("err", "Password must be at least 6 characters.");
+  if (password !== confirm) return setMsg("err", "Passwords do not match.");
 
-  btn.disabled = true;
-  btn.textContent = "Updating…";
+  setLoading(true);
 
   try {
-    // Must have a valid session here
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData?.user) {
-      throw new Error("Recovery session missing. Please request a new reset email.");
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) {
+      setMsg("err", "Your reset session expired. Please request a new reset link.");
+      setLoading(false);
+      return;
     }
 
-    const { error } = await supabase.auth.updateUser({ password: p1 });
-    if (error) throw error;
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      setMsg("err", error.message || "Could not update password. Please try again.");
+      setLoading(false);
+      return;
+    }
 
-    // IMPORTANT: sign out so you will test login correctly with the NEW password
+    setMsg("ok", "Password updated successfully! You can now login with your new password.");
+    form.reset();
+
+    // Optional: sign out so user must login fresh with new password
     await supabase.auth.signOut();
-
-    show(successBox, "Password updated ✅ Please login with your new password.");
-    setTimeout(() => {
-      window.location.href = "/auth/login.html";
-    }, 900);
   } catch (err) {
-    show(errorBox, err?.message || "Password update failed.");
+    setMsg("err", err?.message || "Something went wrong. Please try again.");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Update password";
+    setLoading(false);
   }
 });
-
-init();
