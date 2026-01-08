@@ -5,56 +5,90 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260108" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109a" />
 </head>
 
 <body>
-  <!-- Top bar -->
+  <!-- TOP BAR -->
   <header class="topbar">
-    <div class="brand">
+    <a class="brand" href="/dashboard/index.html" aria-label="PEPSVAL Home">
       <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
-    </div>
+    </a>
 
-    <!-- Avatar + menu -->
-    <div class="avatarWrap">
-      <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Open menu">
-        <!-- Image (hidden if not loaded) -->
-        <img id="avatarImg" class="avatarImg" alt="Profile photo" />
-        <!-- Fallback letter -->
-        <span id="avatarFallback" class="avatarFallback">P</span>
-      </button>
+    <!-- Right side avatar button -->
+    <button id="topAvatarBtn" class="avatarBtn" type="button" aria-label="Account menu">
+      <img id="topAvatarImg" class="avatarImg hidden" alt="Profile photo" />
+      <div id="topAvatarCircle" class="avatarCircle">P</div>
+    </button>
 
-      <div id="avatarMenu" class="avatarMenu" role="menu" aria-label="Account menu">
-        <div class="avatarMenuHeader">
-          <div id="avatarMenuName" class="avatarMenuName">Profile</div>
-        </div>
-
-        <a id="menuProfile" class="menuItem" href="/profile/home.html" role="menuitem">Profile</a>
-        <a id="menuSettings" class="menuItem" href="/setup/profile-setup.html" role="menuitem">Settings</a>
-        <a id="menuLogout" class="menuItem danger" href="#" role="menuitem">Log out</a>
+    <!-- Avatar dropdown menu -->
+    <div id="avatarMenu" class="avatarMenu hidden">
+      <div class="menuHead">
+        <div id="avatarMenuName" class="menuName">Profile</div>
       </div>
+
+      <button id="menuProfile" class="menuItem" type="button">Profile</button>
+      <button id="menuSettings" class="menuItem" type="button">Settings</button>
+      <button id="menuLogout" class="menuItem danger" type="button">Log out</button>
     </div>
   </header>
 
-  <!-- Main content (sample layout – keep your existing feed layout if you want) -->
-  <main class="page">
+  <!-- MAIN CONTENT -->
+  <main class="wrap">
     <section class="card">
-      <h1 class="h1">Dashboard</h1>
-      <p class="muted">Feed / Jobs / Post / Search / Messages / Profile navigation goes here.</p>
+      <h1 class="title">Explore Pepsval</h1>
+      <p class="muted">
+        Your feed and updates will appear here. Next we’ll add posts, jobs, and connections.
+      </p>
+
+      <!-- Placeholder feed cards -->
+      <div class="feed">
+        <div class="postCard">
+          <div class="postTitle">Welcome aboard 🚢</div>
+          <div class="postBody">Your network starts with verified sea service and real connections.</div>
+        </div>
+
+        <div class="postCard">
+          <div class="postTitle">Crewmate matches</div>
+          <div class="postBody">
+            When you add sea service with IMO + dates, Pepsval can notify others who served on the same vessel.
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- Bottom nav -->
+  <!-- BOTTOM NAV -->
   <nav class="bottomNav" aria-label="Bottom navigation">
-    <a class="navItem" href="/dashboard/index.html">Feed</a>
-    <a class="navItem" href="/jobs/index.html">Jobs</a>
-    <a class="navItem plus" href="/post/index.html" aria-label="Create post">+</a>
-    <a class="navItem" href="/search/index.html">Search</a>
-    <a class="navItem" href="/messages/index.html">Messages</a>
-    <a id="navProfile" class="navItem active" href="/profile/home.html">Profile</a>
+    <a class="navItem active" href="/dashboard/index.html" id="navFeed">
+      <span>Feed</span>
+    </a>
+
+    <a class="navItem" href="/jobs/index.html" id="navJobs">
+      <span>Jobs</span>
+    </a>
+
+    <a class="navItem" href="/dashboard/index.html" id="navPlus" title="Create post">
+      <span>+</span>
+    </a>
+
+    <a class="navItem" href="/search/index.html" id="navSearch">
+      <span>Search</span>
+    </a>
+
+    <a class="navItem" href="/messages/index.html" id="navMessages">
+      <span>Messages</span>
+      <!-- badge for (unread messages + unread notifications) -->
+      <span id="messagesBadge" class="badge hidden">0</span>
+    </a>
+
+    <a class="navItem" href="/profile/index.html" id="navProfile">
+      <span>Profile</span>
+    </a>
   </nav>
 
-  <script type="module" src="/dashboard/dashboard.js?v=20260108"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20260109a"></script>
 </body>
 </html>
+```0
