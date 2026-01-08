@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=1" />
+  <link rel="stylesheet" href="/profile/profile.css?v=2" />
 </head>
 
 <body>
@@ -40,11 +40,9 @@
             <span id="accountBadge" class="badge hidden">—</span>
           </div>
 
-          <div id="primaryLine" class="primaryLine"> </div>
+          <div id="primaryLine" class="primaryLine"></div>
 
-          <div class="btnRow" id="headerButtons">
-            <!-- JS inserts buttons -->
-          </div>
+          <div class="btnRow" id="headerButtons"></div>
         </div>
       </div>
 
@@ -57,6 +55,7 @@
         <button class="tab hidden" data-tab="documents" role="tab" id="tabDocuments">Documents</button>
         <button class="tab hidden" data-tab="sea" role="tab" id="tabSea">Sea Service</button>
         <button class="tab hidden" data-tab="jobs" role="tab" id="tabJobs">Jobs</button>
+
         <button class="tab" data-tab="media" role="tab">Media</button>
       </div>
     </section>
@@ -80,7 +79,7 @@
             <ul class="tips">
               <li>Keep your profile updated for top visibility.</li>
               <li>Add posts to build your reputation.</li>
-              <li>Seafarers can add sea service later and get it verified.</li>
+              <li>Seafarers can add documents and sea service anytime.</li>
             </ul>
           </div>
         </div>
@@ -88,6 +87,7 @@
 
       <!-- Main tab content -->
       <section class="mainRail">
+        <!-- ABOUT -->
         <div id="tab_about" class="tabPane">
           <div class="paneCard">
             <h2 class="paneTitle">About</h2>
@@ -114,6 +114,7 @@
           </div>
         </div>
 
+        <!-- POSTS -->
         <div id="tab_posts" class="tabPane hidden">
           <div class="paneCard">
             <div class="postsHead">
@@ -122,38 +123,145 @@
             </div>
 
             <div id="postsList" class="postsList"></div>
-
             <div id="postsStatus" class="status muted">Scroll to load more…</div>
           </div>
         </div>
 
+        <!-- DOCUMENTS (Seafarer only) -->
         <div id="tab_documents" class="tabPane hidden">
           <div class="paneCard">
-            <h2 class="paneTitle">Documents</h2>
-            <p class="muted">
-              This section loads only when opened. (We’ll build certificate upload + expiry tracking next.)
-            </p>
+            <div class="paneTopRow">
+              <h2 class="paneTitle">Documents</h2>
+              <div class="muted smallNote">No file upload. Only dates & issuer.</div>
+            </div>
+
+            <form id="docForm" class="formGrid" autocomplete="off">
+              <div class="field">
+                <label class="lbl">Document type <span class="req">*</span></label>
+                <input id="docType" type="text" placeholder="e.g., Passport / COC / Medical / STCW" required />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Document number</label>
+                <input id="docNumber" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Issued by</label>
+                <input id="docIssuedBy" type="text" placeholder="e.g., Govt of India / DG Shipping" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Issue date</label>
+                <input id="docIssueDate" type="date" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Expiry date</label>
+                <input id="docExpiryDate" type="date" />
+              </div>
+
+              <div class="field actions">
+                <button id="docSaveBtn" class="btn btnPrimary" type="submit">Add document</button>
+                <button id="docClearBtn" class="btn btnGhost" type="button">Clear</button>
+              </div>
+            </form>
+
+            <div id="docError" class="errorBox hidden"></div>
+
+            <div class="tableWrap">
+              <div class="tableHead">
+                <div class="th">Type</div>
+                <div class="th">Issued by</div>
+                <div class="th">Issue</div>
+                <div class="th">Expiry</div>
+                <div class="th">Status</div>
+                <div class="th" style="text-align:right;">Action</div>
+              </div>
+              <div id="docRows" class="tableBody"></div>
+            </div>
+
+            <div id="docStatus" class="status muted">Open this tab to load documents…</div>
           </div>
         </div>
 
+        <!-- SEA SERVICE (Seafarer only) -->
         <div id="tab_sea" class="tabPane hidden">
           <div class="paneCard">
-            <h2 class="paneTitle">Sea Service</h2>
-            <p class="muted">
-              Sea service will be managed here for seafarers. Entries can become locked once verified by an employer or peer.
-            </p>
+            <div class="paneTopRow">
+              <h2 class="paneTitle">Sea Service</h2>
+              <div class="muted smallNote">
+                Sea service becomes locked once verified by an employer or peer.
+              </div>
+            </div>
+
+            <form id="seaForm" class="formGrid" autocomplete="off">
+              <div class="field">
+                <label class="lbl">Vessel name <span class="req">*</span></label>
+                <input id="vesselName" type="text" placeholder="e.g., MV Atlantic Star" required />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Vessel type</label>
+                <input id="vesselType" type="text" placeholder="e.g., Tanker / Container / Drillship" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Rank</label>
+                <input id="seaRank" type="text" placeholder="e.g., 2/O" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Company</label>
+                <input id="seaCompany" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Sign on</label>
+                <input id="signOn" type="date" />
+              </div>
+
+              <div class="field">
+                <label class="lbl">Sign off</label>
+                <input id="signOff" type="date" />
+              </div>
+
+              <div class="field actions">
+                <button id="seaSaveBtn" class="btn btnPrimary" type="submit">Add entry</button>
+                <button id="seaClearBtn" class="btn btnGhost" type="button">Clear</button>
+              </div>
+            </form>
+
+            <div id="seaError" class="errorBox hidden"></div>
+
+            <div class="tableWrap">
+              <div class="tableHead">
+                <div class="th">Vessel</div>
+                <div class="th">Type</div>
+                <div class="th">Rank</div>
+                <div class="th">Company</div>
+                <div class="th">Period</div>
+                <div class="th">Status</div>
+                <div class="th" style="text-align:right;">Action</div>
+              </div>
+              <div id="seaRows" class="tableBody"></div>
+            </div>
+
+            <div id="seaStatus" class="status muted">Open this tab to load sea service…</div>
           </div>
         </div>
 
+        <!-- JOBS -->
         <div id="tab_jobs" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Jobs</h2>
             <p class="muted">
-              Employer job posts will appear here. We will load in pages (infinite scroll) so it stays fast.
+              Employer job posts will appear here (lazy loaded).
             </p>
           </div>
         </div>
 
+        <!-- MEDIA -->
         <div id="tab_media" class="tabPane hidden">
           <div class="paneCard">
             <h2 class="paneTitle">Media</h2>
@@ -166,6 +274,6 @@
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=1"></script>
+  <script type="module" src="/profile/profile.js?v=2"></script>
 </body>
 </html>
