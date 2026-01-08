@@ -1,4 +1,4 @@
-// /setup/profile-setup.js (FULL) — with DOB (required)
+// /setup/profile-setup.js (FULL) — remembers dial code + saves avatar to Supabase Storage
 import { supabase } from "/js/supabaseClient.js";
 import { ROUTES } from "/js/config.js";
 
@@ -31,11 +31,12 @@ const dialValue = $("dialValue");
 const dialList = $("dialList");
 const phoneInput = $("phoneInput");
 
-// Photo (optional)
+// Photo
 const photoInput = $("photoInput");
 const avatarPreview = $("avatarPreview");
 const removePhotoBtn = $("removePhotoBtn");
 let selectedPhotoFile = null;
+let existingAvatarUrl = null; // loaded from DB/local if present
 
 function showError(msg){
   errorBox.style.display = "block";
@@ -50,7 +51,7 @@ function busy(b){
   saveBtn.textContent = b ? "Saving..." : "Save & Continue";
 }
 
-// ---- Expanded ranks ----
+// ---- ranks (same as before, you can add more later) ----
 const RANKS = [
   "Master / Captain","Staff Captain","Chief Officer / C/O","Chief Mate",
   "Second Officer / 2/O","Second Mate","Third Officer / 3/O","Third Mate",
@@ -136,7 +137,7 @@ function initRankCombo(){
   attachCombo(rankSearch, rankList, (q)=>{
     const t=(q||"").toLowerCase().trim();
     const list = !t ? RANKS : RANKS.filter(r=>r.toLowerCase().includes(t));
-    return list.slice(0,90).map(r=>{
+    return list.slice(0,100).map(r=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${r}</strong>`;
@@ -157,7 +158,7 @@ function initCountryCombos(){
   attachCombo(countrySearch, countryList, (q)=>{
     const t=(q||"").toLowerCase().trim();
     const list = !t ? COUNTRIES : COUNTRIES.filter(c=>c.name.toLowerCase().includes(t));
-    return list.slice(0,90).map(c=>{
+    return list.slice(0,100).map(c=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${c.name}</strong> <span style="color:#5d7a88;">(${c.code})</span>`;
@@ -166,6 +167,7 @@ function initCountryCombos(){
         countryValue.value=c.code || c.name;
         closeList(countryList);
 
+        // Always set dial code when a country is picked
         if(c.dial_code){
           dialSearch.value=c.dial_code;
           dialValue.value=c.dial_code;
@@ -179,7 +181,7 @@ function initCountryCombos(){
     const t=(q||"").toLowerCase().trim();
     const base = COUNTRIES.filter(c=>c.dial_code).map(c=>({name:c.name, dial_code:c.dial_code, code:c.code}));
     const list = !t ? base : base.filter(c=>c.dial_code.toLowerCase().includes(t) || c.name.toLowerCase().includes(t));
-    return list.slice(0,90).map(c=>{
+    return list.slice(0,100).map(c=>{
       const row=document.createElement("div");
       row.className="comboItem";
       row.innerHTML = `<strong>${c.dial_code}</strong> <span style="color:#5d7a88;">${c.name}</span>`;
@@ -188,6 +190,7 @@ function initCountryCombos(){
         dialValue.value=c.dial_code;
         closeList(dialList);
 
+        // set country too (nice)
         if(c.code){
           countrySearch.value=c.name;
           countryValue.value=c.code;
@@ -213,21 +216,34 @@ function updateAccountTypeUI(){
 }
 accountType.addEventListener("change", updateAccountTypeUI);
 
-// Photo optional preview
+// Avatar UI helper
+function setAvatar(url){
+  if(url){
+    existingAvatarUrl = url;
+    avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo" />`;
+  } else {
+    existingAvatarUrl = null;
+    avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+  }
+}
+
+// Photo preview (cannot persist file, only URL can persist)
 photoInput.addEventListener("change", ()=>{
   const f = photoInput.files?.[0] || null;
   selectedPhotoFile = f;
   if(!f){
-    avatarPreview.innerHTML=`<span class="avatarHint">Add photo</span>`;
+    if(existingAvatarUrl) setAvatar(existingAvatarUrl);
+    else setAvatar(null);
     return;
   }
   const url = URL.createObjectURL(f);
   avatarPreview.innerHTML = `<img src="${url}" alt="Profile photo" />`;
 });
+
 removePhotoBtn.addEventListener("click", ()=>{
   selectedPhotoFile=null;
   photoInput.value="";
-  avatarPreview.innerHTML=`<span class="avatarHint">Add photo</span>`;
+  setAvatar(null);
 });
 
 // Validation (DOB required; photo+phone optional)
@@ -248,6 +264,7 @@ function validate(){
     if(r==="Other" && !rankOther.value.trim()) return {ok:false,msg:"Please enter your rank (Other)."};
   }
 
+  // phone optional
   const phone = phoneInput.value.trim();
   if(phone && !dialSearch.value.trim()) return {ok:false,msg:"Please select country code for mobile number."};
 
@@ -270,7 +287,7 @@ function parseMissingColumn(msg){
 }
 async function upsertWithAutoColumnFix(payload){
   let p = { ...payload };
-  for(let attempt=1; attempt<=7; attempt++){
+  for(let attempt=1; attempt<=8; attempt++){
     const { error } = await supabase.from("profiles").upsert(p, { onConflict:"id" });
     if(!error) return { ok:true, saved:p };
 
@@ -284,8 +301,8 @@ async function upsertWithAutoColumnFix(payload){
   return { ok:false, error:{ message:"Schema mismatch. Please update profiles table." } };
 }
 
-// Local backup (so user always sees what they saved)
-const LS_KEY = "pepsval_profile_local_v2";
+// Local backup (so dial code and fields always restore)
+const LS_KEY = "pepsval_profile_local_v3";
 function saveLocalProfile(obj){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }catch(_){}
 }
@@ -293,7 +310,6 @@ function loadLocalProfile(){
   try{ return JSON.parse(localStorage.getItem(LS_KEY) || "null"); }catch(_){ return null; }
 }
 
-// Prefill UI
 function applyToUI(p){
   if(!p) return;
 
@@ -311,7 +327,12 @@ function applyToUI(p){
   if(p.dob) dobEl.value = p.dob;
 
   if(p.nationality) countrySearch.value = p.nationality;
-  if(p.phone_dial){ dialSearch.value = p.phone_dial; dialValue.value = p.phone_dial; }
+
+  // ✅ Always restore dial code & phone if we have it (DB or local)
+  if(p.phone_dial){
+    dialSearch.value = p.phone_dial;
+    dialValue.value = p.phone_dial;
+  }
   if(p.phone_number) phoneInput.value = p.phone_number;
 
   if(p.rank){
@@ -321,6 +342,11 @@ function applyToUI(p){
       rankOtherWrap.classList.remove("hidden");
       rankOther.value = p.rank_other || "";
     }
+  }
+
+  // ✅ Restore avatar
+  if(p.avatar_url){
+    setAvatar(p.avatar_url);
   }
 
   updateAccountTypeUI();
@@ -347,25 +373,63 @@ async function prefillFromDBOrLocal(userId){
   if(local) applyToUI(local);
 }
 
+// -------- Avatar upload to Supabase Storage (bucket: avatars) --------
+async function uploadAvatarIfNeeded(userId){
+  if(!selectedPhotoFile) return existingAvatarUrl; // no new file chosen
+
+  const file = selectedPhotoFile;
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const safeExt = ext.replace(/[^a-z0-9]/g,"") || "jpg";
+  const path = `${userId}/avatar_${Date.now()}.${safeExt}`;
+
+  // Upload
+  const { error: upErr } = await supabase
+    .storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+
+  if(upErr){
+    // Don't block saving profile; just show warning
+    showError("Photo upload failed (profile saved without photo): " + upErr.message);
+    return existingAvatarUrl;
+  }
+
+  // Get public URL
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  const publicUrl = data?.publicUrl || null;
+
+  if(publicUrl){
+    existingAvatarUrl = publicUrl;
+    setAvatar(publicUrl);
+  }
+  return publicUrl;
+}
+
 async function saveProfile(){
   const session = await ensureSession();
   if(!session) return;
 
+  const userId = session.user.id;
   const t = accountType.value;
 
+  // Upload avatar (optional)
+  const avatarUrl = await uploadAvatarIfNeeded(userId);
+
   const payload = {
-    id: session.user.id,
+    id: userId,
     full_name: fullName.value.trim() || null,
     account_type: t==="other" ? (accountTypeOther.value.trim() || "other") : t,
-
-    dob: (dobEl.value || "").trim(), // ✅ required
-
+    dob: (dobEl.value || "").trim(),
     nationality: countrySearch.value.trim() || null,
 
-    // Optional (auto-removed if DB doesn't have them)
+    // optional phone
     phone_dial: dialSearch.value.trim() || null,
     phone_number: phoneInput.value.trim() || null,
 
+    // optional avatar url
+    avatar_url: avatarUrl || null,
+
+    // rank
     rank: null
   };
 
@@ -374,16 +438,17 @@ async function saveProfile(){
     payload.rank = (r==="Other") ? (rankOther.value.trim() || "Other") : r;
   }
 
-  // Photo upload intentionally not done yet to avoid breaking.
-  // selectedPhotoFile will be used later.
-
   const res = await upsertWithAutoColumnFix(payload);
   if(!res.ok){
     showError("Database error saving profile: " + (res.error?.message || "Unknown error"));
+    // still store local backup so reopen works
+    saveLocalProfile(payload);
     return;
   }
 
+  // local backup (ensures dial code persists even if DB columns missing)
   saveLocalProfile(payload);
+
   window.location.href = ROUTES.dashboard;
 }
 
