@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Reset Password</title>
 
-  <link rel="stylesheet" href="/auth/login.css?v=9" />
+  <!-- CSS is inside /auth/ folder -->
+  <link rel="stylesheet" href="/auth/login.css?v=20" />
 </head>
 
 <body>
@@ -34,8 +35,8 @@
         <button id="sendBtn" class="btnPrimary" type="submit">Send reset link</button>
 
         <div class="authLinksRow">
-          <!-- ✅ absolute paths -->
           <a class="link" href="/auth/login.html">Back to login</a>
+          <!-- IMPORTANT: create account is in ROOT -->
           <a class="link" href="/create-account.html">Create account</a>
         </div>
 
@@ -49,6 +50,7 @@
     </section>
   </main>
 
-  <script type="module" src="/forgot.js?v=9"></script>
+  <!-- forgot.js is in root as per your repo -->
+  <script type="module" src="/forgot.js?v=20"></script>
 </body>
 </html>
