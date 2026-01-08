@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Create account</title>
 
-  <link rel="stylesheet" href="/auth/create-account.css?v=10" />
+  <!-- Uses same futuristic look as login -->
+  <link rel="stylesheet" href="/auth/create-account.css?v=9999" />
 </head>
 
 <body>
@@ -61,15 +62,99 @@
   </main>
 
   <script>
+    // Password toggle UI
     const pw = document.getElementById("password");
-    const btn = document.getElementById("togglePw");
-    btn.addEventListener("click", () => {
+    const tbtn = document.getElementById("togglePw");
+    tbtn.addEventListener("click", () => {
       const isPw = pw.type === "password";
       pw.type = isPw ? "text" : "password";
-      btn.textContent = isPw ? "Hide" : "Show";
+      tbtn.textContent = isPw ? "Hide" : "Show";
     });
   </script>
 
-  <script type="module" src="/create-account.js?v=10"></script>
+  <!-- BULLETPROOF MODULE: runs even if external JS paths were wrong -->
+  <script type="module">
+    const form = document.getElementById("createForm");
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
+    const btn = document.getElementById("createBtn");
+
+    const show = (el, msg) => { el.style.display="block"; el.textContent=msg; };
+    const hide = (el) => { el.style.display="none"; el.textContent=""; };
+
+    // Catch ANY crash and show it on screen (no silent failure)
+    window.addEventListener("error", (e) => {
+      hide(successBox);
+      show(errorBox, "JS error: " + (e?.message || "Unknown error"));
+    });
+
+    window.addEventListener("unhandledrejection", (e) => {
+      hide(successBox);
+      show(errorBox, "Promise error: " + (e?.reason?.message || e?.reason || "Unknown error"));
+    });
+
+    // Load Supabase safely
+    let supabase;
+    try {
+      const mod = await import("/js/supabase.js");
+      supabase = mod.supabase;
+      if (!supabase) throw new Error("supabase export missing in /js/supabase.js");
+    } catch (err) {
+      show(errorBox, "Cannot load Supabase: " + (err?.message || err));
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hide(errorBox);
+      hide(successBox);
+
+      if (!supabase) {
+        show(errorBox, "Supabase not ready. Check /js/supabase.js SUPABASE_URL + ANON_KEY.");
+        return;
+      }
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirmPassword").value;
+
+      if (!email) return show(errorBox, "Please enter your email.");
+      if (!password) return show(errorBox, "Please enter a password.");
+      if (password.length < 6) return show(errorBox, "Password must be at least 6 characters.");
+      if (password !== confirm) return show(errorBox, "Passwords do not match.");
+
+      btn.disabled = true;
+      btn.textContent = "Creating…";
+
+      try {
+        // MUST be added in Supabase Redirect URLs
+        const emailRedirectTo = `${location.origin}/auth/login.html`;
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo }
+        });
+
+        if (error) {
+          show(errorBox, error.message || "Create account failed.");
+          return;
+        }
+
+        // If email confirmations ON -> session is null
+        if (!data?.session) {
+          show(successBox, "Account created ✅ Check your email to confirm, then login.");
+          return;
+        }
+
+        // If confirmations OFF -> session exists
+        window.location.href = "/setup/profile-setup.html";
+      } catch (err) {
+        show(errorBox, err?.message || "Unexpected error. Please try again.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create account";
+      }
+    });
+  </script>
 </body>
 </html>
