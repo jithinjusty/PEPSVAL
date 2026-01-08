@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Login</title>
 
-  <link rel="stylesheet" href="/auth/login.css?v=2" />
+  <link rel="stylesheet" href="/auth/login.css?v=4" />
 </head>
 
 <body>
@@ -24,9 +24,7 @@
       <form id="loginForm" autocomplete="on" novalidate>
 
         <div class="field">
-          <div class="label">
-            <span>Email</span>
-          </div>
+          <div class="label"><span>Email</span></div>
           <div class="inputRow">
             <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
           </div>
@@ -65,7 +63,6 @@
   </main>
 
   <script>
-    // UI-only password toggle (does not touch Supabase)
     const pw = document.getElementById("password");
     const btn = document.getElementById("togglePw");
     btn.addEventListener("click", () => {
@@ -75,6 +72,6 @@
     });
   </script>
 
-  <script type="module" src="/auth/login.js?v=2"></script>
+  <script type="module" src="/auth/login.js?v=4"></script>
 </body>
 </html>
