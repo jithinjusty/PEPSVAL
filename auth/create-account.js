@@ -1,65 +1,99 @@
-// /create-account.js
+// create-account.js
 import { supabase } from "/js/supabase.js";
 
 const form = document.getElementById("createForm");
+const firstName = document.getElementById("firstName");
+const lastName = document.getElementById("lastName");
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const confirmPassword = document.getElementById("confirmPassword");
+const createBtn = document.getElementById("createBtn");
+
 const errorBox = document.getElementById("errorBox");
 const successBox = document.getElementById("successBox");
-const btn = document.getElementById("createBtn");
 
-function show(el, msg) {
-  el.style.display = "block";
-  el.textContent = msg;
+const togglePw = document.getElementById("togglePw");
+const togglePw2 = document.getElementById("togglePw2");
+
+function showError(msg) {
+  successBox.style.display = "none";
+  errorBox.textContent = msg;
+  errorBox.style.display = "block";
 }
-function hide(el) {
-  el.style.display = "none";
-  el.textContent = "";
+
+function showSuccess(msg) {
+  errorBox.style.display = "none";
+  successBox.textContent = msg;
+  successBox.style.display = "block";
 }
+
+function setLoading(isLoading) {
+  createBtn.disabled = isLoading;
+  createBtn.textContent = isLoading ? "Creating..." : "Create account";
+}
+
+function toggleInputType(input, btn) {
+  const isPw = input.type === "password";
+  input.type = isPw ? "text" : "password";
+  btn.textContent = isPw ? "Hide" : "Show";
+}
+
+togglePw?.addEventListener("click", () => toggleInputType(password, togglePw));
+togglePw2?.addEventListener("click", () => toggleInputType(confirmPassword, togglePw2));
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  hide(errorBox);
-  hide(successBox);
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  const confirm = document.getElementById("confirmPassword").value;
+  errorBox.style.display = "none";
+  successBox.style.display = "none";
 
-  if (!email) return show(errorBox, "Please enter your email.");
-  if (!password) return show(errorBox, "Please enter a password.");
-  if (password.length < 6) return show(errorBox, "Password must be at least 6 characters.");
-  if (password !== confirm) return show(errorBox, "Passwords do not match.");
+  const e1 = (email.value || "").trim();
+  const p1 = password.value || "";
+  const p2 = confirmPassword.value || "";
 
-  btn.disabled = true;
-  btn.textContent = "Creating…";
+  if (!e1) return showError("Please enter your email.");
+  if (!p1 || p1.length < 6) return showError("Password must be at least 6 characters.");
+  if (p1 !== p2) return showError("Passwords do not match.");
+
+  setLoading(true);
 
   try {
-    // MUST be in Supabase Redirect URLs
-    const emailRedirectTo = `${location.origin}/auth/login.html`;
+    const redirectTo = `${window.location.origin}/auth/login.html`;
 
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo }
+      email: e1,
+      password: p1,
+      options: {
+        emailRedirectTo: redirectTo,
+        data: {
+          first_name: (firstName.value || "").trim(),
+          last_name: (lastName.value || "").trim(),
+        },
+      },
     });
 
     if (error) {
-      show(errorBox, error.message || "Create account failed.");
-      return;
+      const msg = (error.message || "").toLowerCase();
+
+      // Common Supabase messages across settings
+      if (msg.includes("user already registered") || msg.includes("already registered")) {
+        return showError("This email is already registered with Pepsval. Please log in.");
+      }
+      if (msg.includes("email rate limit")) {
+        return showError("Too many requests. Please try again in a few minutes.");
+      }
+      return showError(error.message || "Could not create account. Please try again.");
     }
 
-    // If confirm email is ON: session is null and email must arrive
-    if (!data?.session) {
-      show(successBox, "Account created ✅ Please check your email to confirm, then login.");
-      return;
-    }
-
-    // If confirm email OFF: go setup
-    window.location.href = "/setup/profile-setup.html";
+    // IMPORTANT:
+    // Depending on your Supabase auth settings, Supabase may return a user even if already existing.
+    // If identities exist, user will be null or confirmation required.
+    // We always show a safe success message.
+    showSuccess("Account created. Please check your email to confirm.");
+    form.reset();
   } catch (err) {
-    show(errorBox, err?.message || "Unexpected error. Please try again.");
-    console.error(err);
+    showError("Something went wrong. Please try again.");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Create account";
+    setLoading(false);
   }
 });
