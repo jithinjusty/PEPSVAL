@@ -1,61 +1,94 @@
-import { supabase } from "./js/supabase.js";
+// create-account.js
+import { supabase } from "/js/supabase.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("createForm");
-  const firstName = document.getElementById("firstName");
-  const lastName = document.getElementById("lastName");
-  const email = document.getElementById("email");
-  const password = document.getElementById("password");
-  const confirmPassword = document.getElementById("confirmPassword");
-  const errorBox = document.getElementById("errorBox");
+const form = document.getElementById("createForm");
+const errorBox = document.getElementById("errorBox");
 
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = "block";
+function showError(msg) {
+  errorBox.style.display = "block";
+  errorBox.textContent = msg;
+}
+
+function hideError() {
+  errorBox.style.display = "none";
+  errorBox.textContent = "";
+}
+
+function ensureSupabase() {
+  if (!supabase) {
+    showError("Supabase is not initialized. Check /js/supabase.js");
+    return false;
   }
-  function clearError() {
-    errorBox.textContent = "";
-    errorBox.style.display = "none";
+  return true;
+}
+
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideError();
+
+  if (!ensureSupabase()) return;
+
+  const firstName = document.getElementById("firstName")?.value?.trim() || "";
+  const lastName = document.getElementById("lastName")?.value?.trim() || "";
+  const email = document.getElementById("email")?.value?.trim() || "";
+  const password = document.getElementById("password")?.value || "";
+  const confirmPassword = document.getElementById("confirmPassword")?.value || "";
+
+  if (!email) return showError("Please enter your email.");
+  if (!password) return showError("Please enter a password.");
+  if (password.length < 6) return showError("Password must be at least 6 characters.");
+  if (password !== confirmPassword) return showError("Passwords do not match.");
+
+  const btn = document.getElementById("createBtn");
+  const oldText = btn?.textContent;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Creating...";
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearError();
+  try {
+    // IMPORTANT: redirect goes to your reset page / email confirm page when user clicks email link
+    const emailRedirectTo = `${location.origin}/auth/login.html`;
 
-    const fn = (firstName.value || "").trim();
-    const ln = (lastName.value || "").trim();
-    const em = (email.value || "").trim();
-    const pw = password.value || "";
-    const cpw = confirmPassword.value || "";
-
-    if (!fn) return showError("Please enter your first name.");
-    if (!ln) return showError("Please enter your last name.");
-    if (!em) return showError("Please enter your email.");
-    if (!pw) return showError("Please create a password.");
-    if (pw.length < 6) return showError("Password must be at least 6 characters.");
-    if (pw !== cpw) return showError("Passwords do not match.");
-
-    const fullName = `${fn} ${ln}`.trim();
-
-    // Signup (email confirm will happen via template if enabled)
     const { data, error } = await supabase.auth.signUp({
-      email: em,
-      password: pw,
+      email,
+      password,
       options: {
-        data: { full_name: fullName, first_name: fn, last_name: ln }
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim()
+        },
+        emailRedirectTo
       }
     });
 
-    if (error) return showError(error.message);
-
-    // If email confirmations are ON, user may not be logged in yet.
-    // So we show a friendly message and route to login.
-    if (!data?.session) {
-      showError("Please check your email and confirm your account. Then log in.");
+    if (error) {
+      showError(error.message || "Create account failed.");
       return;
     }
 
-    // If session exists, send to profile setup
-    window.location.href = "/profile-setup.html";
-  });
+    // If email confirmations are ON: user must verify email first
+    // If OFF: session may exist immediately
+    const session = data?.session;
+
+    if (session) {
+      // Signed in instantly → go to setup
+      window.location.href = "/setup/profile-setup.html";
+      return;
+    }
+
+    // Otherwise show message
+    alert("Account created! Please check your email to confirm, then login.");
+    window.location.href = "/auth/login.html";
+
+  } catch (err) {
+    showError(err?.message || "Unexpected error. Open console to check.");
+    console.error(err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText || "Create account";
+    }
+  }
 });
