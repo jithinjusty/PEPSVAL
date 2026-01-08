@@ -1,50 +1,50 @@
-// /forgot.js
 import { supabase } from "/js/supabase.js";
 
 const form = document.getElementById("forgotForm");
-const emailInput = document.getElementById("email");
-const errorBox = document.getElementById("errorBox");
-const successBox = document.getElementById("successBox");
-const btn = document.getElementById("sendBtn");
+const msg = document.getElementById("msg");
+const emailEl = document.getElementById("email");
+const submitBtn = document.getElementById("submitBtn");
 
-function show(el, msg) {
-  el.style.display = "block";
-  el.textContent = msg;
+function setMsg(type, text) {
+  msg.hidden = false;
+  msg.className = `msg ${type}`;
+  msg.textContent = text;
 }
-function hide(el) {
-  el.style.display = "none";
-  el.textContent = "";
+function clearMsg() {
+  msg.hidden = true;
+  msg.className = "msg";
+  msg.textContent = "";
+}
+function setLoading(isLoading) {
+  submitBtn.disabled = isLoading;
+  submitBtn.classList.toggle("loading", isLoading);
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  hide(errorBox);
-  hide(successBox);
+  clearMsg();
 
-  const email = (emailInput.value || "").trim().toLowerCase();
-  if (!email) return show(errorBox, "Please enter your email.");
+  const email = (emailEl.value || "").trim().toLowerCase();
+  if (!email) return setMsg("err", "Please enter your email.");
 
-  btn.disabled = true;
-  btn.textContent = "Sending…";
+  setLoading(true);
 
   try {
-    // IMPORTANT: force redirect to YOUR reset page
-    const redirectTo = `${window.location.origin}/reset.html`;
+    // Reset link should land on your ROOT reset page
+    const redirectTo = `${location.origin}/reset.html`;
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
-    if (error) throw error;
+    if (error) {
+      setMsg("err", error.message || "Could not send reset link. Please try again.");
+      return;
+    }
 
-    show(
-      successBox,
-      "Reset link sent ✅ Please check your email (and spam). Open the link and set a new password."
-    );
+    setMsg("ok", "Reset link sent! Please check your email (and spam folder).");
+    form.reset();
   } catch (err) {
-    show(errorBox, err?.message || "Could not send reset email.");
+    setMsg("err", err?.message || "Something went wrong. Please try again.");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Send reset link";
+    setLoading(false);
   }
 });
