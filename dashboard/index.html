@@ -1,94 +1,75 @@
+<!-- dashboard/index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pepsval • Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109a" />
+  <!-- Clean dashboard look -->
+  <link rel="stylesheet" href="/dashboard/dashboard.css" />
+
+  <!-- If you already have a global style, keep it (optional) -->
+  <!-- <link rel="stylesheet" href="/css/style.css" /> -->
+
+  <meta name="theme-color" content="#1F6F86" />
 </head>
 
 <body>
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <a class="brand" href="/dashboard/index.html" aria-label="PEPSVAL Home">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </a>
-
-    <!-- Right side avatar button -->
-    <button id="topAvatarBtn" class="avatarBtn" type="button" aria-label="Account menu">
-      <img id="topAvatarImg" class="avatarImg hidden" alt="Profile photo" />
-      <div id="topAvatarCircle" class="avatarCircle">P</div>
-    </button>
-
-    <!-- Avatar dropdown menu -->
-    <div id="avatarMenu" class="avatarMenu hidden">
-      <div class="menuHead">
-        <div id="avatarMenuName" class="menuName">Profile</div>
-      </div>
-
-      <button id="menuProfile" class="menuItem" type="button">Profile</button>
-      <button id="menuSettings" class="menuItem" type="button">Settings</button>
-      <button id="menuLogout" class="menuItem danger" type="button">Log out</button>
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <a href="/dashboard/">PEPSVAL</a>
+      <small>connect, hire and grow</small>
     </div>
+
+    <!-- Avatar button (dashboard.js uses this) -->
+    <div id="avatarBtn" class="avatar" aria-label="Account menu" title="Account"></div>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="wrap">
-    <section class="card">
-      <h1 class="title">Explore Pepsval</h1>
-      <p class="muted">
-        Your feed and updates will appear here. Next we’ll add posts, jobs, and connections.
-      </p>
+  <!-- Main -->
+  <main>
+    <div class="card">
+      <h1>Explore Pepsval</h1>
+      <p>Your feed and updates will appear here. Next we’ll add posts, jobs, and connections.</p>
 
-      <!-- Placeholder feed cards -->
-      <div class="feed">
-        <div class="postCard">
-          <div class="postTitle">Welcome aboard 🚢</div>
-          <div class="postBody">Your network starts with verified sea service and real connections.</div>
-        </div>
+      <div style="margin-top:14px;">
+        <p style="margin:0; font-weight:800; color:#0b2230;">Welcome aboard 🚢</p>
+        <p style="margin-top:6px;">
+          Your network starts with verified sea service and real connections.
+        </p>
 
-        <div class="postCard">
-          <div class="postTitle">Crewmate matches</div>
-          <div class="postBody">
-            When you add sea service with IMO + dates, Pepsval can notify others who served on the same vessel.
-          </div>
-        </div>
+        <p style="margin-top:12px; font-weight:800; color:#0b2230;">Crewmate matches</p>
+        <p style="margin-top:6px;">
+          When you add sea service with IMO + dates, Pepsval can notify others who served on the same vessel.
+        </p>
       </div>
-    </section>
+    </div>
   </main>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bottomNav" aria-label="Bottom navigation">
-    <a class="navItem active" href="/dashboard/index.html" id="navFeed">
-      <span>Feed</span>
-    </a>
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <div class="wrap">
+      <a href="/dashboard/" class="active" data-tab="feed">Feed</a>
+      <a href="/dashboard/jobs.html" data-tab="jobs">Jobs</a>
+      <a href="/dashboard/create.html" data-tab="create">+</a>
+      <a href="/dashboard/search.html" data-tab="search">Search</a>
 
-    <a class="navItem" href="/jobs/index.html" id="navJobs">
-      <span>Jobs</span>
-    </a>
+      <!-- counts will be updated later -->
+      <a href="/dashboard/messages.html" data-tab="messages">
+        Messages <span id="msgCount">0</span>
+      </a>
 
-    <a class="navItem" href="/dashboard/index.html" id="navPlus" title="Create post">
-      <span>+</span>
-    </a>
-
-    <a class="navItem" href="/search/index.html" id="navSearch">
-      <span>Search</span>
-    </a>
-
-    <a class="navItem" href="/messages/index.html" id="navMessages">
-      <span>Messages</span>
-      <!-- badge for (unread messages + unread notifications) -->
-      <span id="messagesBadge" class="badge hidden">0</span>
-    </a>
-
-    <a class="navItem" href="/profile/index.html" id="navProfile">
-      <span>Profile</span>
-    </a>
+      <!-- IMPORTANT: dashboard.js wires this to /profile/ -->
+      <a href="/profile/" data-tab="profile" id="tabProfile">Profile</a>
+    </div>
   </nav>
 
-  <script type="module" src="/dashboard/dashboard.js?v=20260109a"></script>
+  <!-- Supabase client must be loaded BEFORE dashboard.js -->
+  <!-- Keep ONLY ONE of these. Prefer supabaseClient.js if that’s what you use everywhere. -->
+  <script src="/js/supabaseClient.js"></script>
+
+  <!-- Dashboard logic (avatar menu + profile tab + logout) -->
+  <script src="/dashboard/dashboard.js"></script>
 </body>
 </html>
-```0
