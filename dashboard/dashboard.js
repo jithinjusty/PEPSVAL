@@ -1,342 +1,200 @@
-// dashboard/dashboard.js
-// ✅ FULL FILE (paste полностью)
-// Goal: keep existing dashboard working, fix Profile 404 by always routing to /profile/home.html
-// Works even if some DOM elements are missing (no crashes).
+/* dashboard/dashboard.js
+   Fixes:
+   - Profile tab opens /profile/ (which now redirects to home.html)
+   - Avatar click always opens menu
+   - Menu buttons work: Profile (basic), Settings, Logout
+   - Works even if some IDs/classes differ (fallback selectors)
+*/
 
 import { supabase } from "../js/supabase.js";
 
-(function () {
-  const qs = (s, root = document) => root.querySelector(s);
+document.addEventListener("DOMContentLoaded", () => {
+  wireDashboardNav();
+  wireAvatarMenu();
+  loadUserAvatarSafe();
+});
 
-  // --- Paths (single source of truth) ---
-  const PATHS = {
-    dashboard: "/dashboard/index.html",
-    settings: "/dashboard/settings.html",
-    profileHome: "/profile/home.html", // ✅ FIXED: never use /profile/ (needs index.html)
-    setupBasic: "/profile-setup.html", // your basic profile setup page (root)
-    login: "/auth/login.html",
-    messages: "/messages/index.html", // if not present, we still won't crash
-  };
+/* -----------------------------
+   NAV (bottom tabs)
+--------------------------------*/
+function wireDashboardNav() {
+  // Try common selectors for bottom tabs
+  const profileTab =
+    document.querySelector('[data-tab="profile"]') ||
+    document.querySelector("#tabProfile") ||
+    document.querySelector(".tab-profile") ||
+    findButtonByText("Profile");
 
-  // --- Helpers ---
-  const go = (url) => {
-    // add cache-bust to avoid github pages caching old js/html
-    const u = new URL(url, window.location.origin);
-    u.searchParams.set("v", Date.now().toString());
-    window.location.href = u.toString();
-  };
-
-  const safeText = (el, text) => {
-    if (el) el.textContent = text;
-  };
-
-  const safeShow = (el, show) => {
-    if (!el) return;
-    el.style.display = show ? "" : "none";
-  };
-
-  const setAvatar = (opts) => {
-    const {
-      imgEl,
-      fallbackEl,
-      fullName = "",
-      email = "",
-      avatarUrl = "",
-    } = opts;
-
-    const letter = (fullName || email || "P").trim().charAt(0).toUpperCase() || "P";
-
-    if (imgEl && avatarUrl) {
-      imgEl.src = avatarUrl;
-      imgEl.alt = fullName || "Profile photo";
-      imgEl.style.display = "";
-      if (fallbackEl) fallbackEl.style.display = "none";
-      imgEl.onerror = () => {
-        imgEl.style.display = "none";
-        if (fallbackEl) {
-          fallbackEl.textContent = letter;
-          fallbackEl.style.display = "";
-        }
-      };
-    } else {
-      if (imgEl) imgEl.style.display = "none";
-      if (fallbackEl) {
-        fallbackEl.textContent = letter;
-        fallbackEl.style.display = "";
-      }
-    }
-  };
-
-  async function requireAuth() {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) console.warn("getSession error:", error);
-    const session = data?.session;
-    if (!session) {
-      go(PATHS.login);
-      return null;
-    }
-    return session;
-  }
-
-  async function loadMyProfile(userId) {
-    // We try multiple common column names to avoid breaking if schema changed.
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, name, email, avatar_url, avatar, photo_url, image_url, created_at")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn("profiles select error:", error);
-      return null;
-    }
-    return data || null;
-  }
-
-  async function loadCounts(userId) {
-    // Optional: messages + notifications counts (only if tables exist)
-    // If not, return zeros.
-    const result = { messages: 0, notifications: 0 };
-
-    // messages table (if exists)
-    try {
-      const { count, error } = await supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`);
-      if (!error && typeof count === "number") result.messages = count;
-    } catch (e) {}
-
-    // notifications table (if exists)
-    try {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId);
-      if (!error && typeof count === "number") result.notifications = count;
-    } catch (e) {}
-
-    return result;
-  }
-
-  function wireNavHandlers() {
-    // Bottom nav buttons (works with many possible ids/classes)
-    const btnProfile =
-      qs("#navProfile") || qs("[data-nav='profile']") || qs("a[href*='profile']");
-    const btnSettings =
-      qs("#navSettings") || qs("[data-nav='settings']") || qs("a[href*='settings']");
-    const btnMessages =
-      qs("#navMessages") || qs("[data-nav='messages']") || qs("a[href*='messages']");
-    const btnFeed = qs("#navFeed") || qs("[data-nav='feed']");
-    const btnJobs = qs("#navJobs") || qs("[data-nav='jobs']");
-
-    if (btnProfile) {
-      btnProfile.addEventListener("click", (e) => {
-        e.preventDefault();
-        go(PATHS.profileHome); // ✅ FIXED
-      });
-    }
-
-    if (btnSettings) {
-      btnSettings.addEventListener("click", (e) => {
-        e.preventDefault();
-        go(PATHS.settings);
-      });
-    }
-
-    if (btnMessages) {
-      btnMessages.addEventListener("click", (e) => {
-        e.preventDefault();
-        go(PATHS.messages);
-      });
-    }
-
-    // Optional placeholders (do nothing if you already handle tabs in HTML)
-    if (btnFeed) {
-      btnFeed.addEventListener("click", (e) => {
-        // Keep existing behavior if it uses anchors
-        // If you later want: go("/feed/index.html");
-      });
-    }
-    if (btnJobs) {
-      btnJobs.addEventListener("click", (e) => {});
-    }
-  }
-
-  function wireAvatarMenu() {
-    // Works whether your menu is a dropdown or a modal
-    const avatarButton =
-      qs("#avatarButton") ||
-      qs("#topAvatar") ||
-      qs(".top-avatar") ||
-      qs("[data-avatar-button]");
-
-    const menu =
-      qs("#avatarMenu") ||
-      qs(".avatar-menu") ||
-      qs("[data-avatar-menu]");
-
-    const menuProfile =
-      qs("#menuProfile") ||
-      qs("[data-menu='profile']") ||
-      (menu ? qs("a[href*='profile']", menu) : null);
-
-    const menuSettings =
-      qs("#menuSettings") ||
-      qs("[data-menu='settings']") ||
-      (menu ? qs("a[href*='settings']", menu) : null);
-
-    const menuLogout =
-      qs("#menuLogout") ||
-      qs("[data-menu='logout']") ||
-      (menu ? qs("button[data-logout], a[data-logout]", menu) : null);
-
-    const closeMenu = () => {
-      if (!menu) return;
-      menu.classList.remove("open");
-      menu.style.display = "none";
-      menu.setAttribute("aria-hidden", "true");
-    };
-
-    const openMenu = () => {
-      if (!menu) return;
-      menu.classList.add("open");
-      menu.style.display = "";
-      menu.setAttribute("aria-hidden", "false");
-    };
-
-    if (avatarButton && menu) {
-      // Toggle menu
-      avatarButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        const isHidden = menu.getAttribute("aria-hidden") !== "false";
-        if (isHidden) openMenu();
-        else closeMenu();
-      });
-
-      // Click outside closes
-      document.addEventListener("click", (e) => {
-        if (!menu.classList.contains("open")) return;
-        const clickedInside = menu.contains(e.target) || avatarButton.contains(e.target);
-        if (!clickedInside) closeMenu();
-      });
-
-      // Esc closes
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeMenu();
-      });
-    }
-
-    // Menu actions
-    if (menuProfile) {
-      menuProfile.addEventListener("click", (e) => {
-        e.preventDefault();
-        // Avatar menu Profile should go to OLD basic profile page (your requirement)
-        go(PATHS.setupBasic);
-      });
-    }
-
-    if (menuSettings) {
-      menuSettings.addEventListener("click", (e) => {
-        e.preventDefault();
-        go(PATHS.settings);
-      });
-    }
-
-    if (menuLogout) {
-      menuLogout.addEventListener("click", async (e) => {
-        e.preventDefault();
-        try {
-          await supabase.auth.signOut();
-        } catch (err) {}
-        go(PATHS.login);
-      });
-    }
-  }
-
-  async function init() {
-    // Wire UI first so taps work quickly
-    wireNavHandlers();
-    wireAvatarMenu();
-
-    const session = await requireAuth();
-    if (!session) return;
-
-    const user = session.user;
-    const userId = user?.id;
-    const email = user?.email || "";
-
-    // --- Elements (support multiple existing ids) ---
-    const welcomeEl = qs("#welcomeName") || qs("#welcome") || qs("[data-welcome]");
-    const avatarImg = qs("#avatarImg") || qs("#topAvatarImg") || qs("[data-avatar-img]");
-    const avatarFallback =
-      qs("#avatarFallback") || qs("#topAvatarFallback") || qs("[data-avatar-fallback]");
-
-    const msgBadge =
-      qs("#messagesBadge") || qs("[data-badge='messages']") || qs(".badge-messages");
-    const notiBadge =
-      qs("#notificationsBadge") || qs("[data-badge='notifications']") || qs(".badge-notifications");
-    const totalMsgNotiBadge =
-      qs("#messagesTabCount") || qs("[data-tabcount='messages']") || qs(".tabcount-messages");
-
-    // Load profile (for real photo + name)
-    const profile = await loadMyProfile(userId);
-    const fullName =
-      profile?.full_name || profile?.name || user?.user_metadata?.full_name || "";
-
-    // Avatar URL columns (try multiple)
-    const avatarUrl =
-      profile?.avatar_url ||
-      profile?.photo_url ||
-      profile?.image_url ||
-      profile?.avatar ||
-      user?.user_metadata?.avatar_url ||
-      "";
-
-    setAvatar({ imgEl: avatarImg, fallbackEl: avatarFallback, fullName, email, avatarUrl });
-
-    // Welcome text (you said: welcome message only for first-time users.
-    // For now: show a welcome if localStorage flag is missing. This is safe & client-only.
-    const key = `pepsval_welcomed_${userId}`;
-    const alreadyWelcomed = localStorage.getItem(key) === "1";
-    if (!alreadyWelcomed) {
-      safeText(welcomeEl, fullName ? `Welcome, ${fullName}` : "Welcome to PEPSVAL");
-      localStorage.setItem(key, "1");
-    } else {
-      // Keep existing if your HTML already shows something; otherwise show name.
-      if (welcomeEl && !welcomeEl.textContent.trim()) {
-        safeText(welcomeEl, fullName ? `Hi, ${fullName}` : "Hi");
-      }
-    }
-
-    // Load counts (messages + notifications) without breaking if tables don't exist
-    const counts = await loadCounts(userId);
-
-    // Update badges
-    const setBadge = (el, n) => {
-      if (!el) return;
-      if (!n) {
-        el.textContent = "";
-        el.style.display = "none";
-      } else {
-        el.textContent = n > 99 ? "99+" : String(n);
-        el.style.display = "";
-      }
-    };
-
-    setBadge(msgBadge, counts.messages);
-    setBadge(notiBadge, counts.notifications);
-
-    // If dashboard has a single Messages tab that should show total (msg + noti)
-    setBadge(totalMsgNotiBadge, counts.messages + counts.notifications);
-
-    // Keep session fresh (optional)
-    supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (!newSession) go(PATHS.login);
+  if (profileTab) {
+    profileTab.addEventListener("click", (e) => {
+      e.preventDefault();
+      // NEW profile page (your new profile system)
+      window.location.href = "/profile/";
     });
   }
 
-  // Start
-  document.addEventListener("DOMContentLoaded", init);
-})();
-```0
+  // Messages tab (keep existing routing if any)
+  const messagesTab =
+    document.querySelector('[data-tab="messages"]') ||
+    document.querySelector("#tabMessages") ||
+    document.querySelector(".tab-messages") ||
+    findButtonByText("Messages");
+
+  if (messagesTab) {
+    // If your HTML already has href, do nothing. Else route:
+    if (!messagesTab.getAttribute("href")) {
+      messagesTab.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = "/dashboard/index.html#messages";
+      });
+    }
+  }
+}
+
+function findButtonByText(txt) {
+  const all = Array.from(document.querySelectorAll("a,button,div"));
+  return all.find((el) => (el.textContent || "").trim() === txt);
+}
+
+/* -----------------------------
+   AVATAR + MENU
+--------------------------------*/
+function wireAvatarMenu() {
+  // Try to find the avatar circle
+  const avatarBtn =
+    document.querySelector("#avatarBtn") ||
+    document.querySelector(".avatar") ||
+    document.querySelector(".top-avatar") ||
+    document.querySelector('[data-avatar="btn"]') ||
+    document.querySelector("header .avatar-circle") ||
+    document.querySelector("header [class*='avatar']");
+
+  if (!avatarBtn) return;
+
+  // Make sure it's clickable
+  avatarBtn.style.cursor = "pointer";
+  avatarBtn.style.pointerEvents = "auto";
+  avatarBtn.style.zIndex = "9999";
+
+  // Create menu if not exists
+  let menu = document.querySelector("#avatarMenu");
+  if (!menu) {
+    menu = document.createElement("div");
+    menu.id = "avatarMenu";
+    menu.style.position = "absolute";
+    menu.style.top = "62px";
+    menu.style.right = "14px";
+    menu.style.width = "210px";
+    menu.style.background = "rgba(255,255,255,0.95)";
+    menu.style.border = "1px solid rgba(0,0,0,0.08)";
+    menu.style.borderRadius = "14px";
+    menu.style.boxShadow = "0 12px 30px rgba(0,0,0,0.12)";
+    menu.style.padding = "8px";
+    menu.style.display = "none";
+    menu.style.zIndex = "99999";
+    menu.innerHTML = `
+      <button class="menuItem" data-act="profile">Profile</button>
+      <button class="menuItem" data-act="settings">Settings</button>
+      <button class="menuItem" data-act="logout" style="color:#b00020;">Logout</button>
+    `;
+    document.body.appendChild(menu);
+
+    // Style buttons
+    menu.querySelectorAll(".menuItem").forEach((b) => {
+      b.style.width = "100%";
+      b.style.padding = "12px 12px";
+      b.style.border = "0";
+      b.style.background = "transparent";
+      b.style.textAlign = "left";
+      b.style.borderRadius = "10px";
+      b.style.fontSize = "15px";
+      b.addEventListener("mouseenter", () => (b.style.background = "rgba(31,111,134,0.10)"));
+      b.addEventListener("mouseleave", () => (b.style.background = "transparent"));
+    });
+
+    menu.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-act]");
+      if (!btn) return;
+
+      const act = btn.getAttribute("data-act");
+
+      // Profile in menu = OLD basic profile page (as you requested)
+      if (act === "profile") window.location.href = "/profile-setup.html";
+      if (act === "settings") window.location.href = "/dashboard/settings.html";
+
+      if (act === "logout") {
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {}
+        window.location.href = "/auth/login.html";
+      }
+    });
+  }
+
+  // Toggle on avatar click
+  avatarBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    positionMenu(menu, avatarBtn);
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", () => {
+    const m = document.querySelector("#avatarMenu");
+    if (m) m.style.display = "none";
+  });
+}
+
+function positionMenu(menu, avatarBtn) {
+  const r = avatarBtn.getBoundingClientRect();
+  // place under avatar
+  menu.style.top = `${Math.max(10, r.bottom + 10)}px`;
+  menu.style.right = `14px`;
+}
+
+/* -----------------------------
+   LOAD AVATAR IMAGE
+--------------------------------*/
+async function loadUserAvatarSafe() {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth?.user;
+    if (!user) return;
+
+    // read profile
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+
+    const avatarBtn =
+      document.querySelector("#avatarBtn") ||
+      document.querySelector(".avatar") ||
+      document.querySelector(".top-avatar") ||
+      document.querySelector('[data-avatar="btn"]') ||
+      document.querySelector("header [class*='avatar']");
+
+    if (!avatarBtn) return;
+
+    const name =
+      (prof?.full_name || user.email || "P").trim();
+
+    // If avatar_url exists → show image
+    if (prof?.avatar_url) {
+      // If avatarBtn is a div/circle, set background image
+      avatarBtn.style.backgroundImage = `url('${prof.avatar_url}')`;
+      avatarBtn.style.backgroundSize = "cover";
+      avatarBtn.style.backgroundPosition = "center";
+      avatarBtn.textContent = ""; // remove letter
+      return;
+    }
+
+    // Else show first letter
+    const firstLetter = (name[0] || "P").toUpperCase();
+    avatarBtn.textContent = firstLetter;
+  } catch (e) {
+    // do nothing (avoid breaking dashboard)
+  }
+}
