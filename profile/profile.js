@@ -541,3 +541,28 @@ async function init() {
 }
 
 init();
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutBtn = document.querySelector('[data-act="logout"]');
+  if (!logoutBtn) return;
+
+  logoutBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    try {
+      const client =
+        window.supabase ||
+        window.supabaseClient ||
+        window._supabase ||
+        null;
+
+      if (client?.auth?.signOut) {
+        await client.auth.signOut();
+      }
+    } catch (err) {
+      console.warn("Logout error:", err);
+    }
+
+    // Always redirect safely
+    window.location.href = "/auth/login.html";
+  });
+});
