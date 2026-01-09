@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
 
-  <link rel="stylesheet" href="/setup/profile-setup.css?v=1001" />
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=1002" />
 </head>
 
 <body>
@@ -65,6 +65,7 @@
           <input id="dob" type="date" />
         </div>
 
+        <!-- ✅ Seafarer Rank -->
         <div class="field hidden" id="rankWrap">
           <label class="lbl">Rank <span class="req">*</span></label>
 
@@ -82,6 +83,19 @@
           <div class="help">Type to search or scroll and choose.</div>
         </div>
 
+        <!-- ✅ Employer / Shore job description -->
+        <div class="field hidden" id="jobWrap">
+          <label class="lbl">Job title / Role <span class="req">*</span></label>
+          <input id="jobTitle" type="text" placeholder="e.g., Crewing Manager / Recruiter / Port Captain / HR" />
+          <div class="help">For Employer/Shore staff: describe your job role.</div>
+        </div>
+
+        <div class="field hidden" id="companyWrap">
+          <label class="lbl">Company / Organization <span class="muted">(optional)</span></label>
+          <input id="companyName" type="text" placeholder="e.g., ABC Shipmanagement" />
+        </div>
+
+        <!-- ✅ Nationality (world list) -->
         <div class="field">
           <label class="lbl">Nationality <span class="req">*</span></label>
 
@@ -92,12 +106,12 @@
           </div>
         </div>
 
+        <!-- ✅ Dial code whole world + phone -->
         <div class="field">
           <label class="lbl">Mobile number <span class="muted">(optional)</span></label>
 
           <div class="phoneRow">
             <div class="combo dialCombo" data-combo="dial">
-              <!-- IMPORTANT: neutral placeholder (NOT +91) -->
               <input id="dialSearch" type="text" placeholder="Code" autocomplete="off" />
               <input id="dialValue" type="hidden" />
               <div class="comboList" id="dialList"></div>
@@ -109,6 +123,12 @@
           <div class="help">Select a country to auto-fill the code (you can change it).</div>
         </div>
 
+        <!-- ✅ Bio -->
+        <div class="field">
+          <label class="lbl">Bio <span class="muted">(optional)</span></label>
+          <textarea id="bio" rows="4" placeholder="Write a short bio… (experience, vessel types, goals)"></textarea>
+        </div>
+
         <div id="errorBox" class="error" style="display:none;"></div>
 
         <button id="saveBtn" class="btnPrimary" type="submit" disabled>Save & Continue</button>
@@ -117,6 +137,6 @@
     </section>
   </main>
 
-  <script type="module" src="/setup/profile-setup.js?v=1001"></script>
+  <script type="module" src="/setup/profile-setup.js?v=1002"></script>
 </body>
 </html>
