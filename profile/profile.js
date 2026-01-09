@@ -1,205 +1,236 @@
-:root{
-  --sea:#1F6F86;
-  --seaDeep:#0b3a46;
-  --bg1:#d7f0f6;
-  --bg2:#f6fbfd;
-  --card:rgba(255,255,255,.88);
-  --text:#0a1a20;
-  --muted:#4e6b75;
-  --shadow:0 20px 50px rgba(0,0,0,.10);
-  --radius:22px;
-}
+/* profile/profile.js (NO modules, simple stable)
+   - Loads profile info (profiles table)
+   - Loads sea service list (sea_service table)
+   - Shows Coming soon for posts/docs/media
+*/
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color:var(--text);
-  background:
-    radial-gradient(900px 600px at 20% 0%, rgba(31,111,134,.15), transparent 60%),
-    radial-gradient(700px 500px at 90% 10%, rgba(42,167,199,.14), transparent 65%),
-    linear-gradient(180deg, var(--bg1), var(--bg2));
-}
+(async function () {
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el && el.classList.remove("hidden");
+  const hide = (el) => el && el.classList.add("hidden");
+  const setText = (id, txt) => { const el = $(id); if (el) el.textContent = txt ?? "—"; };
 
-/* Top bar */
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:20;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:14px 16px;
-  background:rgba(255,255,255,.78);
-  backdrop-filter: blur(10px);
-  border-bottom:1px solid rgba(31,111,134,.12);
-}
+  // Supabase client (your project already exposes this in /js/supabase.js)
+  // If for any reason it isn't available, fail gracefully.
+  const supabase = window.supabase || window.supabaseClient || window._supabase;
+  if (!supabase) {
+    console.warn("Supabase client not found on profile page.");
+    setText("postsWrap", "System error: Supabase not loaded.");
+    setText("documentsWrap", "System error: Supabase not loaded.");
+    setText("seaWrap", "System error: Supabase not loaded.");
+    setText("mediaWrap", "System error: Supabase not loaded.");
+    return;
+  }
 
-.brand{display:flex; flex-direction:column; gap:2px; text-decoration:none; color:inherit}
-.brandWord{font-weight:900; letter-spacing:.08em}
-.brandTag{font-size:12px; color:var(--muted)}
+  // ---------- Tabs ----------
+  function activate(tabKey) {
+    // buttons
+    document.querySelectorAll(".tab").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tab === tabKey);
+    });
 
-.btnGhost{
-  appearance:none;
-  border:1px solid rgba(31,111,134,.20);
-  background:rgba(255,255,255,.75);
-  color:var(--seaDeep);
-  padding:9px 12px;
-  border-radius:14px;
-  font-weight:700;
-  text-decoration:none;
-}
+    // panes
+    const keys = ["about", "posts", "documents", "sea", "media"];
+    keys.forEach((k) => {
+      const pane = $("tab_" + k);
+      if (!pane) return;
+      pane.classList.toggle("hidden", k !== tabKey);
+    });
 
-.wrap{max-width:980px; margin:18px auto; padding:0 14px}
+    // Lazy load sections
+    if (tabKey === "posts") loadPostsOnce();
+    if (tabKey === "documents") loadDocumentsOnce();
+    if (tabKey === "sea") loadSeaOnce();
+    if (tabKey === "media") loadMediaOnce();
+  }
 
-.profileCard{
-  background:var(--card);
-  border:1px solid rgba(31,111,134,.16);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
+  document.querySelectorAll(".tab").forEach((b) => {
+    b.addEventListener("click", () => activate(b.dataset.tab));
+  });
 
-/* Header area */
-.profileTop{
-  padding:18px 18px 12px;
-  display:flex;
-  gap:14px;
-  align-items:flex-end;
-}
+  // ---------- Auth ----------
+  async function requireUser() {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) {
+      window.location.href = "/auth/login.html";
+      return null;
+    }
+    return data.user;
+  }
 
-.avatarWrap{
-  overflow:hidden;
-  width:92px;
-  height:92px;
-  border-radius:999px;
-  background:rgba(255,255,255,.85);
-  border:1px solid rgba(31,111,134,.22);
-  box-shadow:0 10px 25px rgba(0,0,0,.12);
-  padding:6px;
-}
+  const user = await requireUser();
+  if (!user) return;
 
-.avatar, .avatarImg{
-  width:100%;
-  height:100%;
-  border-radius:999px;
-  object-fit:cover;
-  display:block;
-}
+  // ---------- Load Profile (profiles table) ----------
+  async function loadProfile() {
+    try {
+      // Pull what we can. If some columns don't exist, we still show basics.
+      const { data: prof, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, rank, nationality, bio, last_vessel, availability, account_type")
+        .eq("id", user.id)
+        .single();
 
-.avatarFallback{
-  width:100%;
-  height:100%;
-  border-radius:999px;
-  display:grid;
-  place-items:center;
-  background:linear-gradient(140deg, rgba(31,111,134,.20), rgba(42,167,199,.10));
-  color:var(--seaDeep);
-  font-weight:900;
-  font-size:28px;
-}
+      if (error) {
+        console.warn("Profile load error:", error);
+      }
 
-.hidden{display:none !important}
+      const fullName = prof?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+      const rank = prof?.rank || "—";
+      const nationality = prof?.nationality || "—";
+      const bio = prof?.bio || "—";
+      const lastVessel = prof?.last_vessel || "—";
+      const availability = prof?.availability || "—";
+      const accType = prof?.account_type || user.user_metadata?.account_type || "";
 
-.headerText{flex:1; min-width:0}
-.nameRow{display:flex; align-items:center; gap:10px}
-.name{
-  font-size:24px;
-  font-weight:900;
-  letter-spacing:.2px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+      setText("profileName", fullName);
+      setText("fullName", fullName);
+      setText("email", user.email || "—");
+      setText("rank", rank);
+      setText("nationality", nationality);
+      setText("bio", bio);
+      setText("lastVessel", lastVessel);
+      setText("availability", availability);
 
-.badge{
-  font-size:12px;
-  font-weight:800;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(31,111,134,.20);
-  background:rgba(31,111,134,.08);
-  color:var(--seaDeep);
-}
+      setText("miniRank", rank);
+      setText("miniNationality", nationality);
 
-.miniRow{display:flex; gap:12px; margin-top:6px; flex-wrap:wrap}
-.miniItem{font-size:13px; color:var(--muted)}
+      // badge
+      const badge = $("typeBadge");
+      if (badge && accType) {
+        badge.textContent = accType;
+        show(badge);
+      } else if (badge) {
+        hide(badge);
+      }
 
-/* Tabs */
-.tabs{
-  display:flex;
-  gap:8px;
-  padding:12px 12px 0;
-  overflow:auto;
-  border-top:1px solid rgba(31,111,134,.10);
-}
+      // avatar
+      const img = $("avatarImg");
+      const fallback = $("avatarFallback");
 
-.tab{
-  border:1px solid rgba(31,111,134,.15);
-  background:rgba(255,255,255,.70);
-  color:var(--seaDeep);
-  padding:10px 12px;
-  border-radius:14px;
-  font-weight:800;
-  cursor:pointer;
-  white-space:nowrap;
-}
+      if (img && prof?.avatar_url) {
+        img.src = prof.avatar_url;
+        img.onerror = () => {
+          hide(img);
+          if (fallback) {
+            fallback.textContent = (fullName || "P").trim().charAt(0).toUpperCase();
+            show(fallback);
+          }
+        };
+      } else {
+        // no avatar_url
+        if (img) hide(img);
+        if (fallback) {
+          fallback.textContent = (fullName || "P").trim().charAt(0).toUpperCase();
+          show(fallback);
+        }
+      }
+    } catch (e) {
+      console.warn("loadProfile exception:", e);
+    }
+  }
 
-.tab.active{
-  background:linear-gradient(140deg, rgba(31,111,134,.18), rgba(42,167,199,.10));
-  border-color:rgba(31,111,134,.22);
-}
+  await loadProfile();
 
-/* Panes */
-.pane{padding:16px 16px 18px}
-.paneTitle{font-weight:900; margin-bottom:10px; letter-spacing:.2px}
-.muted{color:var(--muted); line-height:1.45}
+  // ---------- Posts/Documents/Media (placeholders for now) ----------
+  let postsLoaded = false;
+  let docsLoaded = false;
+  let seaLoaded = false;
+  let mediaLoaded = false;
 
-/* About grid */
-.aboutGrid{
-  margin-top:12px;
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:10px;
-}
+  function loadPostsOnce() {
+    if (postsLoaded) return;
+    postsLoaded = true;
+    const el = $("postsWrap");
+    if (el) el.textContent = "Coming soon.";
+  }
 
-.box{
-  border:1px solid rgba(31,111,134,.14);
-  background:rgba(255,255,255,.70);
-  border-radius:16px;
-  padding:12px;
-}
+  function loadDocumentsOnce() {
+    if (docsLoaded) return;
+    docsLoaded = true;
+    const el = $("documentsWrap");
+    if (el) el.textContent = "Coming soon.";
+  }
 
-.k{font-size:12px; color:var(--muted); font-weight:800}
-.v{margin-top:5px; font-weight:800; color:var(--seaDeep)}
-.bioText{white-space:pre-wrap; line-height:1.45}
+  function loadMediaOnce() {
+    if (mediaLoaded) return;
+    mediaLoaded = true;
+    const el = $("mediaWrap");
+    if (el) el.textContent = "Coming soon.";
+  }
 
-/* ✅ Bio full width on desktop */
-.span2{grid-column:1 / -1}
+  // ---------- Sea Service (real data) ----------
+  async function loadSeaOnce() {
+    if (seaLoaded) return;
+    seaLoaded = true;
 
-/* Lists */
-.list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin-top:10px;
-}
+    const wrap = $("seaWrap");
+    if (!wrap) return;
 
-.cardRow{
-  border:1px solid rgba(31,111,134,.14);
-  background:rgba(255,255,255,.70);
-  border-radius:16px;
-  padding:12px;
-}
+    wrap.textContent = "Loading…";
 
-.cardTitle{font-weight:900; color:var(--seaDeep)}
-.cardMeta{margin-top:6px; color:var(--muted); font-weight:700; font-size:13px}
-.cardNote{margin-top:8px; color:var(--muted); line-height:1.45}
+    try {
+      const { data, error } = await supabase
+        .from("sea_service")
+        .select("id, vessel_name, company_name, rank, vessel_type, sign_on_date, sign_off_date, status, verified_level")
+        .eq("user_id", user.id)
+        .order("sign_on_date", { ascending: false });
 
-@media (max-width:720px){
-  .aboutGrid{grid-template-columns:1fr}
-  .name{font-size:21px}
-  .avatarWrap{width:86px;height:86px}
-  .span2{grid-column:auto}
-}
+      if (error) {
+        console.warn("Sea service load error:", error);
+        wrap.textContent = "Could not load sea service right now.";
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        wrap.textContent = "No sea service entries yet.";
+        return;
+      }
+
+      // Render
+      const list = document.createElement("div");
+      list.className = "list";
+
+      data.forEach((row) => {
+        const card = document.createElement("div");
+        card.className = "cardRow";
+
+        const title = document.createElement("div");
+        title.className = "cardTitle";
+        title.textContent = `${row.vessel_name || "Vessel"}${row.rank ? " • " + row.rank : ""}`;
+
+        const meta = document.createElement("div");
+        meta.className = "cardMeta";
+        meta.textContent =
+          `${row.company_name || "Company"}${row.vessel_type ? " • " + row.vessel_type : ""}`;
+
+        const dates = document.createElement("div");
+        dates.className = "cardNote";
+        dates.textContent =
+          `Sign on: ${row.sign_on_date || "—"}  |  Sign off: ${row.sign_off_date || "—"}`;
+
+        const verify = document.createElement("div");
+        verify.className = "cardNote";
+        const lvl = row.verified_level || row.status || "Self-declared";
+        verify.textContent = `Verification: ${lvl}`;
+
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(dates);
+        card.appendChild(verify);
+
+        list.appendChild(card);
+      });
+
+      wrap.innerHTML = "";
+      wrap.appendChild(list);
+    } catch (e) {
+      console.warn("Sea service exception:", e);
+      wrap.textContent = "Could not load sea service right now.";
+    }
+  }
+
+  // Start on About
+  activate("about");
+})();
