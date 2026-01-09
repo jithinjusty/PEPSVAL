@@ -1,9 +1,16 @@
+/* js/app.js
+   Splash-only canvas animation.
+   IMPORTANT: This must run ONLY on the splash page (index.html).
+*/
+
 document.addEventListener("DOMContentLoaded", () => {
+  // ✅ Guard: run ONLY on the splash page
+  // We require BOTH #ocean canvas AND #splash wrapper to exist.
   const canvas = document.getElementById("ocean");
-  if (!canvas) return;
+  const splash = document.getElementById("splash");
+  if (!canvas || !splash) return;
 
   const ctx = canvas.getContext("2d", { alpha: false });
-  const splash = document.getElementById("splash");
 
   let w = 0, h = 0, t = 0;
 
@@ -286,10 +293,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Keep splash for 3s, fade, then go to login
   setTimeout(() => {
-    if (splash) {
-      splash.style.transition = "opacity 0.6s ease";
-      splash.style.opacity = "0";
-    }
+    splash.style.transition = "opacity 0.6s ease";
+    splash.style.opacity = "0";
+
     setTimeout(() => {
       window.location.href = "/auth/login.html";
     }, 600);
