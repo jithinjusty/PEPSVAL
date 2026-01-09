@@ -1,26 +1,40 @@
+// /js/guard.js
 import { supabase } from "./supabase.js";
 
+/**
+ * Require auth for any protected page.
+ * If not logged in -> redirect to login.
+ */
 export async function requireAuth({ redirectTo = "/auth/login.html" } = {}) {
-  const { data } = await supabase.auth.getSession();
-  if (!data?.session) {
+  const { data, error } = await supabase.auth.getSession();
+  const session = data?.session;
+
+  if (error || !session) {
     window.location.href = redirectTo;
     return null;
   }
-  return data.session;
+  return session;
 }
 
+/**
+ * Get minimal profile to decide routing after login/signup.
+ */
 export async function getMyProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
     .select("id, setup_complete")
     .eq("id", userId)
-    .maybeSingle();
+    .single();
 
   if (error) return null;
-  return data || null;
+  return data;
 }
 
-// Use on login success
+/**
+ * Route user after login if you call this anywhere.
+ * - If setup not complete -> /setup/profile-setup.html
+ * - Else -> /dashboard/index.html
+ */
 export async function routeAfterLogin() {
   const session = await requireAuth();
   if (!session) return;
@@ -32,10 +46,12 @@ export async function routeAfterLogin() {
     return;
   }
 
-  window.location.href = "/dashboard.html";
+  window.location.href = "/dashboard/index.html";
 }
 
-// Use right after signup success
+/**
+ * Route right after signup success
+ */
 export function routeAfterSignup() {
   window.location.href = "/setup/profile-setup.html";
 }
