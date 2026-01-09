@@ -5,23 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109stable" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260110ui1" />
 </head>
 
 <body>
-  <!-- IMPORTANT:
-       Keep your existing dashboard HTML content here.
-       If you already have dashboard cards, tabs, etc, keep them.
-       Only ensure you have a container like below so it never looks blank.
-  -->
-
   <header class="topbar">
     <a class="brand" href="/dashboard/index.html">
       <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
     </a>
 
-    <button id="logoutBtn" class="btnGhost" type="button">Log out</button>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a class="btnGhost" href="/setup/profile-setup.html">Edit Basic Profile</a>
+      <button id="logoutBtn" class="btnGhost" type="button">Log out</button>
+    </div>
   </header>
 
   <main class="wrap">
@@ -34,7 +31,6 @@
     </div>
   </main>
 
-  <!-- ✅ Module dashboard script (one Supabase system only) -->
-  <script type="module" src="/dashboard/dashboard.js?v=20260109stable"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20260110ui1"></script>
 </body>
 </html>
