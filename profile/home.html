@@ -22,20 +22,20 @@
     <section class="profileCard">
       <div class="profileTop">
         <div class="avatarWrap">
-          <img id="avatarImg" class="avatarImg" alt="Profile photo" />
+          <!-- ✅ IMPORTANT: avatar class added to stop overflow -->
+          <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
           <div id="avatarFallback" class="avatarFallback hidden">P</div>
         </div>
 
-        <div class="info">
+        <div class="headerText">
           <div class="nameRow">
-            <h1 id="profileName" class="name">Profile</h1>
-            <span id="accountBadge" class="badgePill hidden">—</span>
+            <div class="name" id="profileName">Profile</div>
+            <span id="typeBadge" class="badge hidden">Seafarer</span>
           </div>
 
           <div class="miniRow">
-            <div class="mini"><span class="miniLbl">Nationality:</span> <span id="miniNationality">—</span></div>
-            <div class="mini"><span class="miniLbl">Type:</span> <span id="miniType">—</span></div>
-            <div class="mini"><span class="miniLbl">Since:</span> <span id="miniSince">—</span></div>
+            <div class="miniItem">Rank: <span id="miniRank">—</span></div>
+            <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
           </div>
         </div>
       </div>
@@ -57,127 +57,57 @@
           Your profile is your identity on Pepsval. Keep it updated to increase visibility and trust.
         </p>
 
-        <div class="grid2">
-          <div class="kv"><div class="k">Name</div><div id="aboutName" class="v">—</div></div>
-          <div class="kv"><div class="k">Date of birth</div><div id="aboutDob" class="v">—</div></div>
-          <div class="kv"><div class="k">Phone</div><div id="aboutPhone" class="v">—</div></div>
-          <div class="kv"><div class="k">Account type</div><div id="aboutType" class="v">—</div></div>
+        <div class="aboutGrid">
+          <div class="box">
+            <div class="k">Full Name</div>
+            <div class="v" id="fullName">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Email</div>
+            <div class="v" id="email">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Rank</div>
+            <div class="v" id="rank">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Nationality</div>
+            <div class="v" id="nationality">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Last Vessel</div>
+            <div class="v" id="lastVessel">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Availability</div>
+            <div class="v" id="availability">—</div>
+          </div>
         </div>
       </section>
 
       <section id="tab_posts" class="pane hidden">
         <div class="paneTitle">Posts</div>
-        <div class="muted">Posts will appear here (infinite scroll later).</div>
+        <div class="muted">Coming soon.</div>
       </section>
 
       <section id="tab_documents" class="pane hidden">
         <div class="paneTitle">Documents</div>
-        <div class="muted">Documents (issue/expiry only) will be added here.</div>
+        <div id="documentsWrap" class="muted">Loading…</div>
       </section>
 
-      <!-- SEA SERVICE -->
       <section id="tab_sea" class="pane hidden">
         <div class="paneTitle">Sea Service</div>
-
-        <!-- Crewmate matches (NEW) -->
-        <div class="subCard">
-          <div class="subTitle">Crewmate matches</div>
-          <div id="crewmateStatus" class="muted">Loading…</div>
-          <div id="crewmateError" class="error hidden"></div>
-          <div id="crewmateList" class="matchList"></div>
-
-          <div class="hint">
-            Matches are based on **same IMO number + overlapping dates**. This helps you connect and request peer confirmation.
-          </div>
-        </div>
-
-        <div class="subCard" id="seaFormWrap">
-          <div class="subTitle">Add sea service</div>
-
-          <form id="seaForm" class="form" novalidate>
-            <div class="row2">
-              <div class="field">
-                <label>Vessel name <span class="req">*</span></label>
-                <input id="vesselName" type="text" placeholder="e.g., MV Example" required />
-              </div>
-              <div class="field">
-                <label>IMO number (7 digits) <span class="req">*</span></label>
-                <input id="imoNumber" type="text" inputmode="numeric" placeholder="e.g., 9876543" required />
-              </div>
-            </div>
-
-            <div class="row3">
-              <div class="field">
-                <label>Vessel type</label>
-                <input id="vesselType" list="vesselTypeOptions" placeholder="Search vessel type…" />
-                <datalist id="vesselTypeOptions"></datalist>
-              </div>
-
-              <div class="field">
-                <label>Rank</label>
-                <input id="seaRank" list="rankOptions" placeholder="Search rank…" />
-                <datalist id="rankOptions"></datalist>
-              </div>
-
-              <div class="field">
-                <label>Company name</label>
-                <input id="seaCompany" list="companyOptions" placeholder="Search company…" />
-                <datalist id="companyOptions"></datalist>
-              </div>
-            </div>
-
-            <div class="row2">
-              <div class="field">
-                <label>Sign on date <span class="req">*</span></label>
-                <input id="signOnDate" type="date" required />
-              </div>
-              <div class="field">
-                <label>Sign off date</label>
-                <input id="signOffDate" type="date" />
-              </div>
-            </div>
-
-            <div id="seaError" class="error hidden"></div>
-
-            <div class="actions">
-              <button id="seaSaveBtn" class="btnPrimary" type="submit">Save</button>
-              <button id="seaClearBtn" class="btnGhost" type="button">Clear</button>
-            </div>
-
-            <div class="hint">
-              Sea service becomes locked once verified by an employer or peer.
-            </div>
-          </form>
-        </div>
-
-        <div class="subCard">
-          <div class="subTitle">Your entries</div>
-          <div id="seaStatus" class="muted">Loading…</div>
-          <div id="seaError2" class="error hidden"></div>
-
-          <div class="table">
-            <div class="tr th">
-              <div class="td">Vessel</div>
-              <div class="td">Type</div>
-              <div class="td">Rank</div>
-              <div class="td">Company</div>
-              <div class="td">Period</div>
-              <div class="td">Status</div>
-              <div class="td"></div>
-            </div>
-            <div id="seaRows"></div>
-          </div>
-        </div>
+        <div id="seaWrap" class="muted">Loading…</div>
       </section>
 
       <section id="tab_jobs" class="pane hidden">
         <div class="paneTitle">Jobs</div>
-        <div class="muted">Employer job posts will appear here.</div>
+        <div class="muted">Coming soon.</div>
       </section>
 
       <section id="tab_media" class="pane hidden">
         <div class="paneTitle">Media</div>
-        <div class="muted">Photos/videos will appear here later.</div>
+        <div class="muted">Coming soon.</div>
       </section>
     </section>
   </main>
