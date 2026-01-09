@@ -1,3 +1,16 @@
+/* Force clean profile page background */
+html, body {
+  background: #f6f8fb !important;
+  background-image: none !important;
+}
+
+body::before, body::after {
+  content: none !important;
+}
+
+* {
+  background-image: none;
+}
 :root{
   --sea:#1F6F86;
   --seaDeep:#0b3a46;
