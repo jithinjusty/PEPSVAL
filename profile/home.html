@@ -22,7 +22,6 @@
     <section class="profileCard">
       <div class="profileTop">
         <div class="avatarWrap">
-          <!-- ✅ IMPORTANT: avatar class added to stop overflow -->
           <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
           <div id="avatarFallback" class="avatarFallback hidden">P</div>
         </div>
@@ -44,17 +43,16 @@
       <div class="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
         <button class="tab" data-tab="posts" type="button">Posts</button>
-        <button id="tabDocuments" class="tab hidden" data-tab="documents" type="button">Documents</button>
-        <button id="tabSea" class="tab hidden" data-tab="sea" type="button">Sea Service</button>
-        <button id="tabJobs" class="tab hidden" data-tab="jobs" type="button">Jobs</button>
+        <button class="tab" data-tab="documents" type="button">Documents</button>
+        <button class="tab" data-tab="sea" type="button">Sea Service</button>
         <button class="tab" data-tab="media" type="button">Media</button>
       </div>
 
       <!-- Panes -->
       <section id="tab_about" class="pane">
         <div class="paneTitle">Overview</div>
-        <p id="aboutText" class="muted">
-          Your profile is your identity on Pepsval. Keep it updated to increase visibility and trust.
+        <p class="muted">
+          Your profile is your identity on Pepsval. Verified details increase trust and visibility.
         </p>
 
         <div class="aboutGrid">
@@ -62,32 +60,43 @@
             <div class="k">Full Name</div>
             <div class="v" id="fullName">—</div>
           </div>
+
           <div class="box">
             <div class="k">Email</div>
             <div class="v" id="email">—</div>
           </div>
+
           <div class="box">
             <div class="k">Rank</div>
             <div class="v" id="rank">—</div>
           </div>
+
           <div class="box">
             <div class="k">Nationality</div>
             <div class="v" id="nationality">—</div>
           </div>
+
           <div class="box">
             <div class="k">Last Vessel</div>
             <div class="v" id="lastVessel">—</div>
           </div>
+
           <div class="box">
             <div class="k">Availability</div>
             <div class="v" id="availability">—</div>
+          </div>
+
+          <!-- ✅ Bio column (full width on desktop) -->
+          <div class="box span2">
+            <div class="k">Bio</div>
+            <div class="v bioText" id="bio">—</div>
           </div>
         </div>
       </section>
 
       <section id="tab_posts" class="pane hidden">
         <div class="paneTitle">Posts</div>
-        <div class="muted">Coming soon.</div>
+        <div id="postsWrap" class="muted">Loading…</div>
       </section>
 
       <section id="tab_documents" class="pane hidden">
@@ -100,18 +109,14 @@
         <div id="seaWrap" class="muted">Loading…</div>
       </section>
 
-      <section id="tab_jobs" class="pane hidden">
-        <div class="paneTitle">Jobs</div>
-        <div class="muted">Coming soon.</div>
-      </section>
-
       <section id="tab_media" class="pane hidden">
         <div class="paneTitle">Media</div>
-        <div class="muted">Coming soon.</div>
+        <div id="mediaWrap" class="muted">Loading…</div>
       </section>
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=20260109cm"></script>
+  <!-- ✅ Important: this file is NOT module now (simple + stable) -->
+  <script src="/profile/profile.js?v=20260109cm"></script>
 </body>
 </html>
