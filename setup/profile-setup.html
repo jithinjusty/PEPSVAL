@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
 
-  <link rel="stylesheet" href="/setup/profile-setup.css?v=1002" />
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=1003" />
 </head>
 
 <body>
@@ -65,7 +65,7 @@
           <input id="dob" type="date" />
         </div>
 
-        <!-- ✅ Seafarer Rank -->
+        <!-- Seafarer Rank -->
         <div class="field hidden" id="rankWrap">
           <label class="lbl">Rank <span class="req">*</span></label>
 
@@ -83,11 +83,22 @@
           <div class="help">Type to search or scroll and choose.</div>
         </div>
 
-        <!-- ✅ Employer / Shore job description -->
-        <div class="field hidden" id="jobWrap">
-          <label class="lbl">Job title / Role <span class="req">*</span></label>
-          <input id="jobTitle" type="text" placeholder="e.g., Crewing Manager / Recruiter / Port Captain / HR" />
-          <div class="help">For Employer/Shore staff: describe your job role.</div>
+        <!-- Employer/Shore Role (dropdown) -->
+        <div class="field hidden" id="roleWrap">
+          <label class="lbl">Role <span class="req">*</span></label>
+
+          <div class="combo" data-combo="role">
+            <input id="roleSearch" type="text" placeholder="Search role…" autocomplete="off" />
+            <input id="roleValue" type="hidden" />
+            <div class="comboList" id="roleList"></div>
+          </div>
+
+          <div class="field hidden" id="roleOtherWrap" style="margin-top:10px;">
+            <label class="lbl">Other role <span class="req">*</span></label>
+            <input id="roleOther" type="text" placeholder="Write your role" />
+          </div>
+
+          <div class="help">Choose your job role (HR / Crewing / Fleet / Ops / Recruiter etc.).</div>
         </div>
 
         <div class="field hidden" id="companyWrap">
@@ -95,7 +106,7 @@
           <input id="companyName" type="text" placeholder="e.g., ABC Shipmanagement" />
         </div>
 
-        <!-- ✅ Nationality (world list) -->
+        <!-- Nationality (world list) -->
         <div class="field">
           <label class="lbl">Nationality <span class="req">*</span></label>
 
@@ -106,7 +117,7 @@
           </div>
         </div>
 
-        <!-- ✅ Dial code whole world + phone -->
+        <!-- Dial code whole world + phone -->
         <div class="field">
           <label class="lbl">Mobile number <span class="muted">(optional)</span></label>
 
@@ -123,10 +134,11 @@
           <div class="help">Select a country to auto-fill the code (you can change it).</div>
         </div>
 
-        <!-- ✅ Bio -->
+        <!-- Bio -->
         <div class="field">
           <label class="lbl">Bio <span class="muted">(optional)</span></label>
           <textarea id="bio" rows="4" placeholder="Write a short bio… (experience, vessel types, goals)"></textarea>
+          <div class="help">You can edit later from Dashboard → Edit Basic Profile.</div>
         </div>
 
         <div id="errorBox" class="error" style="display:none;"></div>
@@ -137,6 +149,6 @@
     </section>
   </main>
 
-  <script type="module" src="/setup/profile-setup.js?v=1002"></script>
+  <script type="module" src="/setup/profile-setup.js?v=1003"></script>
 </body>
 </html>
