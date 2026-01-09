@@ -1,75 +1,18 @@
-<!-- dashboard/index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pepsval • Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Dashboard</title>
 
-  <!-- Clean dashboard look -->
-  <link rel="stylesheet" href="/dashboard/dashboard.css" />
-
-  <!-- If you already have a global style, keep it (optional) -->
-  <!-- <link rel="stylesheet" href="/css/style.css" /> -->
-
-  <meta name="theme-color" content="#1F6F86" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109fix" />
 </head>
 
 <body>
-  <!-- Header -->
-  <header>
-    <div class="brand">
-      <a href="/dashboard/">PEPSVAL</a>
-      <small>connect, hire and grow</small>
-    </div>
+  <!-- your existing dashboard HTML stays the same above this line -->
+  <!-- IMPORTANT: keep your current body content exactly as it is -->
+  <!-- Only replace the script section at the bottom with this: -->
 
-    <!-- Avatar button (dashboard.js uses this) -->
-    <div id="avatarBtn" class="avatar" aria-label="Account menu" title="Account"></div>
-  </header>
-
-  <!-- Main -->
-  <main>
-    <div class="card">
-      <h1>Explore Pepsval</h1>
-      <p>Your feed and updates will appear here. Next we’ll add posts, jobs, and connections.</p>
-
-      <div style="margin-top:14px;">
-        <p style="margin:0; font-weight:800; color:#0b2230;">Welcome aboard 🚢</p>
-        <p style="margin-top:6px;">
-          Your network starts with verified sea service and real connections.
-        </p>
-
-        <p style="margin-top:12px; font-weight:800; color:#0b2230;">Crewmate matches</p>
-        <p style="margin-top:6px;">
-          When you add sea service with IMO + dates, Pepsval can notify others who served on the same vessel.
-        </p>
-      </div>
-    </div>
-  </main>
-
-  <!-- Bottom Nav -->
-  <nav class="bottom-nav">
-    <div class="wrap">
-      <a href="/dashboard/" class="active" data-tab="feed">Feed</a>
-      <a href="/dashboard/jobs.html" data-tab="jobs">Jobs</a>
-      <a href="/dashboard/create.html" data-tab="create">+</a>
-      <a href="/dashboard/search.html" data-tab="search">Search</a>
-
-      <!-- counts will be updated later -->
-      <a href="/dashboard/messages.html" data-tab="messages">
-        Messages <span id="msgCount">0</span>
-      </a>
-
-      <!-- IMPORTANT: dashboard.js wires this to /profile/ -->
-      <a href="/profile/" data-tab="profile" id="tabProfile">Profile</a>
-    </div>
-  </nav>
-
-  <!-- Supabase client must be loaded BEFORE dashboard.js -->
-  <!-- Keep ONLY ONE of these. Prefer supabaseClient.js if that’s what you use everywhere. -->
-  <script src="/js/supabaseClient.js"></script>
-
-  <!-- Dashboard logic (avatar menu + profile tab + logout) -->
-  <script src="/dashboard/dashboard.js"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20260109fix"></script>
 </body>
 </html>
