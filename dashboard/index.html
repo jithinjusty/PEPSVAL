@@ -5,88 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109dashfix" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260109stable" />
 </head>
 
 <body>
+  <!-- IMPORTANT:
+       Keep your existing dashboard HTML content here.
+       If you already have dashboard cards, tabs, etc, keep them.
+       Only ensure you have a container like below so it never looks blank.
+  -->
+
   <header class="topbar">
     <a class="brand" href="/dashboard/index.html">
       <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
     </a>
 
-    <div class="topActions">
-      <button id="messagesBtn" class="chip" type="button">
-        Messages <span id="msgCount" class="count">0</span>
-      </button>
-
-      <button id="notifBtn" class="chip" type="button">
-        Notifications <span id="notifCount" class="count">0</span>
-      </button>
-
-      <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Account menu">
-        <span id="avatarLetter" class="avatarLetter">P</span>
-      </button>
-    </div>
+    <button id="logoutBtn" class="btnGhost" type="button">Log out</button>
   </header>
 
   <main class="wrap">
-    <section class="hero">
-      <div class="heroLeft">
-        <div class="hello">Welcome back,</div>
-        <div id="userName" class="userName">Seafarer</div>
-        <div class="sub">Your trust profile and network updates will appear here.</div>
+    <div class="card">
+      <div class="cardTitle">Dashboard</div>
+      <div class="cardSub" id="dashStatus">Loading…</div>
+      <div class="cardBody">
+        <a class="link" href="/profile/home.html">Open Profile →</a>
       </div>
-
-      <div class="heroRight">
-        <div class="miniCard">
-          <div class="miniTitle">Profile</div>
-          <div id="profileStatus" class="miniValue">Loading…</div>
-          <a class="miniLink" href="/profile/home.html">Open profile →</a>
-        </div>
-
-        <div class="miniCard">
-          <div class="miniTitle">Sea Service</div>
-          <div id="seaCount" class="miniValue">—</div>
-          <a class="miniLink" href="/profile/home.html#sea">View entries →</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <div class="cardTitle">Feed</div>
-        <div class="cardSub">Updates from your maritime network.</div>
-        <div id="feedBox" class="cardBody muted">Coming soon.</div>
-      </div>
-
-      <div class="card">
-        <div class="cardTitle">Jobs</div>
-        <div class="cardSub">Verified jobs for sea and shore.</div>
-        <div class="cardBody muted">Coming soon.</div>
-      </div>
-
-      <div class="card">
-        <div class="cardTitle">Messages</div>
-        <div class="cardSub">All chats + notifications in one place.</div>
-        <div class="cardBody muted">Coming soon.</div>
-      </div>
-
-      <div class="card">
-        <div class="cardTitle">Verification</div>
-        <div class="cardSub">Document verified / Employment confirmed / Peer confirmed.</div>
-        <div class="cardBody muted">Coming soon.</div>
-      </div>
-    </section>
+    </div>
   </main>
 
-  <!-- Avatar dropdown -->
-  <div id="avatarMenu" class="menu hidden">
-    <button class="menuItem" data-act="profile" type="button">Basic profile</button>
-    <button class="menuItem" data-act="settings" type="button">Settings</button>
-    <button class="menuItem danger" data-act="logout" type="button">Log out</button>
-  </div>
-
-  <script type="module" src="/dashboard/dashboard.js?v=20260109dashfix"></script>
+  <!-- ✅ Module dashboard script (one Supabase system only) -->
+  <script type="module" src="/dashboard/dashboard.js?v=20260109stable"></script>
 </body>
 </html>
