@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Settings</title>
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=3001" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=3001" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">settings</div>
+    </div>
+    <div class="topActions">
+      <a class="chip" href="/dashboard/index.html">Back</a>
+      <button class="chip danger" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Account</div>
+        <div class="cardSub">More settings will be added later. (Dark/light toggle can be added here.)</div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottomNav">
+    <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
+    <a class="bnItem" href="/feed/index.html">Feed</a>
+    <a class="bnItem" href="/jobs/index.html">Jobs</a>
+    <a class="bnItem" href="/messages/index.html">Messages</a>
+    <a class="bnItem" href="/profile/home.html">Profile</a>
+  </nav>
+
+  <script type="module">
+    import { supabase } from "/js/supabase.js";
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/auth/login.html";
+    });
+  </script>
+</body>
+</html>
