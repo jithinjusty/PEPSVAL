@@ -1,0 +1,6 @@
+.list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.item{border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;text-decoration:none;color:inherit}
+.title{font-weight:900}
+.meta{color:#666;font-size:13px;margin-top:6px}
+.muted{color:#666}
+.inputChip{border:1px solid #ddd;background:#fff;min-width:220px}
