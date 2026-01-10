@@ -5,32 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=20260110ui1" />
+  <!-- Optional: if you don’t have favicon, you can remove this line -->
+  <link rel="icon" href="/assets/logo.webp" />
+
+  <!-- Global styles (if you use it) -->
+  <link rel="stylesheet" href="/css/style.css?v=1001" />
+
+  <!-- Dashboard styles -->
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1001" />
 </head>
 
 <body>
-  <header class="topbar">
-    <a class="brand" href="/dashboard/index.html">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </a>
+  <!-- If your dashboard.js renders everything, keep only this -->
+  <div id="app"></div>
 
-    <div style="display:flex;gap:10px;align-items:center;">
-      <a class="btnGhost" href="/setup/profile-setup.html">Edit Basic Profile</a>
-      <button id="logoutBtn" class="btnGhost" type="button">Log out</button>
-    </div>
-  </header>
+  <!-- IMPORTANT: absolute paths (GitHub Pages safe) -->
+  <script src="/js/config.js?v=1001"></script>
+  <script src="/js/supabaseClient.js?v=1001"></script>
+  <script src="/js/guard.js?v=1001"></script>
 
-  <main class="wrap">
-    <div class="card">
-      <div class="cardTitle">Dashboard</div>
-      <div class="cardSub" id="dashStatus">Loading…</div>
-      <div class="cardBody">
-        <a class="link" href="/profile/home.html">Open Profile →</a>
-      </div>
-    </div>
-  </main>
-
-  <script type="module" src="/dashboard/dashboard.js?v=20260110ui1"></script>
+  <script src="/dashboard/dashboard.js?v=1001"></script>
 </body>
 </html>
