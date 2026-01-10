@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Search</title>
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=3001" />
+  <link rel="stylesheet" href="/search/search.css?v=3001" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">search</div>
+    </div>
+    <div class="topActions">
+      <input id="q" class="chip inputChip" placeholder="Search people or jobs…" />
+      <button class="chip" id="btn" type="button">Go</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">People</div>
+        <div id="people" class="list"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Jobs</div>
+        <div id="jobs" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottomNav">
+    <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
+    <a class="bnItem" href="/feed/index.html">Feed</a>
+    <a class="bnItem" href="/jobs/index.html">Jobs</a>
+    <a class="bnItem" href="/messages/index.html">Messages</a>
+    <a class="bnItem" href="/profile/home.html">Profile</a>
+  </nav>
+
+  <script type="module" src="/search/search.js?v=3001"></script>
+</body>
+</html>
