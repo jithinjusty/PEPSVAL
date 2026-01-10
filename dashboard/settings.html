@@ -6,18 +6,33 @@
   <title>PEPSVAL — Settings</title>
 
   <link rel="icon" href="/assets/logo.webp" />
-  <link rel="stylesheet" href="/css/style.css?v=1001" />
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1001" />
+  <link rel="stylesheet" href="/css/style.css?v=2001" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=2001" />
 </head>
 
 <body>
-  <div id="app"></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">settings</div>
+    </div>
 
-  <script src="/js/config.js?v=1001"></script>
-  <script src="/js/supabaseClient.js?v=1001"></script>
-  <script src="/js/guard.js?v=1001"></script>
+    <div class="topActions">
+      <a class="chip" href="/dashboard/index.html">Back</a>
+      <button class="chip danger" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </header>
 
-  <!-- If you use same dashboard JS to render settings -->
-  <script src="/dashboard/dashboard.js?v=1001"></script>
+  <main class="wrap">
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Account</div>
+        <div class="cardSub">More settings will be added later.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- IMPORTANT: MODULE -->
+  <script type="module" src="/dashboard/dashboard.js?v=2001"></script>
 </body>
 </html>
