@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Feed</title>
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=3001" />
+  <link rel="stylesheet" href="/feed/feed.css?v=3001" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">feed</div>
+    </div>
+    <div class="topActions">
+      <input id="searchInput" class="chip inputChip" placeholder="Search people/jobs…" />
+      <button class="chip" id="goSearch" type="button">Search</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Create a post</div>
+        <textarea id="postText" class="ta" placeholder="Share something with the maritime network…"></textarea>
+        <div class="row">
+          <button class="btn" id="postBtn" type="button">Post</button>
+          <span class="muted" id="postStatus"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Latest posts</div>
+        <div id="posts" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="fab">+</button>
+
+  <nav class="bottomNav">
+    <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
+    <a class="bnItem active" href="/feed/index.html">Feed</a>
+    <a class="bnItem" href="/jobs/index.html">Jobs</a>
+    <a class="bnItem" href="/messages/index.html">Messages</a>
+    <a class="bnItem" href="/profile/home.html">Profile</a>
+  </nav>
+
+  <script type="module" src="/feed/feed.js?v=3001"></script>
+</body>
+</html>
