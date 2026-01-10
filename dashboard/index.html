@@ -5,54 +5,72 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f6f8fb; color: #111; }
-    .wrap { padding: 18px; }
-    .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 16px; max-width: 700px; }
-    .ok { color: #0a7a2f; font-weight: 700; }
-    .bad { color: #b00020; font-weight: 700; }
-    code { background:#f0f2f5; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=2001" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=2001" />
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h2>PEPSVAL Dashboard Loader</h2>
-      <p>If you can see this, <span class="ok">dashboard/index.html is loading</span>.</p>
-      <p id="status">Checking JS…</p>
-      <p>App container: <code>#app</code></p>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
     </div>
 
-    <div id="app" class="card" style="margin-top:12px;">
-      <p>Waiting for <code>/dashboard/dashboard.js</code> to render UI…</p>
+    <div class="topActions">
+      <div class="chip" id="dashStatus">Loading…</div>
+      <button class="chip danger" id="logoutBtn" type="button">Logout</button>
     </div>
-  </div>
+  </header>
 
-  <script>
-    // This runs even before your real dashboard.js
-    const status = document.getElementById("status");
-    status.innerHTML = '<span class="ok">Inline JS runs ✅</span>';
-  </script>
+  <main class="wrap">
+    <section class="hero">
+      <div class="heroLeft">
+        <div class="hello">Welcome</div>
+        <div class="sub">Your dashboard will show quick links and status.</div>
+      </div>
+      <div class="heroRight">
+        <div class="miniCard">
+          <div class="miniTitle">Profile</div>
+          <div class="miniValue"><a class="miniLink" href="/profile/home.html">Open</a></div>
+        </div>
+        <div class="miniCard">
+          <div class="miniTitle">Messages</div>
+          <div class="miniValue"><a class="miniLink" href="/messages/index.html">Open</a></div>
+        </div>
+        <div class="miniCard">
+          <div class="miniTitle">Feed</div>
+          <div class="miniValue"><a class="miniLink" href="/feed/index.html">Open</a></div>
+        </div>
+        <div class="miniCard">
+          <div class="miniTitle">Jobs</div>
+          <div class="miniValue"><a class="miniLink" href="/jobs/index.html">Open</a></div>
+        </div>
+      </div>
+    </section>
 
-  <!-- Absolute paths ONLY -->
-  <script src="/js/config.js?v=1002"></script>
-  <script src="/js/supabaseClient.js?v=1002"></script>
-  <script src="/js/guard.js?v=1002"></script>
-  <script src="/dashboard/dashboard.js?v=1002"></script>
+    <section class="grid">
+      <div class="card">
+        <div class="cardBody">
+          <div class="cardTitle">Status</div>
+          <div class="cardSub">
+            If your profile setup is incomplete, you will be redirected to setup.
+          </div>
+        </div>
+      </div>
 
-  <script>
-    // After 1 second, verify if dashboard.js actually executed
-    setTimeout(() => {
-      const app = document.getElementById("app");
-      const txt = app.innerText || "";
-      const looksRendered = txt.includes("Waiting for") === false;
-      if (looksRendered) {
-        status.innerHTML = '<span class="ok">dashboard.js executed ✅</span>';
-      } else {
-        status.innerHTML = '<span class="bad">dashboard.js did NOT execute ❌</span> — open DevTools → Network tab and check which file is 404.';
-      }
-    }, 1000);
-  </script>
+      <div class="card">
+        <div class="cardBody">
+          <div class="cardTitle">Settings</div>
+          <div class="cardSub">
+            <a class="miniLink" href="/dashboard/settings.html">Open settings</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- IMPORTANT: dashboard.js is a MODULE -->
+  <script type="module" src="/dashboard/dashboard.js?v=2001"></script>
 </body>
 </html>
