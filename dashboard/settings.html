@@ -4,25 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Settings</title>
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1" />
+
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=1001" />
+  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1001" />
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brandName">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </div>
-    <a class="navItem" href="/dashboard/index.html">Back</a>
-  </header>
+  <div id="app"></div>
 
-  <main class="page">
-    <section class="card">
-      <h1 class="title">Settings</h1>
-      <p class="muted">
-        Feed filters (photo/text/video, nationality, company posts) will be added here next.
-      </p>
-    </section>
-  </main>
+  <script src="/js/config.js?v=1001"></script>
+  <script src="/js/supabaseClient.js?v=1001"></script>
+  <script src="/js/guard.js?v=1001"></script>
+
+  <!-- If you use same dashboard JS to render settings -->
+  <script src="/dashboard/dashboard.js?v=1001"></script>
 </body>
 </html>
