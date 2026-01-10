@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PEPSVAL — Jobs</title>
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=3001" />
+  <link rel="stylesheet" href="/jobs/jobs.css?v=3001" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">jobs</div>
+    </div>
+    <div class="topActions">
+      <input id="searchInput" class="chip inputChip" placeholder="Search jobs…" />
+      <button class="chip" id="goSearch" type="button">Search</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" id="employerCard" style="display:none">
+      <div class="cardBody">
+        <div class="cardTitle">Post a job</div>
+        <input id="jobTitle" class="inp" placeholder="Job title (e.g., 2/O Container)" />
+        <input id="jobCompany" class="inp" placeholder="Company name" />
+        <input id="jobLocation" class="inp" placeholder="Location (Port / City / Remote)" />
+        <textarea id="jobDesc" class="ta" placeholder="Description / requirements / contact…"></textarea>
+        <div class="row">
+          <button class="btn" id="jobBtn" type="button">Publish</button>
+          <span class="muted" id="jobStatus"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardBody">
+        <div class="cardTitle">Open jobs</div>
+        <div id="jobs" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottomNav">
+    <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
+    <a class="bnItem" href="/feed/index.html">Feed</a>
+    <a class="bnItem active" href="/jobs/index.html">Jobs</a>
+    <a class="bnItem" href="/messages/index.html">Messages</a>
+    <a class="bnItem" href="/profile/home.html">Profile</a>
+  </nav>
+
+  <script type="module" src="/jobs/jobs.js?v=3001"></script>
+</body>
+</html>
