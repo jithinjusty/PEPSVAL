@@ -5,25 +5,54 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Dashboard</title>
 
-  <!-- Optional: if you don’t have favicon, you can remove this line -->
-  <link rel="icon" href="/assets/logo.webp" />
-
-  <!-- Global styles (if you use it) -->
-  <link rel="stylesheet" href="/css/style.css?v=1001" />
-
-  <!-- Dashboard styles -->
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=1001" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f6f8fb; color: #111; }
+    .wrap { padding: 18px; }
+    .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 16px; max-width: 700px; }
+    .ok { color: #0a7a2f; font-weight: 700; }
+    .bad { color: #b00020; font-weight: 700; }
+    code { background:#f0f2f5; padding:2px 6px; border-radius:6px; }
+  </style>
 </head>
 
 <body>
-  <!-- If your dashboard.js renders everything, keep only this -->
-  <div id="app"></div>
+  <div class="wrap">
+    <div class="card">
+      <h2>PEPSVAL Dashboard Loader</h2>
+      <p>If you can see this, <span class="ok">dashboard/index.html is loading</span>.</p>
+      <p id="status">Checking JS…</p>
+      <p>App container: <code>#app</code></p>
+    </div>
 
-  <!-- IMPORTANT: absolute paths (GitHub Pages safe) -->
-  <script src="/js/config.js?v=1001"></script>
-  <script src="/js/supabaseClient.js?v=1001"></script>
-  <script src="/js/guard.js?v=1001"></script>
+    <div id="app" class="card" style="margin-top:12px;">
+      <p>Waiting for <code>/dashboard/dashboard.js</code> to render UI…</p>
+    </div>
+  </div>
 
-  <script src="/dashboard/dashboard.js?v=1001"></script>
+  <script>
+    // This runs even before your real dashboard.js
+    const status = document.getElementById("status");
+    status.innerHTML = '<span class="ok">Inline JS runs ✅</span>';
+  </script>
+
+  <!-- Absolute paths ONLY -->
+  <script src="/js/config.js?v=1002"></script>
+  <script src="/js/supabaseClient.js?v=1002"></script>
+  <script src="/js/guard.js?v=1002"></script>
+  <script src="/dashboard/dashboard.js?v=1002"></script>
+
+  <script>
+    // After 1 second, verify if dashboard.js actually executed
+    setTimeout(() => {
+      const app = document.getElementById("app");
+      const txt = app.innerText || "";
+      const looksRendered = txt.includes("Waiting for") === false;
+      if (looksRendered) {
+        status.innerHTML = '<span class="ok">dashboard.js executed ✅</span>';
+      } else {
+        status.innerHTML = '<span class="bad">dashboard.js did NOT execute ❌</span> — open DevTools → Network tab and check which file is 404.';
+      }
+    }, 1000);
+  </script>
 </body>
 </html>
