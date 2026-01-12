@@ -34,11 +34,7 @@ function escapeHtml(s) {
 }
 
 function fmt(ts) {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return "";
-  }
+  try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
 
 function displayName(profile) {
@@ -51,20 +47,12 @@ function displayName(profile) {
 function setTopBar(profile) {
   userNameEl.textContent = displayName(profile);
   userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
-  userAvatarEl.onerror = () => {
-    userAvatarEl.src = DEFAULT_AVATAR;
-  };
+  userAvatarEl.onerror = () => { userAvatarEl.src = DEFAULT_AVATAR; };
 }
 
 /* Dropdown */
-function closeMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = true;
-}
-function toggleMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = !avatarMenu.hidden;
-}
+function closeMenu() { avatarMenu.hidden = true; }
+function toggleMenu() { avatarMenu.hidden = !avatarMenu.hidden; }
 
 avatarBtn?.addEventListener("click", (e) => {
   e.preventDefault();
@@ -99,19 +87,19 @@ function showPreview(file) {
     mediaPreviewEl.innerHTML = `
       <div class="previewCard">
         <img class="previewImg" src="${url}" alt="preview"/>
-        <button class="previewRemove" id="removePreview">Remove</button>
+        <button class="previewRemove" id="removePreview" type="button">Remove</button>
       </div>`;
   } else if (type.startsWith("video/")) {
     mediaPreviewEl.innerHTML = `
       <div class="previewCard">
         <video class="previewVid" src="${url}" controls playsinline></video>
-        <button class="previewRemove" id="removePreview">Remove</button>
+        <button class="previewRemove" id="removePreview" type="button">Remove</button>
       </div>`;
   } else {
     mediaPreviewEl.innerHTML = `
       <div class="previewCard">
         <div class="muted">Selected: ${escapeHtml(file.name)}</div>
-        <button class="previewRemove" id="removePreview">Remove</button>
+        <button class="previewRemove" id="removePreview" type="button">Remove</button>
       </div>`;
   }
 
@@ -139,14 +127,12 @@ postMediaEl?.addEventListener("change", (e) => {
 
 /* Render posts */
 function renderPost(p) {
-  const authorText = escapeHtml(p.author_name || "Member");
+  const author = escapeHtml(p.author_name || "Member");
   const time = escapeHtml(fmt(p.created_at));
   const text = escapeHtml(p.content || "");
+  const authorLink = `/profile/user.html?id=${encodeURIComponent(p.author_id || "")}`;
 
-  // NOTE: This link will work only when /profile/user.html is implemented.
-  const authorLink = `/profile/user.html?id=${encodeURIComponent(
-    p.author_id || ""
-  )}`;
+  const isMine = (p.author_id && session?.user?.id) ? (p.author_id === session.user.id) : false;
 
   let mediaHtml = "";
   if (p.media_url && p.media_type) {
@@ -158,16 +144,27 @@ function renderPost(p) {
     }
   }
 
+  // Delete button only for your own posts
+  const actionsHtml = isMine
+    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(String(p.id))}">Delete</button>`
+    : ``;
+
   return `
     <article class="postCard">
       <div class="postHeader">
         <div class="postAuthor">
-          <a class="authorLink" href="${authorLink}">${authorText}</a>
+          <a class="authorLink" href="${authorLink}">${author}</a>
+          ${isMine ? `<span class="youTag">you</span>` : ``}
         </div>
         <div class="postTime">${time}</div>
       </div>
+
       ${text ? `<div class="postText">${text}</div>` : ``}
       ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
+
+      <div class="postFooter">
+        ${actionsHtml}
+      </div>
     </article>`;
 }
 
@@ -181,9 +178,7 @@ async function loadPosts() {
     .limit(50);
 
   if (error) {
-    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(
-      error.message
-    )}</div>`;
+    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(error.message)}</div>`;
     return;
   }
 
@@ -195,15 +190,48 @@ async function loadPosts() {
   feedListEl.innerHTML = data.map(renderPost).join("");
 }
 
+/* Delete post (your own) */
+async function deletePost(postId) {
+  if (!postId) return;
+
+  const ok = confirm("Delete this post?");
+  if (!ok) return;
+
+  // Safety: delete only if it's yours
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq("author_id", session.user.id);
+
+  if (error) {
+    alert(`Delete failed: ${error.message}`);
+    return;
+  }
+
+  await loadPosts();
+}
+
+// Event delegation for delete buttons
+feedListEl?.addEventListener("click", async (e) => {
+  const btn = e.target?.closest?.("button[data-action]");
+  if (!btn) return;
+
+  const action = btn.getAttribute("data-action");
+  const postId = btn.getAttribute("data-post-id");
+
+  if (action === "delete") {
+    await deletePost(postId);
+  }
+});
+
 /* Upload + create post */
 async function uploadMedia(file) {
-  // ✅ FIX: your bucket name is post_media (underscore)
+  // ✅ Your real bucket name (underscore)
   const bucket = "post_media";
 
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${session.user.id}/${Date.now()}-${Math.random()
-    .toString(16)
-    .slice(2)}.${ext}`;
+  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
 
   const { error: upErr } = await supabase.storage
     .from(bucket)
