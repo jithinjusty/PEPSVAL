@@ -1,4 +1,4 @@
-/* PEPSVAL Feed/Jobs base (isolated) */
+/* /feed/feed.css */
 :root{
   --bg:#f6fbff;
   --card:#ffffff;
@@ -101,18 +101,6 @@ body.app-bg{
   margin-top:10px;
   flex-wrap:wrap;
 }
-
-/* reliable "hidden" file input (NOT display:none) */
-.fileInput{
-  position:absolute;
-  left:-9999px;
-  width:1px;
-  height:1px;
-  opacity:0;
-}
-
-/* shared button styles for label + button */
-.btn,
 .post-actions button{
   border:0;
   border-radius:12px;
@@ -120,12 +108,7 @@ body.app-bg{
   font-weight:900;
   cursor:pointer;
   background:#eaf4fb;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  user-select:none;
 }
-
 .post-actions .primary{
   background:var(--brand);
   color:#fff;
@@ -158,8 +141,7 @@ body.app-bg{
 /* Feed list */
 .feed-list{margin-top:14px;display:flex;flex-direction:column;gap:12px}
 
-.postHeader{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.authorLink{font-weight:900;color:var(--text);text-decoration:none}
+.postHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .postTime{font-size:12px;color:var(--muted)}
 .postText{margin-top:10px;white-space:pre-wrap;line-height:1.35}
 
@@ -169,6 +151,63 @@ body.app-bg{
   border-radius:14px;
   border:1px solid var(--line);
   display:block;
+}
+
+.postAvatar{
+  width:34px;height:34px;border-radius:999px;object-fit:cover;
+  border:1px solid #dbe7ef;background:#fff;
+}
+.postAuthorName{font-weight:900;line-height:1.1}
+
+.youTag{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 8px;
+  font-size:11px;
+  border-radius:999px;
+  background:#eef6fb;
+  border:1px solid var(--line);
+  color:var(--brand);
+  font-weight:900;
+}
+
+.postFooter{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.miniBtn{
+  border:1px solid var(--line);
+  background:#fbfdff;
+  color:var(--text);
+  border-radius:12px;
+  padding:9px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.miniBtn:hover{background:#eef6fb}
+.dangerBtn{
+  background:#ffe9ea;
+  border-color:#ffd0d6;
+  color:#b00020;
+}
+.likedBtn{
+  border-color:rgba(31,111,134,.35);
+  background:rgba(31,111,134,.08);
+  color:var(--brand);
+}
+
+.countPill{
+  display:inline-block;
+  margin-left:8px;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#fff;
+  font-size:12px;
+  font-weight:900;
 }
 
 .muted{color:var(--muted)}
@@ -199,38 +238,3 @@ body.app-bg{
   border-radius:12px;
 }
 .nav-item.active{background:#eef6fb}
-.postFooter{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
-.miniBtn{
-  border:1px solid var(--line);
-  background:#eef6fb;
-  padding:8px 10px;
-  border-radius:12px;
-  font-weight:900;
-  cursor:pointer;
-}
-.miniBtn.liked{
-  background:var(--brand);
-  color:#fff;
-  border-color:var(--brand);
-}
-.dangerBtn{
-  background:#ffe9ea;
-  color:#b00020;
-  border-color:#ffd0d4;
-}
-.youTag{
-  display:inline-block;
-  font-size:11px;
-  padding:2px 8px;
-  border-radius:999px;
-  background:#eaf4fb;
-  border:1px solid var(--line);
-  color:var(--brand);
-  font-weight:900;
-  margin-left:6px;
-}
