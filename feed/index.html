@@ -1,4 +1,63 @@
-<nav class="bottomNav">
-  <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
-  ...
-</nav>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pepsval — Feed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/feed/feed.css" />
+
+  <script type="module" src="/js/supabase.js"></script>
+  <script type="module" src="/js/guard.js"></script>
+  <script type="module" src="/feed/feed.js"></script>
+</head>
+
+<body class="app-bg">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="/assets/logo.webp" class="top-logo" />
+      <span class="brand">Pepsval</span>
+    </div>
+
+    <div class="topbar-right">
+      <span id="userName" class="user-name">Loading…</span>
+      <img id="userAvatar" class="avatar" src="/assets/default-avatar.png" />
+    </div>
+  </header>
+
+  <!-- Feed -->
+  <main class="feed-wrap">
+
+    <!-- Create Post -->
+    <div class="create-post">
+      <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
+
+      <div class="post-actions">
+        <input type="file" id="postMedia" accept="image/*,video/*" hidden />
+        <button id="addMedia">📷 Photo / 🎥 Video</button>
+        <button id="postBtn" class="primary">Post</button>
+      </div>
+
+      <div id="mediaPreview"></div>
+    </div>
+
+    <!-- Feed List -->
+    <div id="feedList" class="feed-list">
+      <div class="loading">Loading feed…</div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a class="nav-item active" href="/feed/index.html">Feed</a>
+    <a class="nav-item" href="/jobs/index.html">Jobs</a>
+    <a class="nav-item" href="/messages/index.html">Messages</a>
+    <a class="nav-item" href="/profile/home.html">Profile</a>
+  </nav>
+
+</body>
+</html>
