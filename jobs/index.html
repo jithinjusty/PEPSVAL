@@ -3,54 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Jobs</title>
-  <link rel="icon" href="/assets/logo.webp" />
-  <link rel="stylesheet" href="/css/style.css?v=3001" />
-  <link rel="stylesheet" href="/jobs/jobs.css?v=3001" />
+  <title>Pepsval — Jobs</title>
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/feed/feed.css" />
+
+  <script type="module" src="/js/supabase.js"></script>
+  <script type="module" src="/js/guard.js"></script>
+  <script type="module" src="/jobs/jobs.js"></script>
 </head>
-<body>
+<body class="app-bg">
+
   <header class="topbar">
-    <div class="brand">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">jobs</div>
+    <div class="topbar-left">
+      <img src="/assets/logo.webp" class="top-logo" alt="Pepsval"/>
+      <span class="brand">Pepsval</span>
     </div>
-    <div class="topActions">
-      <input id="searchInput" class="chip inputChip" placeholder="Search jobs…" />
-      <button class="chip" id="goSearch" type="button">Search</button>
+    <div class="topbar-right">
+      <span class="user-name">Jobs</span>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="card" id="employerCard" style="display:none">
-      <div class="cardBody">
-        <div class="cardTitle">Post a job</div>
-        <input id="jobTitle" class="inp" placeholder="Job title (e.g., 2/O Container)" />
-        <input id="jobCompany" class="inp" placeholder="Company name" />
-        <input id="jobLocation" class="inp" placeholder="Location (Port / City / Remote)" />
-        <textarea id="jobDesc" class="ta" placeholder="Description / requirements / contact…"></textarea>
-        <div class="row">
-          <button class="btn" id="jobBtn" type="button">Publish</button>
-          <span class="muted" id="jobStatus"></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="cardBody">
-        <div class="cardTitle">Open jobs</div>
-        <div id="jobs" class="list"></div>
-      </div>
-    </section>
+  <main class="feed-wrap">
+    <div class="postCard">
+      <div style="font-weight:900;font-size:18px;">Open jobs</div>
+      <div class="muted" style="margin-top:6px;">No jobs yet. (Next we’ll add job posting + filters.)</div>
+    </div>
   </main>
 
-  <nav class="bottomNav">
-    <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
-    <a class="bnItem" href="/feed/index.html">Feed</a>
-    <a class="bnItem active" href="/jobs/index.html">Jobs</a>
-    <a class="bnItem" href="/messages/index.html">Messages</a>
-    <a class="bnItem" href="/profile/home.html">Profile</a>
+  <nav class="bottom-nav">
+    <a class="nav-item" href="/feed/index.html">Feed</a>
+    <a class="nav-item active" href="/jobs/index.html">Jobs</a>
+    <a class="nav-item" href="/messages/index.html">Messages</a>
+    <a class="nav-item" href="/profile/home.html">Profile</a>
   </nav>
 
-  <script type="module" src="/jobs/jobs.js?v=3001"></script>
 </body>
 </html>
