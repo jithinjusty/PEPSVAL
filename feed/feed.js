@@ -28,15 +28,15 @@ const DEFAULT_AVATAR =
     <rect x="16" y="52" width="48" height="18" rx="9" fill="#1F6F86"/>
   </svg>`);
 
-function escapeHtml(s) {
-  return (s || "")
+function esc(s) {
+  return (s ?? "")
+    .toString()
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
 function fmt(ts) {
   try {
     return new Date(ts).toLocaleString();
@@ -44,29 +44,24 @@ function fmt(ts) {
     return "";
   }
 }
-
-function nameFromProfileRow(row) {
+function displayName(profile) {
   const n =
-    (row?.full_name && String(row.full_name).trim()) ||
-    (row?.username && String(row.username).trim());
+    (profile?.full_name && String(profile.full_name).trim()) ||
+    (profile?.username && String(profile.username).trim());
   return n || "Member";
 }
-
 function setTopBar(profile) {
-  const nm = nameFromProfileRow(profile);
-  userNameEl.textContent = nm;
+  userNameEl.textContent = displayName(profile);
   userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
   userAvatarEl.onerror = () => (userAvatarEl.src = DEFAULT_AVATAR);
 }
 
-/* Dropdown */
+/* avatar menu */
 function closeMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = true;
+  if (avatarMenu) avatarMenu.hidden = true;
 }
 function toggleMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = !avatarMenu.hidden;
+  if (avatarMenu) avatarMenu.hidden = !avatarMenu.hidden;
 }
 avatarBtn?.addEventListener("click", (e) => {
   e.preventDefault();
@@ -82,7 +77,7 @@ logoutBtn?.addEventListener("click", async () => {
   window.location.href = "/auth/login.html";
 });
 
-/* Media preview */
+/* media preview */
 let selectedFile = null;
 
 function clearPreview() {
@@ -90,7 +85,6 @@ function clearPreview() {
   mediaPreviewEl.innerHTML = "";
   if (postMediaEl) postMediaEl.value = "";
 }
-
 function showPreview(file) {
   const type = file.type || "";
   const url = URL.createObjectURL(file);
@@ -110,7 +104,7 @@ function showPreview(file) {
   } else {
     mediaPreviewEl.innerHTML = `
       <div class="previewCard">
-        <div class="muted">Selected: ${escapeHtml(file.name)}</div>
+        <div class="muted">Selected: ${esc(file.name)}</div>
         <button class="previewRemove" id="removePreview" type="button">Remove</button>
       </div>`;
   }
@@ -125,7 +119,6 @@ addMediaBtn?.addEventListener("click", () => postMediaEl?.click());
 postMediaEl?.addEventListener("change", (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
-
   if (file.size > 25 * 1024 * 1024) {
     alert("File too large (max 25MB).");
     clearPreview();
@@ -135,122 +128,368 @@ postMediaEl?.addEventListener("change", (e) => {
   showPreview(file);
 });
 
-/* Likes cache */
-const likeCache = new Map(); // postId -> { count:number, liked:boolean }
-let lastFeedRows = [];
+/* FEED state */
+let feedRows = [];
+const postState = new Map(); // postId -> { liked:boolean, likeCount:number, commentCount:number, media_url, media_type }
+const myLikedPostIds = new Set(); // postIds liked by me
 
-/* Comments bottom sheet (Instagram style) */
-let commentsModalEl = null;
+async function loadMyLikesForPosts(postIds) {
+  myLikedPostIds.clear();
+  if (!postIds.length) return;
+
+  const { data, error } = await supabase
+    .from("post_likes")
+    .select("post_id")
+    .eq("user_id", session.user.id)
+    .in("post_id", postIds);
+
+  if (error) return;
+
+  for (const r of data || []) myLikedPostIds.add(String(r.post_id));
+}
+
+/* render */
+function renderPost(row) {
+  const postId = String(row.id);
+  const isMine = row.author_id === session?.user?.id;
+
+  const name = esc(displayName(row));
+  const time = esc(fmt(row.created_at));
+  const text = esc(row.content || "");
+  const authorLink = `/profile/user.html?id=${encodeURIComponent(row.author_id || "")}`;
+
+  const avatarUrl = row.avatar_url || DEFAULT_AVATAR;
+
+  const media_url = row.media_url || null;
+  const media_type = row.media_type || null;
+
+  let mediaHtml = "";
+  if (media_url && media_type) {
+    const safeUrl = esc(media_url);
+    if (media_type.startsWith("image/")) {
+      mediaHtml = `<img class="postMediaImg" src="${safeUrl}" alt="post media"/>`;
+    } else if (media_type.startsWith("video/")) {
+      mediaHtml = `<video class="postMediaVid" src="${safeUrl}" controls playsinline></video>`;
+    }
+  }
+
+  const liked = myLikedPostIds.has(postId);
+  const likeCount = Number(row.like_count || 0);
+  const commentCount = Number(row.comment_count || 0);
+
+  postState.set(postId, {
+    liked,
+    likeCount,
+    commentCount,
+    media_url,
+    media_type,
+  });
+
+  const deleteBtn = isMine
+   ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${esc(
+        postId
+      )}">Delete</button>`
+    : ``;
+
+  return `
+    <article class="postCard" id="post-${esc(postId)}">
+      <div class="postHeader">
+        <div class="postAuthor">
+          <a href="${authorLink}" class="authorRow">
+            <img class="postAvatar" src="${esc(avatarUrl)}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
+            <div class="authorMeta">
+              <div class="postAuthorName">${name}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
+              <div class="postTime">${time}</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      ${text ? `<div class="postText">${text}</div>` : ``}
+      ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
+
+      <div class="postFooter">
+        <button class="miniBtn ${liked ? "likedBtn" : ""}" type="button" data-action="like" data-post-id="${esc(
+          postId
+        )}">
+          <span class="btnLabel">${liked ? "Liked" : "Like"}</span>
+          <span class="countPill" data-like-pill="${esc(postId)}">${likeCount}</span>
+        </button>
+
+        <button class="miniBtn" type="button" data-action="comment" data-post-id="${esc(postId)}">
+          <span class="btnLabel">Comment</span>
+          <span class="countPill" data-comment-pill="${esc(postId)}">${commentCount}</span>
+        </button>
+
+        <button class="miniBtn" type="button" data-action="share" data-post-id="${esc(postId)}">
+          Share
+        </button>
+
+        ${deleteBtn}
+      </div>
+    </article>
+  `;
+}
+
+async function loadFeed() {
+  feedListEl.innerHTML = `<div class="loading">Loading feed…</div>`;
+
+  const { data, error } = await supabase
+    .from("v_feed_posts")
+    .select(
+      "id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url, like_count, comment_count"
+    )
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${esc(error.message)}</div>`;
+    return;
+  }
+
+  feedRows = data || [];
+  if (!feedRows.length) {
+    feedListEl.innerHTML = `<div class="muted">No posts yet. Be the first to post!</div>`;
+    return;
+  }
+
+  const postIds = feedRows.map((r) => r.id);
+  await loadMyLikesForPosts(postIds);
+
+  feedListEl.innerHTML = feedRows.map(renderPost).join("");
+}
+
+/* like (no refresh) */
+function updatePostLikeUI(postId) {
+  const st = postState.get(String(postId));
+  if (!st) return;
+
+  const btn = feedListEl.querySelector(`button[data-action="like"][data-post-id="${CSS.escape(String(postId))}"]`);
+  const pill = feedListEl.querySelector(`span[data-like-pill="${CSS.escape(String(postId))}"]`);
+
+  if (pill) pill.textContent = String(st.likeCount);
+
+  if (btn) {
+    btn.classList.toggle("likedBtn", !!st.liked);
+    const label = btn.querySelector(".btnLabel");
+    if (label) label.textContent = st.liked ? "Liked" : "Like";
+  }
+}
+
+async function togglePostLike(postId) {
+  const key = String(postId);
+  const st = postState.get(key);
+  if (!st) return;
+
+  const prev = { ...st };
+
+  st.liked = !st.liked;
+  st.likeCount = Math.max(0, st.likeCount + (st.liked ? 1 : -1));
+  postState.set(key, st);
+  updatePostLikeUI(key);
+
+  try {
+    if (st.liked) {
+      const { error } = await supabase.from("post_likes").insert({
+        post_id: Number(postId),
+        user_id: session.user.id,
+      });
+      if (error) throw error;
+      myLikedPostIds.add(key);
+    } else {
+      const { error } = await supabase
+        .from("post_likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", session.user.id);
+      if (error) throw error;
+      myLikedPostIds.delete(key);
+    }
+  } catch (e) {
+    postState.set(key, prev);
+    if (prev.liked) myLikedPostIds.add(key);
+    else myLikedPostIds.delete(key);
+    updatePostLikeUI(key);
+    alert(`Like failed: ${e?.message || e}`);
+  }
+}
+
+/* delete post */
+async function deletePost(postId) {
+  if (!confirm("Delete this post?")) return;
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq("author_id", session.user.id);
+  if (error) {
+    alert(`Delete failed: ${error.message}`);
+    return;
+  }
+  await loadFeed();
+}
+
+/* upload + create post */
+async function uploadMedia(file) {
+  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "3600" });
+
+  if (upErr) throw upErr;
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function createPost() {
+  const content = (postTextEl.value || "").trim();
+  if (!content && !selectedFile) {
+    alert("Write something or add a photo/video.");
+    return;
+  }
+
+  postBtn.disabled = true;
+  postBtn.textContent = "Posting…";
+
+  try {
+    let media_url = null;
+    let media_type = null;
+
+    if (selectedFile) {
+      media_type = selectedFile.type || null;
+      media_url = await uploadMedia(selectedFile);
+    }
+
+    const { error } = await supabase.from("posts").insert({
+      author_id: session.user.id,
+      author_name: displayName(me),
+      content,
+      media_url,
+      media_type,
+    });
+
+    if (error) throw error;
+
+    postTextEl.value = "";
+    clearPreview();
+    await loadFeed();
+  } catch (e) {
+    alert(`Post failed: ${e?.message || e}`);
+  } finally {
+    postBtn.disabled = false;
+    postBtn.textContent = "Post";
+  }
+}
+
+postBtn?.addEventListener("click", createPost);
+
+/* COMMENTS (Instagram-style bottom sheet) */
+let commentsUI = null;
 let currentPostId = null;
-let currentReplyTo = null; // { id, name } or null
+let replyTo = null; // {id, name} or null
+
+const commentUserCache = new Map(); // userId -> profile row
 const commentLikeCache = new Map(); // commentId -> {count, liked}
-const commentUserCache = new Map(); // userId -> {full_name, username, avatar_url}
 
-function ensureCommentsModal() {
-  if (commentsModalEl) return;
+function ensureCommentsUI() {
+  if (commentsUI) return;
 
-  commentsModalEl = document.createElement("div");
-  commentsModalEl.id = "commentsModal";
-  commentsModalEl.className = "pv-modal";
-  commentsModalEl.hidden = true;
-  commentsModalEl.innerHTML = `
-    <div class="pv-modal-backdrop" data-close="1"></div>
-    <section class="pv-sheet" role="dialog" aria-modal="true" aria-label="Comments">
-      <div class="pv-sheet-head">
-        <button class="pv-sheet-close" type="button" data-close="1">✕</button>
-        <div class="pv-sheet-title">Comments</div>
-        <div class="pv-sheet-spacer"></div>
+  commentsUI = document.createElement("div");
+  commentsUI.id = "pvCommentsSheet";
+  commentsUI.className = "pvSheetWrap";
+  commentsUI.hidden = true;
+  commentsUI.innerHTML = `
+    <div class="pvSheetBackdrop" data-close="1"></div>
+    <section class="pvSheet">
+      <div class="pvSheetHead">
+        <button class="pvSheetClose" type="button" data-close="1">✕</button>
+        <div class="pvSheetTitle">Comments</div>
+        <div class="pvSheetRight"></div>
       </div>
 
-      <div class="pv-sheet-body">
-        <div id="pvCommentsList" class="pv-comments-list">
-          <div class="loading">Loading comments…</div>
-        </div>
+      <div class="pvSheetBody" id="pvCommentsList">
+        <div class="loading">Loading comments…</div>
       </div>
 
-      <div class="pv-sheet-compose">
-        <div id="pvReplyChip" class="pv-reply-chip" hidden>
+      <div class="pvSheetCompose">
+        <div class="pvReplyChip" id="pvReplyChip" hidden>
           <span id="pvReplyText"></span>
-          <button id="pvReplyCancel" class="pv-reply-cancel" type="button">✕</button>
+          <button class="pvReplyCancel" id="pvReplyCancel" type="button">✕</button>
         </div>
 
-        <div class="pv-compose-row">
-          <input id="pvCommentInput" class="pv-compose-input" type="text" placeholder="Add a comment…" maxlength="600" />
-          <button id="pvCommentSend" class="pv-compose-send" type="button">Post</button>
+        <div class="pvComposeRow">
+          <input class="pvComposeInput" id="pvCommentInput" type="text" placeholder="Add a comment…" maxlength="600"/>
+          <button class="pvComposeSend" id="pvCommentSend" type="button">Post</button>
         </div>
       </div>
     </section>
   `;
-  document.body.appendChild(commentsModalEl);
+  document.body.appendChild(commentsUI);
 
-  commentsModalEl.addEventListener("click", (e) => {
-    const close = e.target?.closest?.("[data-close]");
-    if (close) closeComments();
+  commentsUI.addEventListener("click", (e) => {
+    if (e.target?.closest?.("[data-close]")) closeComments();
   });
 
-  const cancelBtn = commentsModalEl.querySelector("#pvReplyCancel");
-  cancelBtn?.addEventListener("click", () => setReplyTo(null));
-
-  const sendBtn = commentsModalEl.querySelector("#pvCommentSend");
-  sendBtn?.addEventListener("click", submitComment);
-
-  const input = commentsModalEl.querySelector("#pvCommentInput");
-  input?.addEventListener("keydown", (e) => {
+  commentsUI.querySelector("#pvReplyCancel")?.addEventListener("click", () => setReplyTo(null));
+  commentsUI.querySelector("#pvCommentSend")?.addEventListener("click", submitComment);
+  commentsUI.querySelector("#pvCommentInput")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       submitComment();
     }
   });
 
-  const list = commentsModalEl.querySelector("#pvCommentsList");
-  list?.addEventListener("click", async (e) => {
+  commentsUI.querySelector("#pvCommentsList")?.addEventListener("click", async (e) => {
     const btn = e.target?.closest?.("button[data-caction]");
     if (!btn) return;
 
     const action = btn.getAttribute("data-caction");
-    const cid = btn.getAttribute("data-cid");
+    const cid = Number(btn.getAttribute("data-cid"));
 
     if (action === "reply") {
       const nm = btn.getAttribute("data-cname") || "Member";
-      setReplyTo({ id: Number(cid), name: nm });
+      setReplyTo({ id: cid, name: nm });
       return;
     }
 
     if (action === "like") {
-      await toggleCommentLike(Number(cid));
+      await toggleCommentLike(cid);
       return;
     }
 
     if (action === "delete") {
-      await deleteComment(Number(cid));
+      await deleteComment(cid);
       return;
     }
   });
 }
 
 function openComments(postId) {
-  ensureCommentsModal();
+  ensureCommentsUI();
   currentPostId = Number(postId);
   setReplyTo(null);
-  commentsModalEl.hidden = false;
-  document.documentElement.classList.add("pv-noscroll");
-  document.body.classList.add("pv-noscroll");
+  commentsUI.hidden = false;
+  document.documentElement.classList.add("pvNoScroll");
+  document.body.classList.add("pvNoScroll");
   loadComments();
 }
 
 function closeComments() {
-  if (!commentsModalEl) return;
-  commentsModalEl.hidden = true;
-  document.documentElement.classList.remove("pv-noscroll");
-  document.body.classList.remove("pv-noscroll");
+  if (!commentsUI) return;
+  commentsUI.hidden = true;
+  document.documentElement.classList.remove("pvNoScroll");
+  document.body.classList.remove("pvNoScroll");
   currentPostId = null;
   setReplyTo(null);
 }
 
 function setReplyTo(obj) {
-  currentReplyTo = obj;
-  const chip = commentsModalEl.querySelector("#pvReplyChip");
-  const txt = commentsModalEl.querySelector("#pvReplyText");
+  replyTo = obj;
+  const chip = commentsUI.querySelector("#pvReplyChip");
+  const txt = commentsUI.querySelector("#pvReplyText");
   if (!chip || !txt) return;
 
   if (!obj) {
@@ -261,13 +500,20 @@ function setReplyTo(obj) {
   chip.hidden = false;
   txt.textContent = `Replying to ${obj.name}`;
 }
-commentUserCache.get(String(uid));
-  return nameFromProfileRow(p);
+
+async function fetchProfiles(userIds) {
+  const ids = [...new Set(userIds.filter(Boolean))].filter((id) => !commentUserCache.has(String(id)));
+  if (!ids.length) return;
+
+  const { data } = await supabase.from("profiles").select("id, full_name, username, avatar_url").in("id", ids);
+  for (const r of data || []) commentUserCache.set(String(r.id), r);
 }
 
-function userAvatarById(uid) {
-  const p = commentUserCache.get(String(uid));
-  return p?.avatar_url || DEFAULT_AVATAR;
+function cName(uid) {
+  return displayName(commentUserCache.get(String(uid)));
+}
+function cAvatar(uid) {
+  return commentUserCache.get(String(uid))?.avatar_url || DEFAULT_AVATAR;
 }
 
 async function loadCommentLikes(commentIds) {
@@ -287,18 +533,16 @@ async function loadCommentLikes(commentIds) {
     const key = String(r.comment_id);
     const cur = commentLikeCache.get(key) || { count: 0, liked: false };
     cur.count += 1;
-    if (r.user_id === session?.user?.id) cur.liked = true;
+    if (r.user_id === session.user.id) cur.liked = true;
     commentLikeCache.set(key, cur);
   }
 }
 
-function buildCommentTree(rows) {
+function buildTree(rows) {
   const byId = new Map();
   const roots = [];
 
-  for (const r of rows) {
-    byId.set(String(r.id), { ...r, children: [] });
-  }
+  for (const r of rows) byId.set(String(r.id), { ...r, children: [] });
 
   for (const r of rows) {
     const node = byId.get(String(r.id));
@@ -319,44 +563,42 @@ function buildCommentTree(rows) {
 }
 
 function renderComment(node, depth = 0) {
-  const cid = node.id;
-  const mine = node.user_id === session?.user?.id;
-  const nm = escapeHtml(userNameById(node.user_id));
-  const av = escapeHtml(userAvatarById(node.user_id));
-  const time = escapeHtml(fmt(node.created_at));
-  const text = escapeHtml(node.content || "");
+  const cid = String(node.id);
+  const mine = node.author_id === session.user.id;
 
-  const li = commentLikeCache.get(String(cid)) || { count: 0, liked: false };
-  const likeLabel = li.liked ? "Liked" : "Like";
-  const likeCount = li.count || 0;
+  const nm = esc(cName(node.author_id));
+  const av = esc(cAvatar(node.author_id));
+  const time = esc(fmt(node.created_at));
+  const text = esc(node.content || "");
+
+  const li = commentLikeCache.get(cid) || { count: 0, liked: false };
 
   const delBtn = mine
-    ? `<button class="pv-cmini danger" type="button" data-caction="delete" data-cid="${escapeHtml(
-        String(cid)
-      )}">Delete</button>`
+    ? `<button class="pvCBtn danger" type="button" data-caction="delete" data-cid="${esc(cid)}">Delete</button>`
     : ``;
 
   const replyBtn =
     depth === 0
-      ? `<button class="pv-cmini" type="button" data-caction="reply" data-cid="${escapeHtml(
-          String(cid)
-        )}" data-cname="${escapeHtml(nm)}">Reply</button>`
+      ? `<button class="pvCBtn" type="button" data-caction="reply" data-cid="${esc(cid)}" data-cname="${esc(
+          nm
+        )}">Reply</button>`
       : ``;
 
-  const html = `
-    <div class="pv-comment ${depth ? "pv-reply" : ""}">
-      <img class="pv-cavatar" src="${av}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
-      <div class="pv-cbody">
-        <div class="pv-ctop">
-          <div class="pv-cname">${nm}</div>
-          <div class="pv-ctime">${time}</div>
+  return `
+    <div class="pvComment ${depth ? "pvReply" : ""}">
+      <img class="pvCAvatar" src="${av}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
+      <div class="pvCBody">
+        <div class="pvCTop">
+          <div class="pvCName">${nm}</div>
+          <div class="pvCTime">${time}</div>
         </div>
-        <div class="pv-ctext">${text}</div>
-        <div class="pv-cactions">
-          <button class="pv-cmini ${li.liked ? "liked" : ""}" type="button" data-caction="like" data-cid="${escapeHtml(
-            String(cid)
+        <div class="pvCText">${text}</div>
+
+        <div class="pvCActions">
+          <button class="pvCBtn ${li.liked ? "liked" : ""}" type="button" data-caction="like" data-cid="${esc(
+            cid
           )}">
-            ${likeLabel} <span class="pv-cpill" data-clike-count="${escapeHtml(String(cid))}">${likeCount}</span>
+            ${li.liked ? "Liked" : "Like"} <span class="pvCPill" data-clike-pill="${esc(cid)}">${li.count}</span>
           </button>
           ${replyBtn}
           ${delBtn}
@@ -364,28 +606,26 @@ function renderComment(node, depth = 0) {
 
         ${
           node.children?.length
-            ? `<div class="pv-replies">${node.children.map((c) => renderComment(c, depth + 1)).join("")}</div>`
+            ? `<div class="pvReplies">${node.children.map((c) => renderComment(c, depth + 1)).join("")}</div>`
             : ``
         }
       </div>
     </div>
   `;
-  return html;
 }
 
 async function loadComments() {
-  if (!currentPostId) return;
-  const list = commentsModalEl.querySelector("#pvCommentsList");
+  const list = commentsUI.querySelector("#pvCommentsList");
   list.innerHTML = `<div class="loading">Loading comments…</div>`;
 
   const { data, error } = await supabase
     .from("post_comments")
-    .select("id, post_id, user_id, parent_id, content, created_at")
+    .select("id, post_id, author_id, parent_id, content, created_at")
     .eq("post_id", currentPostId)
     .order("created_at", { ascending: true });
 
   if (error) {
-    list.innerHTML = `<div class="errorBox">Error loading comments: ${escapeHtml(error.message)}</div>`;
+    list.innerHTML = `<div class="errorBox">Error loading comments: ${esc(error.message)}</div>`;
     return;
   }
 
@@ -395,41 +635,114 @@ async function loadComments() {
     return;
   }
 
-  await fetchUsersForComments(rows.map((r) => r.user_id));
+  await fetchProfiles(rows.map((r) => r.author_id));
   await loadCommentLikes(rows.map((r) => r.id));
 
-  const tree = buildCommentTree(rows);
+  const tree = buildTree(rows);
   list.innerHTML = tree.map((n) => renderComment(n)).join("");
 }
 
-function updateCommentLikeUI(commentId, liked, count) {
-  const btn = commentsModalEl.querySelector(`button[data-caction="like"][data-cid="${CSS.escape(String(commentId))}"]`);
-  const pill = commentsModalEl.querySelector(`span[data-clike-count="${CSS.escape(String(commentId))}"]`);
-  if (pill) pill.textContent = String(count);
+function updatePostCommentUI(postId) {
+  const st = postState.get(String(postId));
+  if (!st) return;
+  const pill = feedListEl.querySelector(`span[data-comment-pill="${CSS.escape(String(postId))}"]`);
+  if (pill) pill.textContent = String(st.commentCount);
+}
+
+async function submitComment() {
+  const input = commentsUI.querySelector("#pvCommentInput");
+  const send = commentsUI.querySelector("#pvCommentSend");
+
+  const content = (input?.value || "").trim();
+  if (!content) return;
+
+  send.disabled = true;
+
+  try {
+    const { error } = await supabase.from("post_comments").insert({
+      post_id: currentPostId,
+      author_id: session.user.id,
+      content,
+      parent_id: replyTo?.id || null,
+    });
+
+    if (error) throw error;
+
+    input.value = "";
+    setReplyTo(null);
+
+    const pst = postState.get(String(currentPostId));
+    if (pst) {
+      pst.commentCount = Math.max(0, Number(pst.commentCount || 0) + 1);
+      postState.set(String(currentPostId), pst);
+      updatePostCommentUI(String(currentPostId));
+    }
+
+    await loadComments();
+    const body = commentsUI.querySelector("#pvCommentsList");
+    body.scrollTop = body.scrollHeight;
+  } catch (e) {
+    alert(`Comment failed: ${e?.message || e}`);
+  } finally {
+    send.disabled = false;
+  }
+}
+
+async function deleteComment(commentId) {
+  if (!confirm("Delete this comment?")) return;
+
+  const { error } = await supabase
+    .from("post_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("author_id", session.user.id);
+
+  if (error) {
+    alert(`Delete failed: ${error.message}`);
+    return;
+  }
+
+  const pst = postState.get(String(currentPostId));
+  if (pst) {
+    pst.commentCount = Math.max(0, Number(pst.commentCount || 0) - 1);
+    postState.set(String(currentPostId), pst);
+    updatePostCommentUI(String(currentPostId));
+  }
+
+  await loadComments();
+}
+
+function updateCommentLikeUI(commentId) {
+  const st = commentLikeCache.get(String(commentId));
+  if (!st) return;
+
+  const btn = commentsUI.querySelector(
+    `button[data-caction="like"][data-cid="${CSS.escape(String(commentId))}"]`
+  );
+  const pill = commentsUI.querySelector(`span[data-clike-pill="${CSS.escape(String(commentId))}"]`);
+
+  if (pill) pill.textContent = String(st.count);
 
   if (btn) {
-    btn.classList.toggle("liked", !!liked);
-    const pillHtml =
-      pill?.outerHTML || `<span class="pv-cpill" data-clike-count="${escapeHtml(String(commentId))}">${count}</span>`;
-    btn.innerHTML = `${liked ? "Liked" : "Like"} ${pillHtml}`;
+    btn.classList.toggle("liked", !!st.liked);
+    btn.childNodes[0].textContent = st.liked ? "Liked " : "Like ";
   }
 }
 
 async function toggleCommentLike(commentId) {
-  if (!commentId || !session?.user?.id) return;
-
   const key = String(commentId);
   const cur = commentLikeCache.get(key) || { count: 0, liked: false };
+  const prev = { ...cur };
 
-  const nextLiked = !cur.liked;
-  const nextCount = Math.max(0, cur.count + (nextLiked ? 1 : -1));
-  commentLikeCache.set(key, { count: nextCount, liked: nextLiked });
-  updateCommentLikeUI(commentId, nextLiked, nextCount);
+  cur.liked = !cur.liked;
+  cur.count = Math.max(0, cur.count + (cur.liked ? 1 : -1));
+  commentLikeCache.set(key, cur);
+  updateCommentLikeUI(key);
 
   try {
-    if (nextLiked) {
+    if (cur.liked) {
       const { error } = await supabase.from("comment_likes").insert({
-        comment_id: commentId,
+        comment_id: Number(commentId),
         user_id: session.user.id,
       });
       if (error) throw error;
@@ -442,331 +755,132 @@ async function toggleCommentLike(commentId) {
       if (error) throw error;
     }
   } catch (e) {
-    commentLikeCache.set(key, cur);
-    updateCommentLikeUI(commentId, cur.liked, cur.count);
+    commentLikeCache.set(key, prev);
+    updateCommentLikeUI(key);
     alert(`Comment like failed: ${e?.message || e}`);
   }
 }
 
-async function deleteComment(commentId) {
-  const ok = confirm("Delete this comment?");
-  if (!ok) return;
+/* SHARE (internal placeholder + external + save media) */
+let shareUI = null;
 
-  const { error } = await supabase
-    .from("post_comments")
-    .delete()
-    .eq("id", commentId)
-    .eq("user_id", session.user.id);
+function ensureShareUI() {
+  if (shareUI) return;
 
-  if (error) {
-    alert(`Delete failed: ${error.message}`);
-    return;
-  }
-  await loadComments();
-}
-
-async function submitComment() {
-  if (!currentPostId) return;
-
-  const input = commentsModalEl.querySelector("#pvCommentInput");
-  const send = commentsModalEl.querySelector("#pvCommentSend");
-  const content = (input?.value || "").trim();
-  if (!content) return;
-
-  send.disabled = true;
-  try {
-    const payload = {
-      post_id: currentPostId,
-      user_id: session.user.id,
-      content,
-      parent_id: currentReplyTo?.id || null,
-    };
-
-    const { error } = await supabase.from("post_comments").insert(payload);
-    if (error) throw error;
-
-    input.value = "";
-    setReplyTo(null);
-    await loadComments();
-
-    const body = commentsModalEl.querySelector(".pv-sheet-body");
-    body.scrollTop = body.scrollHeight;
-  } catch (e) {
-    alert(`Comment failed: ${e?.message || e}`);
-  } finally {
-    send.disabled = false;
-  }
-}
-
-/* Render posts */
-function renderPost(row) {
-  const postId = row.id;
-  const authorId = row.author_id;
-
-  const authorName = escapeHtml(nameFromProfileRow(row));
-  const time = escapeHtml(fmt(row.created_at));
-  const text = escapeHtml(row.content || "");
-
-  const isMine = authorId && session?.user?.id ? authorId === session.user.id : false;
-  const authorLink = `/profile/user.html?id=${encodeURIComponent(authorId || "")}`;
-
-  const avatarUrl = row.avatar_url || DEFAULT_AVATAR;
-
-  let mediaHtml = "";
-  if (row.media_url && row.media_type) {
-    const safeUrl = escapeHtml(row.media_url);
-    if (row.media_type.startsWith("image/")) {
-      mediaHtml = `<img class="postMediaImg" src="${safeUrl}" alt="post media"/>`;
-    } else if (row.media_type.startsWith("video/")) {
-      mediaHtml = `<video class="postMediaVid" src="${safeUrl}" controls playsinline></video>`;
-    }
-  }
-
-  const likeInfo = likeCache.get(String(postId)) || { count: 0, liked: false };
-  const likeLabel = likeInfo.liked ? "Liked" : "Like";
-  const likeCount = likeInfo.count || 0;
-
-  const deleteBtn = isMine
-
-async function fetchUsersForComments(userIds) {
-  const unique = [...new Set(userIds.filter(Boolean))].filter((id) => !commentUserCache.has(String(id)));
-  if (!unique.length) return;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, username, avatar_url")
-    .in("id", unique);
-
-  if (error) return;
-  for (const r of data || []) commentUserCache.set(String(r.id), r);
-}
-
-function userNameById(uid) {
-  const p =
-   ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
-        String(postId)
-      )}">Delete</button>`
-    : ``;
-
-  const actions = `
-    <div class="postFooter">
-      <button class="miniBtn ${likeInfo.liked ? "likedBtn" : ""}" type="button" data-action="like" data-post-id="${escapeHtml(
-        String(postId)
-      )}">
-        ${likeLabel}
-        <span class="countPill" data-like-count="${escapeHtml(String(postId))}">${likeCount}</span>
-      </button>
-
-      <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(String(postId))}">
-        Comment
-      </button>
-
-      <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">
-        Share
-      </button>
-
-      ${deleteBtn}
-    </div>
-  `;
-
-  return `
-    <article class="postCard" id="post-${escapeHtml(String(postId))}">
-      <div class="postHeader">
-        <div class="postAuthor" style="display:flex;align-items:center;gap:10px;">
-          <a href="${authorLink}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-            <img src="${escapeHtml(avatarUrl)}" alt="" class="postAvatar" onerror="this.src='${DEFAULT_AVATAR}'"/>
-            <div>
-              <div class="postAuthorName">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
-              <div class="postTime">${time}</div>
-            </div>
-          </a>
-        </div>
+  shareUI = document.createElement("div");
+  shareUI.id = "pvShareSheet";
+  shareUI.className = "pvSheetWrap";
+  shareUI.hidden = true;
+  shareUI.innerHTML = `
+    <div class="pvSheetBackdrop" data-close="1"></div>
+    <section class="pvSheet">
+      <div class="pvSheetHead">
+        <button class="pvSheetClose" type="button" data-close="1">✕</button>
+        <div class="pvSheetTitle">Share</div>
+        <div class="pvSheetRight"></div>
       </div>
 
-      ${text ? `<div class="postText">${text}</div>` : ``}
-      ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
-
-      ${actions}
-    </article>
+      <div class="pvSheetBody">
+        <div class="pvShareGrid">
+          <button class="pvShareBtn" type="button" data-saction="copy">Copy Link</button>
+          <button class="pvShareBtn" type="button" data-saction="native">Share to Apps</button>
+          <button class="pvShareBtn" type="button" data-saction="save">Save Media</button>
+          <button class="pvShareBtn" type="button" data-saction="pepsval">Send in Pepsval</button>
+        </div>
+        <div class="pvShareHint">“Send in Pepsval” will open Messages with the post link (if Messages page supports it).</div>
+      </div>
+    </section>
   `;
+  document.body.appendChild(shareUI);
+
+  shareUI.addEventListener("click", (e) => {
+    if (e.target?.closest?.("[data-close]")) closeShare();
+  });
+
+  shareUI.querySelector(".pvSheetBody")?.addEventListener("click", async (e) => {
+    const btn = e.target?.closest?.("button[data-saction]");
+    if (!btn) return;
+    const action = btn.getAttribute("data-saction");
+    await handleShareAction(action);
+  });
 }
 
-async function loadLikesForPosts(postIds) {
-  likeCache.clear();
-  if (!postIds.length) return;
-
-  const { data, error } = await supabase
-    .from("post_likes")
-    .select("post_id, user_id")
-    .in("post_id", postIds);
-
-  if (error) return;
-
-  for (const pid of postIds) likeCache.set(String(pid), { count: 0, liked: false });
-
-  for (const r of data || []) {
-    const key = String(r.post_id);
-    const cur = likeCache.get(key) || { count: 0, liked: false };
-    cur.count += 1;
-    if (r.user_id === session?.user?.id) cur.liked = true;
-    likeCache.set(key, cur);
-  }
+let sharePostId = null;
+function openShare(postId) {
+  ensureShareUI();
+  sharePostId = String(postId);
+  shareUI.hidden = false;
+  document.documentElement.classList.add("pvNoScroll");
+  document.body.classList.add("pvNoScroll");
+}
+function closeShare() {
+  if (!shareUI) return;
+  shareUI.hidden = true;
+  document.documentElement.classList.remove("pvNoScroll");
+  document.body.classList.remove("pvNoScroll");
+  sharePostId = null;
 }
 
-async function loadPosts() {
-  feedListEl.innerHTML = `<div class="loading">Loading feed…</div>`;
+function postLink(postId) {
+  return `${location.origin}/feed/index.html#post-${postId}`;
+}
 
-  const { data, error } = await supabase
-    .from("v_feed_posts")
-    .select("id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url")
-    .order("created_at", { ascending: false })
-    .limit(50);
+async function downloadMedia(url, filename) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  const obj = URL.createObjectURL(blob);
+  a.href = obj;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(obj);
+}
 
-  if (error) {
-    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(error.message)}</div>`;
+async function handleShareAction(action) {
+  if (!sharePostId) return;
+
+  const link = postLink(sharePostId);
+  const st = postState.get(String(sharePostId));
+
+  if (action === "copy") {
+    await navigator.clipboard.writeText(link);
+    alert("Link copied ✅");
+    closeShare();
     return;
   }
 
-  lastFeedRows = data || [];
-
-  if (!lastFeedRows.length) {
-    feedListEl.innerHTML = `<div class="muted">No posts yet. Be the first to post!</div>`;
-    return;
-  }
-
-  const postIds = lastFeedRows.map((r) => r.id);
-  await loadLikesForPosts(postIds);
-
-  feedListEl.innerHTML = lastFeedRows.map(renderPost).join("");
-}
-
-/* Delete post */
-async function deletePost(postId) {
-  if (!postId) return;
-  const ok = confirm("Delete this post?");
-  if (!ok) return;
-
-  const { error } = await supabase
-    .from("posts")
-    .delete()
-    .eq("id", postId)
-    .eq("author_id", session.user.id);
-
-  if (error) {
-    alert(`Delete failed: ${error.message}`);
-    return;
-  }
-  await loadPosts();
-}
-
-/* Like toggle (no refresh) */
-function updateLikeUI(postId, liked, count) {
-  const btn = feedListEl.querySelector(`button[data-action="like"][data-post-id="${CSS.escape(String(postId))}"]`);
-  const pill = feedListEl.querySelector(`span[data-like-count="${CSS.escape(String(postId))}"]`);
-  if (pill) pill.textContent = String(count);
-
-  if (btn) {
-    btn.classList.toggle("likedBtn", !!liked);
-    const pillHtml = pill
-      ? pill.outerHTML
-      : `<span class="countPill" data-like-count="${escapeHtml(String(postId))}">${count}</span>`;
-    btn.innerHTML = `${liked ? "Liked" : "Like"} ${pillHtml}`;
-  }
-}
-
-async function toggleLike(postId) {
-  if (!postId || !session?.user?.id) return;
-
-  const key = String(postId);
-  const cur = likeCache.get(key) || { count: 0, liked: false };
-
-  const nextLiked = !cur.liked;
-  const nextCount = Math.max(0, cur.count + (nextLiked ? 1 : -1));
-  likeCache.set(key, { count: nextCount, liked: nextLiked });
-  updateLikeUI(postId, nextLiked, nextCount);
-
-  try {
-    if (nextLiked) {
-      const { error } = await supabase.from("post_likes").insert({
-        post_id: Number(postId),
-        user_id: session.user.id,
-      });
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", session.user.id);
-      if (error) throw error;
+  if (action === "native") {
+    try {
+      await navigator.share({ title: "Pepsval Post", url: link });
+    } catch {
+      await navigator.clipboard.writeText(link);
+      alert("Link copied ✅");
     }
-  } catch (e) {
-    likeCache.set(key, cur);
-    updateLikeUI(postId, cur.liked, cur.count);
-    alert(`Like failed: ${e?.message || e}`);
-  }
-}
-
-/* Upload + create post */
-async function uploadMedia(file) {
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
-
-  const { error: upErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "3600" });
-
-  if (upErr) throw upErr;
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
-}
-
-async function createPost() {
-  const content = (postTextEl.value || "").trim();
-
-  if (!content && !selectedFile) {
-    alert("Write something or add a photo/video.");
+    closeShare();
     return;
   }
 
-  postBtn.disabled = true;
-  postBtn.textContent = "Posting…";
-
-  try {
-    let media_url = null;
-    let media_type = null;
-
-    if (selectedFile) {
-      media_type = selectedFile.type || null;
-      media_url = await uploadMedia(selectedFile);
+  if (action === "save") {
+    if (!st?.media_url) {
+      alert("No media to save.");
+      return;
     }
+    const ext = st.media_type?.startsWith("video/") ? "mp4" : "jpg";
+    await downloadMedia(st.media_url, `pepsval-post-${sharePostId}.${ext}`);
+    closeShare();
+    return;
+  }
 
-    const payload = {
-      author_id: session.user.id,
-      author_name: nameFromProfileRow(me),
-      content,
-      media_url,
-      media_type,
-    };
-
-    const { error } = await supabase.from("posts").insert(payload);
-    if (error) throw error;
-
-    postTextEl.value = "";
-    clearPreview();
-    await loadPosts();
-  } catch (e) {
-    alert(`Post failed: ${e.message || e}`);
-  } finally {
-    postBtn.disabled = false;
-    postBtn.textContent = "Post";
+  if (action === "pepsval") {
+    const url = `/messages/index.html?share=${encodeURIComponent(link)}`;
+    window.location.href = url;
+    return;
   }
 }
 
-postBtn?.addEventListener("click", createPost);
-
-/* Actions */
+/* click actions */
 feedListEl?.addEventListener("click", async (e) => {
   const btn = e.target?.closest?.("button[data-action]");
   if (!btn) return;
@@ -774,38 +888,13 @@ feedListEl?.addEventListener("click", async (e) => {
   const action = btn.getAttribute("data-action");
   const postId = btn.getAttribute("data-post-id");
 
-  if (action === "delete") {
-    await deletePost(postId);
-    return;
-  }
-
-  if (action === "like") {
-    await toggleLike(postId);
-    return;
-  }
-
-  if (action === "comment") {
-    openComments(postId);
-    return;
-  }
-
-  if (action === "share") {
-    const url = `${location.origin}/feed/index.html#post-${postId}`;
-    try {
-      await navigator.share({ title: "Pepsval Post", url });
-    } catch {
-      try {
-        await navigator.clipboard.writeText(url);
-        alert("Link copied ✅");
-      } catch {
-        alert(url);
-      }
-    }
-    return;
-  }
+  if (action === "like") return togglePostLike(postId);
+  if (action === "comment") return openComments(postId);
+  if (action === "share") return openShare(postId);
+  if (action === "delete") return deletePost(postId);
 });
 
-/* Init */
+/* init */
 (async function init() {
   session = await requireAuth();
   if (!session) return;
@@ -824,5 +913,5 @@ feedListEl?.addEventListener("click", async (e) => {
 
   me = prof || {};
   setTopBar(me);
-  await loadPosts();
+  await loadFeed();
 })();
