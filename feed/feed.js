@@ -18,6 +18,8 @@ const feedListEl = document.getElementById("feedList");
 let session = null;
 let me = null;
 
+const BUCKET = "post_media";
+
 const DEFAULT_AVATAR =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
@@ -34,37 +36,45 @@ function escapeHtml(s) {
 }
 
 function fmt(ts) {
-  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return "";
+  }
 }
 
-function displayName(profile) {
+function nameFromProfileRow(row) {
   const n =
-    (profile?.full_name && String(profile.full_name).trim()) ||
-    (profile?.username && String(profile.username).trim());
+    (row?.full_name && String(row.full_name).trim()) ||
+    (row?.username && String(row.username).trim());
   return n || "Member";
 }
 
 function setTopBar(profile) {
-  userNameEl.textContent = displayName(profile);
+  const nm = nameFromProfileRow(profile);
+  userNameEl.textContent = nm;
   userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
-  userAvatarEl.onerror = () => { userAvatarEl.src = DEFAULT_AVATAR; };
+  userAvatarEl.onerror = () => (userAvatarEl.src = DEFAULT_AVATAR);
 }
 
 /* Dropdown */
-function closeMenu() { avatarMenu.hidden = true; }
-function toggleMenu() { avatarMenu.hidden = !avatarMenu.hidden; }
-
+function closeMenu() {
+  if (!avatarMenu) return;
+  avatarMenu.hidden = true;
+}
+function toggleMenu() {
+  if (!avatarMenu) return;
+  avatarMenu.hidden = !avatarMenu.hidden;
+}
 avatarBtn?.addEventListener("click", (e) => {
   e.preventDefault();
   toggleMenu();
 });
-
 document.addEventListener("click", (e) => {
   if (!avatarMenu || avatarMenu.hidden) return;
   const inside = avatarMenu.contains(e.target) || avatarBtn.contains(e.target);
   if (!inside) closeMenu();
 });
-
 logoutBtn?.addEventListener("click", async () => {
   await supabase.auth.signOut();
   window.location.href = "/auth/login.html";
@@ -76,7 +86,7 @@ let selectedFile = null;
 function clearPreview() {
   selectedFile = null;
   mediaPreviewEl.innerHTML = "";
-  postMediaEl.value = "";
+  if (postMediaEl) postMediaEl.value = "";
 }
 
 function showPreview(file) {
@@ -109,8 +119,7 @@ function showPreview(file) {
   });
 }
 
-addMediaBtn?.addEventListener("click", () => postMediaEl.click());
-
+addMediaBtn?.addEventListener("click", () => postMediaEl?.click());
 postMediaEl?.addEventListener("change", (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -120,60 +129,78 @@ postMediaEl?.addEventListener("change", (e) => {
     clearPreview();
     return;
   }
-
   selectedFile = file;
   showPreview(file);
 });
 
-/* Render posts */
-function renderPost(p) {
-  const author = escapeHtml(p.author_name || "Member");
-  const time = escapeHtml(fmt(p.created_at));
-  const text = escapeHtml(p.content || "");
-  const authorLink = `/profile/user.html?id=${encodeURIComponent(p.author_id || "")}`;
+/* Render posts (from v_feed_posts view) */
+function renderPost(row) {
+  const postId = row.id;
+  const authorId = row.author_id;
 
-  const isMine = (p.author_id && session?.user?.id) ? (p.author_id === session.user.id) : false;
+  const authorName = escapeHtml(nameFromProfileRow(row));
+  const time = escapeHtml(fmt(row.created_at));
+  const text = escapeHtml(row.content || "");
+
+  const isMine = authorId && session?.user?.id ? authorId === session.user.id : false;
+  const authorLink = `/profile/user.html?id=${encodeURIComponent(authorId || "")}`;
+
+  const avatarUrl = row.avatar_url || DEFAULT_AVATAR;
 
   let mediaHtml = "";
-  if (p.media_url && p.media_type) {
-    const safeUrl = escapeHtml(p.media_url);
-    if (p.media_type.startsWith("image/")) {
+  if (row.media_url && row.media_type) {
+    const safeUrl = escapeHtml(row.media_url);
+    if (row.media_type.startsWith("image/")) {
       mediaHtml = `<img class="postMediaImg" src="${safeUrl}" alt="post media"/>`;
-    } else if (p.media_type.startsWith("video/")) {
+    } else if (row.media_type.startsWith("video/")) {
       mediaHtml = `<video class="postMediaVid" src="${safeUrl}" controls playsinline></video>`;
     }
   }
 
-  // Delete button only for your own posts
-  const actionsHtml = isMine
-    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(String(p.id))}">Delete</button>`
+  const deleteBtn = isMine
+    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
+        String(postId)
+      )}">Delete</button>`
     : ``;
+
+  // Like/Comment/Share UI (backend next step)
+  const actions = `
+    <div class="postFooter">
+      <button class="miniBtn" type="button" data-action="like" data-post-id="${escapeHtml(String(postId))}">Like</button>
+      <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(String(postId))}">Comment</button>
+      <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">Share</button>
+      ${deleteBtn}
+    </div>
+  `;
 
   return `
     <article class="postCard">
       <div class="postHeader">
-        <div class="postAuthor">
-          <a class="authorLink" href="${authorLink}">${author}</a>
-          ${isMine ? `<span class="youTag">you</span>` : ``}
+        <div class="postAuthor" style="display:flex;align-items:center;gap:10px;">
+          <a href="${authorLink}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+            <img src="${escapeHtml(avatarUrl)}" alt="" style="width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #dbe7ef;background:#fff" onerror="this.src='${DEFAULT_AVATAR}'"/>
+            <div>
+              <div class="postAuthorName" style="font-weight:900;line-height:1.1;">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
+              <div class="postTime">${time}</div>
+            </div>
+          </a>
         </div>
-        <div class="postTime">${time}</div>
       </div>
 
       ${text ? `<div class="postText">${text}</div>` : ``}
       ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
 
-      <div class="postFooter">
-        ${actionsHtml}
-      </div>
-    </article>`;
+      ${actions}
+    </article>
+  `;
 }
 
 async function loadPosts() {
   feedListEl.innerHTML = `<div class="loading">Loading feed…</div>`;
 
   const { data, error } = await supabase
-    .from("posts")
-    .select("id, content, created_at, author_id, author_name, media_url, media_type")
+    .from("v_feed_posts")
+    .select("id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -190,14 +217,12 @@ async function loadPosts() {
   feedListEl.innerHTML = data.map(renderPost).join("");
 }
 
-/* Delete post (your own) */
+/* Delete post */
 async function deletePost(postId) {
   if (!postId) return;
-
   const ok = confirm("Delete this post?");
   if (!ok) return;
 
-  // Safety: delete only if it's yours
   const { error } = await supabase
     .from("posts")
     .delete()
@@ -208,42 +233,21 @@ async function deletePost(postId) {
     alert(`Delete failed: ${error.message}`);
     return;
   }
-
   await loadPosts();
 }
 
-// Event delegation for delete buttons
-feedListEl?.addEventListener("click", async (e) => {
-  const btn = e.target?.closest?.("button[data-action]");
-  if (!btn) return;
-
-  const action = btn.getAttribute("data-action");
-  const postId = btn.getAttribute("data-post-id");
-
-  if (action === "delete") {
-    await deletePost(postId);
-  }
-});
-
 /* Upload + create post */
 async function uploadMedia(file) {
-  // ✅ Your real bucket name (underscore)
-  const bucket = "post_media";
-
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
 
   const { error: upErr } = await supabase.storage
-    .from(bucket)
-    .upload(path, file, {
-      contentType: file.type,
-      upsert: false,
-      cacheControl: "3600",
-    });
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "3600" });
 
   if (upErr) throw upErr;
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
 
@@ -269,7 +273,7 @@ async function createPost() {
 
     const payload = {
       author_id: session.user.id,
-      author_name: displayName(me),
+      author_name: nameFromProfileRow(me), // keep for backward compatibility, but feed uses view now
       content,
       media_url,
       media_type,
@@ -290,6 +294,41 @@ async function createPost() {
 }
 
 postBtn?.addEventListener("click", createPost);
+
+/* Like/Comment/Share buttons (UI now, backend next step) */
+feedListEl?.addEventListener("click", async (e) => {
+  const btn = e.target?.closest?.("button[data-action]");
+  if (!btn) return;
+
+  const action = btn.getAttribute("data-action");
+  const postId = btn.getAttribute("data-post-id");
+
+  if (action === "delete") {
+    await deletePost(postId);
+    return;
+  }
+
+  if (action === "like") {
+    alert("Next step: Like system backend (real likes count).");
+    return;
+  }
+
+  if (action === "comment") {
+    alert("Next step: Comment system backend + comment UI.");
+    return;
+  }
+
+  if (action === "share") {
+    const url = `${location.origin}/feed/index.html#post-${postId}`;
+    try {
+      await navigator.share({ title: "Pepsval Post", url });
+    } catch {
+      await navigator.clipboard.writeText(url);
+      alert("Link copied ✅");
+    }
+    return;
+  }
+});
 
 /* Init */
 (async function init() {
