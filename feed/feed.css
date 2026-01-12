@@ -101,6 +101,18 @@ body.app-bg{
   margin-top:10px;
   flex-wrap:wrap;
 }
+
+/* reliable "hidden" file input (NOT display:none) */
+.fileInput{
+  position:absolute;
+  left:-9999px;
+  width:1px;
+  height:1px;
+  opacity:0;
+}
+
+/* shared button styles for label + button */
+.btn,
 .post-actions button{
   border:0;
   border-radius:12px;
@@ -108,7 +120,12 @@ body.app-bg{
   font-weight:900;
   cursor:pointer;
   background:#eaf4fb;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
 }
+
 .post-actions .primary{
   background:var(--brand);
   color:#fff;
@@ -182,57 +199,3 @@ body.app-bg{
   border-radius:12px;
 }
 .nav-item.active{background:#eef6fb}
-/* --- Post footer actions (Like / Comment / Share / Delete) --- */
-.postFooter{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  justify-content:flex-start;
-  flex-wrap:wrap;
-  margin-top:10px;
-  padding-top:10px;
-  border-top:1px solid var(--line);
-}
-
-.miniBtn{
-  border:1px solid var(--line);
-  background:#f3f9fe;
-  color:var(--text);
-  border-radius:12px;
-  padding:8px 10px;
-  font-weight:900;
-  cursor:pointer;
-  font-size:13px;
-}
-
-.miniBtn:hover{background:#eaf4fb}
-
-.miniBtn.liked{
-  border-color:rgba(31,111,134,.35);
-  background:rgba(31,111,134,.10);
-  color:var(--brand);
-}
-
-.dangerBtn{
-  border-color:#ffd0d6;
-  background:#ffe9ea;
-  color:#b00020;
-}
-
-.dangerBtn:hover{background:#ffdfe2}
-
-/* small "you" tag */
-.youTag{
-  display:inline-block;
-  margin-left:6px;
-  font-size:11px;
-  padding:2px 8px;
-  border-radius:999px;
-  border:1px solid var(--line);
-  background:#f3f9fe;
-  color:var(--muted);
-  font-weight:900;
-}
-
-/* optional: make post header nicer on mobile */
-.postAuthorName{font-weight:900}
