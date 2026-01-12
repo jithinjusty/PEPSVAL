@@ -139,6 +139,365 @@ postMediaEl?.addEventListener("change", (e) => {
 const likeCache = new Map(); // postId -> { count:number, liked:boolean }
 let lastFeedRows = [];
 
+/* Comments bottom sheet (Instagram style) */
+let commentsModalEl = null;
+let currentPostId = null;
+let currentReplyTo = null; // { id, name } or null
+const commentLikeCache = new Map(); // commentId -> {count, liked}
+const commentUserCache = new Map(); // userId -> {full_name, username, avatar_url}
+
+function ensureCommentsModal() {
+  if (commentsModalEl) return;
+
+  commentsModalEl = document.createElement("div");
+  commentsModalEl.id = "commentsModal";
+  commentsModalEl.className = "pv-modal";
+  commentsModalEl.hidden = true;
+  commentsModalEl.innerHTML = `
+    <div class="pv-modal-backdrop" data-close="1"></div>
+    <section class="pv-sheet" role="dialog" aria-modal="true" aria-label="Comments">
+      <div class="pv-sheet-head">
+        <button class="pv-sheet-close" type="button" data-close="1">✕</button>
+        <div class="pv-sheet-title">Comments</div>
+        <div class="pv-sheet-spacer"></div>
+      </div>
+
+      <div class="pv-sheet-body">
+        <div id="pvCommentsList" class="pv-comments-list">
+          <div class="loading">Loading comments…</div>
+        </div>
+      </div>
+
+      <div class="pv-sheet-compose">
+        <div id="pvReplyChip" class="pv-reply-chip" hidden>
+          <span id="pvReplyText"></span>
+          <button id="pvReplyCancel" class="pv-reply-cancel" type="button">✕</button>
+        </div>
+
+        <div class="pv-compose-row">
+          <input id="pvCommentInput" class="pv-compose-input" type="text" placeholder="Add a comment…" maxlength="600" />
+          <button id="pvCommentSend" class="pv-compose-send" type="button">Post</button>
+        </div>
+      </div>
+    </section>
+  `;
+  document.body.appendChild(commentsModalEl);
+
+  commentsModalEl.addEventListener("click", (e) => {
+    const close = e.target?.closest?.("[data-close]");
+    if (close) closeComments();
+  });
+
+  const cancelBtn = commentsModalEl.querySelector("#pvReplyCancel");
+  cancelBtn?.addEventListener("click", () => setReplyTo(null));
+
+  const sendBtn = commentsModalEl.querySelector("#pvCommentSend");
+  sendBtn?.addEventListener("click", submitComment);
+
+  const input = commentsModalEl.querySelector("#pvCommentInput");
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitComment();
+    }
+  });
+
+  const list = commentsModalEl.querySelector("#pvCommentsList");
+  list?.addEventListener("click", async (e) => {
+    const btn = e.target?.closest?.("button[data-caction]");
+    if (!btn) return;
+
+    const action = btn.getAttribute("data-caction");
+    const cid = btn.getAttribute("data-cid");
+
+    if (action === "reply") {
+      const nm = btn.getAttribute("data-cname") || "Member";
+      setReplyTo({ id: Number(cid), name: nm });
+      return;
+    }
+
+    if (action === "like") {
+      await toggleCommentLike(Number(cid));
+      return;
+    }
+
+    if (action === "delete") {
+      await deleteComment(Number(cid));
+      return;
+    }
+  });
+}
+
+function openComments(postId) {
+  ensureCommentsModal();
+  currentPostId = Number(postId);
+  setReplyTo(null);
+  commentsModalEl.hidden = false;
+  document.documentElement.classList.add("pv-noscroll");
+  document.body.classList.add("pv-noscroll");
+  loadComments();
+}
+
+function closeComments() {
+  if (!commentsModalEl) return;
+  commentsModalEl.hidden = true;
+  document.documentElement.classList.remove("pv-noscroll");
+  document.body.classList.remove("pv-noscroll");
+  currentPostId = null;
+  setReplyTo(null);
+}
+
+function setReplyTo(obj) {
+  currentReplyTo = obj;
+  const chip = commentsModalEl.querySelector("#pvReplyChip");
+  const txt = commentsModalEl.querySelector("#pvReplyText");
+  if (!chip || !txt) return;
+
+  if (!obj) {
+    chip.hidden = true;
+    txt.textContent = "";
+    return;
+  }
+  chip.hidden = false;
+  txt.textContent = `Replying to ${obj.name}`;
+}
+commentUserCache.get(String(uid));
+  return nameFromProfileRow(p);
+}
+
+function userAvatarById(uid) {
+  const p = commentUserCache.get(String(uid));
+  return p?.avatar_url || DEFAULT_AVATAR;
+}
+
+async function loadCommentLikes(commentIds) {
+  commentLikeCache.clear();
+  if (!commentIds.length) return;
+
+  const { data, error } = await supabase
+    .from("comment_likes")
+    .select("comment_id, user_id")
+    .in("comment_id", commentIds);
+
+  if (error) return;
+
+  for (const cid of commentIds) commentLikeCache.set(String(cid), { count: 0, liked: false });
+
+  for (const r of data || []) {
+    const key = String(r.comment_id);
+    const cur = commentLikeCache.get(key) || { count: 0, liked: false };
+    cur.count += 1;
+    if (r.user_id === session?.user?.id) cur.liked = true;
+    commentLikeCache.set(key, cur);
+  }
+}
+
+function buildCommentTree(rows) {
+  const byId = new Map();
+  const roots = [];
+
+  for (const r of rows) {
+    byId.set(String(r.id), { ...r, children: [] });
+  }
+
+  for (const r of rows) {
+    const node = byId.get(String(r.id));
+    if (r.parent_id) {
+      const parent = byId.get(String(r.parent_id));
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortByTime = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+  roots.sort(sortByTime);
+  for (const n of roots) n.children.sort(sortByTime);
+
+  return roots;
+}
+
+function renderComment(node, depth = 0) {
+  const cid = node.id;
+  const mine = node.user_id === session?.user?.id;
+  const nm = escapeHtml(userNameById(node.user_id));
+  const av = escapeHtml(userAvatarById(node.user_id));
+  const time = escapeHtml(fmt(node.created_at));
+  const text = escapeHtml(node.content || "");
+
+  const li = commentLikeCache.get(String(cid)) || { count: 0, liked: false };
+  const likeLabel = li.liked ? "Liked" : "Like";
+  const likeCount = li.count || 0;
+
+  const delBtn = mine
+    ? `<button class="pv-cmini danger" type="button" data-caction="delete" data-cid="${escapeHtml(
+        String(cid)
+      )}">Delete</button>`
+    : ``;
+
+  const replyBtn =
+    depth === 0
+      ? `<button class="pv-cmini" type="button" data-caction="reply" data-cid="${escapeHtml(
+          String(cid)
+        )}" data-cname="${escapeHtml(nm)}">Reply</button>`
+      : ``;
+
+  const html = `
+    <div class="pv-comment ${depth ? "pv-reply" : ""}">
+      <img class="pv-cavatar" src="${av}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
+      <div class="pv-cbody">
+        <div class="pv-ctop">
+          <div class="pv-cname">${nm}</div>
+          <div class="pv-ctime">${time}</div>
+        </div>
+        <div class="pv-ctext">${text}</div>
+        <div class="pv-cactions">
+          <button class="pv-cmini ${li.liked ? "liked" : ""}" type="button" data-caction="like" data-cid="${escapeHtml(
+            String(cid)
+          )}">
+            ${likeLabel} <span class="pv-cpill" data-clike-count="${escapeHtml(String(cid))}">${likeCount}</span>
+          </button>
+          ${replyBtn}
+          ${delBtn}
+        </div>
+
+        ${
+          node.children?.length
+            ? `<div class="pv-replies">${node.children.map((c) => renderComment(c, depth + 1)).join("")}</div>`
+            : ``
+        }
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+async function loadComments() {
+  if (!currentPostId) return;
+  const list = commentsModalEl.querySelector("#pvCommentsList");
+  list.innerHTML = `<div class="loading">Loading comments…</div>`;
+
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("id, post_id, user_id, parent_id, content, created_at")
+    .eq("post_id", currentPostId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    list.innerHTML = `<div class="errorBox">Error loading comments: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
+  const rows = data || [];
+  if (!rows.length) {
+    list.innerHTML = `<div class="muted">No comments yet.</div>`;
+    return;
+  }
+
+  await fetchUsersForComments(rows.map((r) => r.user_id));
+  await loadCommentLikes(rows.map((r) => r.id));
+
+  const tree = buildCommentTree(rows);
+  list.innerHTML = tree.map((n) => renderComment(n)).join("");
+}
+
+function updateCommentLikeUI(commentId, liked, count) {
+  const btn = commentsModalEl.querySelector(`button[data-caction="like"][data-cid="${CSS.escape(String(commentId))}"]`);
+  const pill = commentsModalEl.querySelector(`span[data-clike-count="${CSS.escape(String(commentId))}"]`);
+  if (pill) pill.textContent = String(count);
+
+  if (btn) {
+    btn.classList.toggle("liked", !!liked);
+    const pillHtml =
+      pill?.outerHTML || `<span class="pv-cpill" data-clike-count="${escapeHtml(String(commentId))}">${count}</span>`;
+    btn.innerHTML = `${liked ? "Liked" : "Like"} ${pillHtml}`;
+  }
+}
+
+async function toggleCommentLike(commentId) {
+  if (!commentId || !session?.user?.id) return;
+
+  const key = String(commentId);
+  const cur = commentLikeCache.get(key) || { count: 0, liked: false };
+
+  const nextLiked = !cur.liked;
+  const nextCount = Math.max(0, cur.count + (nextLiked ? 1 : -1));
+  commentLikeCache.set(key, { count: nextCount, liked: nextLiked });
+  updateCommentLikeUI(commentId, nextLiked, nextCount);
+
+  try {
+    if (nextLiked) {
+      const { error } = await supabase.from("comment_likes").insert({
+        comment_id: commentId,
+        user_id: session.user.id,
+      });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("user_id", session.user.id);
+      if (error) throw error;
+    }
+  } catch (e) {
+    commentLikeCache.set(key, cur);
+    updateCommentLikeUI(commentId, cur.liked, cur.count);
+    alert(`Comment like failed: ${e?.message || e}`);
+  }
+}
+
+async function deleteComment(commentId) {
+  const ok = confirm("Delete this comment?");
+  if (!ok) return;
+
+  const { error } = await supabase
+    .from("post_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", session.user.id);
+
+  if (error) {
+    alert(`Delete failed: ${error.message}`);
+    return;
+  }
+  await loadComments();
+}
+
+async function submitComment() {
+  if (!currentPostId) return;
+
+  const input = commentsModalEl.querySelector("#pvCommentInput");
+  const send = commentsModalEl.querySelector("#pvCommentSend");
+  const content = (input?.value || "").trim();
+  if (!content) return;
+
+  send.disabled = true;
+  try {
+    const payload = {
+      post_id: currentPostId,
+      user_id: session.user.id,
+      content,
+      parent_id: currentReplyTo?.id || null,
+    };
+
+    const { error } = await supabase.from("post_comments").insert(payload);
+    if (error) throw error;
+
+    input.value = "";
+    setReplyTo(null);
+    await loadComments();
+
+    const body = commentsModalEl.querySelector(".pv-sheet-body");
+    body.scrollTop = body.scrollHeight;
+  } catch (e) {
+    alert(`Comment failed: ${e?.message || e}`);
+  } finally {
+    send.disabled = false;
+  }
+}
+
 /* Render posts */
 function renderPost(row) {
   const postId = row.id;
@@ -168,7 +527,23 @@ function renderPost(row) {
   const likeCount = likeInfo.count || 0;
 
   const deleteBtn = isMine
-    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
+
+async function fetchUsersForComments(userIds) {
+  const unique = [...new Set(userIds.filter(Boolean))].filter((id) => !commentUserCache.has(String(id)));
+  if (!unique.length) return;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, username, avatar_url")
+    .in("id", unique);
+
+  if (error) return;
+  for (const r of data || []) commentUserCache.set(String(r.id), r);
+}
+
+function userNameById(uid) {
+  const p =
+   ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
         String(postId)
       )}">Delete</button>`
     : ``;
@@ -292,7 +667,9 @@ function updateLikeUI(postId, liked, count) {
 
   if (btn) {
     btn.classList.toggle("likedBtn", !!liked);
-    const pillHtml = pill ? pill.outerHTML : `<span class="countPill" data-like-count="${escapeHtml(String(postId))}">${count}</span>`;
+    const pillHtml = pill
+      ? pill.outerHTML
+      : `<span class="countPill" data-like-count="${escapeHtml(String(postId))}">${count}</span>`;
     btn.innerHTML = `${liked ? "Liked" : "Like"} ${pillHtml}`;
   }
 }
@@ -303,7 +680,6 @@ async function toggleLike(postId) {
   const key = String(postId);
   const cur = likeCache.get(key) || { count: 0, liked: false };
 
-  // optimistic UI
   const nextLiked = !cur.liked;
   const nextCount = Math.max(0, cur.count + (nextLiked ? 1 : -1));
   likeCache.set(key, { count: nextCount, liked: nextLiked });
@@ -325,7 +701,6 @@ async function toggleLike(postId) {
       if (error) throw error;
     }
   } catch (e) {
-    // rollback on error
     likeCache.set(key, cur);
     updateLikeUI(postId, cur.liked, cur.count);
     alert(`Like failed: ${e?.message || e}`);
@@ -410,7 +785,7 @@ feedListEl?.addEventListener("click", async (e) => {
   }
 
   if (action === "comment") {
-    alert("Next step: Comments system (modal + replies + likes).");
+    openComments(postId);
     return;
   }
 
