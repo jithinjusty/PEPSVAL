@@ -18,11 +18,12 @@ export async function requireAuth({ redirectTo = "/auth/login.html" } = {}) {
 
 /**
  * Get minimal profile to decide routing after login/signup.
+ * (Include fields needed for UI so we don't fall back to email.)
  */
 export async function getMyProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, setup_complete")
+    .select("id, setup_complete, full_name, username, account_type, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -31,9 +32,9 @@ export async function getMyProfile(userId) {
 }
 
 /**
- * Route user after login if you call this anywhere.
+ * Route user after login:
  * - If setup not complete -> /setup/profile-setup.html
- * - Else -> /dashboard/index.html
+ * - Else -> /feed/index.html (Feed is the app home)
  */
 export async function routeAfterLogin() {
   const session = await requireAuth();
@@ -46,7 +47,7 @@ export async function routeAfterLogin() {
     return;
   }
 
-  window.location.href = "/dashboard/index.html";
+  window.location.href = "/feed/index.html";
 }
 
 /**
