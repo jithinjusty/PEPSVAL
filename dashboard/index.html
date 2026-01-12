@@ -3,82 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PEPSVAL — Dashboard</title>
-  <link rel="icon" href="/assets/logo.webp" />
-  <link rel="stylesheet" href="/css/style.css?v=3001" />
-  <link rel="stylesheet" href="/dashboard/dashboard.css?v=3001" />
+  <title>PEPSVAL</title>
+  <meta http-equiv="refresh" content="0; url=/feed/index.html" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </div>
-    <div class="topActions">
-      <span class="chip" id="dashStatus">Loading…</span>
-      <button class="chip danger" id="logoutBtn" type="button">Logout</button>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <section class="card">
-      <div class="cardBody">
-        <div class="cardTitle">Welcome</div>
-        <div class="cardSub" id="helloLine">Loading your profile…</div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <a class="card linkCard" href="/profile/home.html">
-        <div class="cardBody">
-          <div class="cardTitle">Profile</div>
-          <div class="cardSub" id="profileStatus">Open & edit your profile</div>
-        </div>
-      </a>
-
-      <a class="card linkCard" href="/feed/index.html">
-        <div class="cardBody">
-          <div class="cardTitle">Feed</div>
-          <div class="cardSub"><span id="postsCount">—</span> posts</div>
-        </div>
-      </a>
-
-      <a class="card linkCard" href="/jobs/index.html">
-        <div class="cardBody">
-          <div class="cardTitle">Jobs</div>
-          <div class="cardSub"><span id="jobsCount">—</span> jobs live</div>
-        </div>
-      </a>
-
-      <a class="card linkCard" href="/messages/index.html">
-        <div class="cardBody">
-          <div class="cardTitle">Messages</div>
-          <div class="cardSub">
-            <span id="msgCount">—</span> messages • <span id="notiCount">—</span> notifications
-          </div>
-        </div>
-      </a>
-    </section>
-
-    <section class="card noteCard">
-      <div class="cardBody">
-        <div class="cardTitle">Sea service verification note</div>
-        <div class="cardSub">
-          Once any peer or employer verification is approved, sea service entries become locked (not editable).
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <nav class="bottomNav">
-    <a class="bnItem active" href="/dashboard/index.html">Dashboard</a>
-    <a class="bnItem" href="/feed/index.html">Feed</a>
-    <a class="bnItem" href="/jobs/index.html">Jobs</a>
-    <a class="bnItem" href="/messages/index.html">Messages</a>
-    <a class="bnItem" href="/profile/home.html">Profile</a>
-  </nav>
-
-  <!-- IMPORTANT: module (your dashboard.js uses import) -->
-  <script type="module" src="/dashboard/dashboard.js?v=3001"></script>
+  Redirecting to Feed…
+  <script>
+    location.replace("/feed/index.html");
+  </script>
 </body>
 </html>
