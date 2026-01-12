@@ -32,21 +32,39 @@ function escapeHtml(s) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
 function fmt(ts) {
-  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return "";
+  }
 }
+
 function displayName(profile) {
-  return profile?.full_name || profile?.username || "Member";
+  const n =
+    (profile?.full_name && String(profile.full_name).trim()) ||
+    (profile?.username && String(profile.username).trim());
+  return n || "Member";
 }
+
 function setTopBar(profile) {
   userNameEl.textContent = displayName(profile);
   userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
-  userAvatarEl.onerror = () => { userAvatarEl.src = DEFAULT_AVATAR; };
+  userAvatarEl.onerror = () => {
+    userAvatarEl.src = DEFAULT_AVATAR;
+  };
 }
 
 /* Dropdown */
-function closeMenu() { avatarMenu.hidden = true; }
-function toggleMenu() { avatarMenu.hidden = !avatarMenu.hidden; }
+function closeMenu() {
+  if (!avatarMenu) return;
+  avatarMenu.hidden = true;
+}
+function toggleMenu() {
+  if (!avatarMenu) return;
+  avatarMenu.hidden = !avatarMenu.hidden;
+}
 
 avatarBtn?.addEventListener("click", (e) => {
   e.preventDefault();
@@ -72,6 +90,7 @@ function clearPreview() {
   mediaPreviewEl.innerHTML = "";
   postMediaEl.value = "";
 }
+
 function showPreview(file) {
   const type = file.type || "";
   const url = URL.createObjectURL(file);
@@ -88,6 +107,12 @@ function showPreview(file) {
         <video class="previewVid" src="${url}" controls playsinline></video>
         <button class="previewRemove" id="removePreview">Remove</button>
       </div>`;
+  } else {
+    mediaPreviewEl.innerHTML = `
+      <div class="previewCard">
+        <div class="muted">Selected: ${escapeHtml(file.name)}</div>
+        <button class="previewRemove" id="removePreview">Remove</button>
+      </div>`;
   }
 
   document.getElementById("removePreview")?.addEventListener("click", () => {
@@ -97,31 +122,39 @@ function showPreview(file) {
 }
 
 addMediaBtn?.addEventListener("click", () => postMediaEl.click());
+
 postMediaEl?.addEventListener("change", (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
+
   if (file.size > 25 * 1024 * 1024) {
     alert("File too large (max 25MB).");
     clearPreview();
     return;
   }
+
   selectedFile = file;
   showPreview(file);
 });
 
 /* Render posts */
 function renderPost(p) {
-  const author = escapeHtml(p.author_name || "Member");
+  const authorText = escapeHtml(p.author_name || "Member");
   const time = escapeHtml(fmt(p.created_at));
   const text = escapeHtml(p.content || "");
-  const authorLink = `/profile/user.html?id=${encodeURIComponent(p.author_id)}`;
+
+  // NOTE: This link will work only when /profile/user.html is implemented.
+  const authorLink = `/profile/user.html?id=${encodeURIComponent(
+    p.author_id || ""
+  )}`;
 
   let mediaHtml = "";
   if (p.media_url && p.media_type) {
+    const safeUrl = escapeHtml(p.media_url);
     if (p.media_type.startsWith("image/")) {
-      mediaHtml = `<img class="postMediaImg" src="${escapeHtml(p.media_url)}" alt="post media"/>`;
+      mediaHtml = `<img class="postMediaImg" src="${safeUrl}" alt="post media"/>`;
     } else if (p.media_type.startsWith("video/")) {
-      mediaHtml = `<video class="postMediaVid" src="${escapeHtml(p.media_url)}" controls playsinline></video>`;
+      mediaHtml = `<video class="postMediaVid" src="${safeUrl}" controls playsinline></video>`;
     }
   }
 
@@ -129,7 +162,7 @@ function renderPost(p) {
     <article class="postCard">
       <div class="postHeader">
         <div class="postAuthor">
-          <a class="authorLink" href="${authorLink}">${author}</a>
+          <a class="authorLink" href="${authorLink}">${authorText}</a>
         </div>
         <div class="postTime">${time}</div>
       </div>
@@ -139,6 +172,8 @@ function renderPost(p) {
 }
 
 async function loadPosts() {
+  feedListEl.innerHTML = `<div class="loading">Loading feed…</div>`;
+
   const { data, error } = await supabase
     .from("posts")
     .select("id, content, created_at, author_id, author_name, media_url, media_type")
@@ -146,7 +181,9 @@ async function loadPosts() {
     .limit(50);
 
   if (error) {
-    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(error.message)}</div>`;
+    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(
+      error.message
+    )}</div>`;
     return;
   }
 
@@ -160,13 +197,21 @@ async function loadPosts() {
 
 /* Upload + create post */
 async function uploadMedia(file) {
-  const bucket = "post-media";
+  // ✅ FIX: your bucket name is post_media (underscore)
+  const bucket = "post_media";
+
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
+  const path = `${session.user.id}/${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}.${ext}`;
 
   const { error: upErr } = await supabase.storage
     .from(bucket)
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: "3600",
+    });
 
   if (upErr) throw upErr;
 
