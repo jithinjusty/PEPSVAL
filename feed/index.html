@@ -5,17 +5,15 @@
   <title>Pepsval — Feed</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/feed/feed.css" />
+  <link rel="stylesheet" href="/feed/feed.css?v=5001" />
 
   <script type="module" src="/js/supabase.js"></script>
   <script type="module" src="/js/guard.js"></script>
-  <script type="module" src="/feed/feed.js"></script>
+  <script type="module" src="/feed/feed.js?v=5001"></script>
 </head>
 
 <body class="app-bg">
 
-  <!-- Top Bar -->
   <header class="topbar">
     <div class="topbar-left">
       <img src="/assets/logo.webp" class="top-logo" alt="Pepsval"/>
@@ -25,12 +23,10 @@
     <div class="topbar-right">
       <span id="userName" class="user-name">Loading…</span>
 
-      <!-- Avatar Button -->
       <button id="avatarBtn" class="avatarBtn" aria-label="Account menu">
         <img id="userAvatar" class="avatar" alt="Me"/>
       </button>
 
-      <!-- Dropdown -->
       <div id="avatarMenu" class="avatarMenu" hidden>
         <a href="/profile/home.html" class="menuItem">My profile</a>
         <a href="/setup/profile-setup.html" class="menuItem">Edit profile</a>
@@ -39,10 +35,7 @@
     </div>
   </header>
 
-  <!-- Feed -->
   <main class="feed-wrap">
-
-    <!-- Create Post -->
     <div class="create-post">
       <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
 
@@ -55,14 +48,11 @@
       <div id="mediaPreview"></div>
     </div>
 
-    <!-- Feed List -->
     <div id="feedList" class="feed-list">
       <div class="loading">Loading feed…</div>
     </div>
-
   </main>
 
-  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
     <a class="nav-item active" href="/feed/index.html">Feed</a>
     <a class="nav-item" href="/jobs/index.html">Jobs</a>
