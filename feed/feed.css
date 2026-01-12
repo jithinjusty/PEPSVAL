@@ -1,11 +1,184 @@
-.ta{width:100%;min-height:90px;border:1px solid #e6e6e6;border-radius:12px;padding:10px;font:inherit;resize:vertical}
-.row{display:flex;gap:10px;align-items:center;margin-top:10px}
-.btn{border:0;border-radius:12px;padding:10px 14px;background:#111;color:#fff;cursor:pointer}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-.muted{color:#666;font-size:14px}
-.list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
-.post{border:1px solid #eee;border-radius:12px;padding:12px;background:#fff}
-.postTop{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#666}
-.postBody{margin-top:8px;white-space:pre-wrap}
-.fab{position:fixed;right:16px;bottom:76px;width:52px;height:52px;border-radius:999px;border:0;background:#111;color:#fff;font-size:26px;cursor:pointer}
-.inputChip{border:1px solid #ddd;background:#fff;min-width:180px}
+/* Feed page look */
+body.app-bg {
+  background: #f5f7fb;
+  color: #111;
+}
+
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
+  border-bottom: 1px solid #e6e6e6;
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.topbar-left{display:flex;gap:10px;align-items:center}
+.top-logo{width:34px;height:34px;border-radius:10px}
+.brand{font-weight:900;letter-spacing:.3px}
+
+.topbar-right{display:flex;gap:10px;align-items:center}
+.user-name{font-weight:800}
+.avatar{width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #e6e6e6;background:#fff}
+
+.feed-wrap{
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 14px 90px;
+}
+
+.create-post{
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius:16px;
+  padding:12px;
+}
+
+.create-post textarea{
+  width:100%;
+  min-height: 90px;
+  resize: vertical;
+  border:1px solid #e6e6e6;
+  border-radius:12px;
+  padding:10px;
+  font: inherit;
+  outline: none;
+}
+
+.post-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top:10px;
+  flex-wrap: wrap;
+}
+
+.post-actions button{
+  border:1px solid #e6e6e6;
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.post-actions .primary{
+  border:0;
+  background:#111;
+  color:#fff;
+}
+
+#mediaPreview{margin-top:10px}
+.previewCard{
+  border:1px solid #e6e6e6;
+  border-radius:14px;
+  padding:10px;
+  background:#fafafa;
+}
+.previewImg{width:100%;border-radius:12px;display:block}
+.previewVid{width:100%;border-radius:12px;display:block}
+
+.previewRemove{
+  margin-top:10px;
+  border:1px solid #ffb3b3;
+  background:#fff;
+  color:#b00020;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.feed-list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+
+.postCard{
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius:16px;
+  padding:12px;
+}
+
+.postHeader{
+  display:flex;
+  justify-content: space-between;
+  gap:10px;
+  align-items: baseline;
+}
+
+.authorLink{
+  font-weight:900;
+  color:#111;
+  text-decoration:none;
+}
+.authorLink:active{opacity:.7}
+
+.youTag{
+  margin-left:8px;
+  font-size:12px;
+  font-weight:900;
+  color:#1F6F86;
+  background:#e7f4f7;
+  padding:2px 8px;
+  border-radius:999px;
+  vertical-align: middle;
+}
+
+.postTime{font-size:12px;color:#666}
+
+.postText{
+  margin-top:10px;
+  white-space: pre-wrap;
+  line-height: 1.35;
+}
+
+.postMedia{margin-top:10px}
+.postMediaImg{width:100%;border-radius:14px;display:block}
+.postMediaVid{width:100%;border-radius:14px;display:block}
+
+.postFooter{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.miniBtn{
+  border:1px solid #e6e6e6;
+  background:#fafafa;
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:900;
+}
+
+.loading{color:#666;font-weight:800}
+.muted{color:#666}
+.errorBox{color:#b00020;font-weight:900}
+
+/* Bottom nav (new) */
+.bottom-nav{
+  position: fixed;
+  left:0; right:0; bottom:0;
+  height:60px;
+  background:#fff;
+  border-top:1px solid #e6e6e6;
+  display:flex;
+  justify-content: space-around;
+  align-items: center;
+  padding:6px 10px;
+  z-index: 30;
+}
+.nav-item{
+  flex:1;
+  text-align:center;
+  text-decoration:none;
+  color:#111;
+  font-weight:900;
+  font-size:13px;
+  padding:10px 6px;
+  border-radius:12px;
+}
+.nav-item.active{background:#f0f2f5}
