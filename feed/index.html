@@ -18,13 +18,24 @@
   <!-- Top Bar -->
   <header class="topbar">
     <div class="topbar-left">
-      <img src="/assets/logo.webp" class="top-logo" />
+      <img src="/assets/logo.webp" class="top-logo" alt="Pepsval"/>
       <span class="brand">Pepsval</span>
     </div>
 
     <div class="topbar-right">
       <span id="userName" class="user-name">Loading…</span>
-      <img id="userAvatar" class="avatar" src="/assets/default-avatar.png" />
+
+      <!-- Avatar Button -->
+      <button id="avatarBtn" class="avatarBtn" aria-label="Account menu">
+        <img id="userAvatar" class="avatar" alt="Me"/>
+      </button>
+
+      <!-- Dropdown -->
+      <div id="avatarMenu" class="avatarMenu" hidden>
+        <a href="/profile/home.html" class="menuItem">My profile</a>
+        <a href="/setup/profile-setup.html" class="menuItem">Edit profile</a>
+        <button id="logoutBtn" class="menuItem danger">Logout</button>
+      </div>
     </div>
   </header>
 
