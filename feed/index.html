@@ -2,88 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pepsval — Feed (DEBUG)</title>
+  <title>Pepsval — Feed</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- NO external CSS (debug) -->
-  <style>
-    body{margin:0;font-family:Arial,system-ui;background:#f6fbff;color:#0b1b24;}
-    .bar{position:sticky;top:0;z-index:999;background:white;border-bottom:1px solid #dbe7ef;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .left{display:flex;align-items:center;gap:10px}
-    .logo{width:34px;height:34px;border-radius:10px}
-    .brand{font-weight:900}
-    .badge{background:#111;color:#fff;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:900}
-    .wrap{max-width:760px;margin:14px auto;padding:0 14px}
-    .card{background:#fff;border:1px solid #dbe7ef;border-radius:16px;padding:12px;box-shadow:0 10px 24px rgba(0,0,0,.06)}
-    textarea{width:100%;min-height:90px;border:1px solid #dbe7ef;border-radius:14px;padding:10px;font-size:15px;outline:none}
-    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
-    button{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
-    .ghost{background:#eaf4fb}
-    .primary{background:#1F6F86;color:#fff}
-    #mediaPreview img,#mediaPreview video{max-width:100%;border-radius:14px;border:1px solid #dbe7ef;margin-top:10px}
-    .list{margin-top:14px;display:flex;flex-direction:column;gap:12px}
-    .post{background:#fff;border:1px solid #dbe7ef;border-radius:16px;padding:12px}
-    .muted{color:#5a6b76;font-size:13px}
-    .nav{position:fixed;left:0;right:0;bottom:0;background:white;border-top:1px solid #dbe7ef;display:flex;justify-content:space-around;padding:10px 0}
-    .nav a{color:#0b1b24;text-decoration:none;font-weight:900}
-    .spacer{height:70px}
-  </style>
-
-  <!-- Scripts -->
-  <script type="module">
-    // Quick visible proof that JS runs
-    console.log("✅ FEED DEBUG HTML loaded");
-    window.__FEED_DEBUG__ = true;
-  </script>
+  <link rel="stylesheet" href="/feed/feed.css?v=6001" />
 
   <script type="module" src="/js/supabase.js"></script>
   <script type="module" src="/js/guard.js"></script>
-  <script type="module" src="/feed/feed.js?v=9999"></script>
+  <script type="module" src="/feed/feed.js?v=6001"></script>
 </head>
 
-<body>
+<body class="app-bg">
 
-  <header class="bar">
-    <div class="left">
-      <img class="logo" src="/assets/logo.webp" alt="Pepsval">
-      <div>
-        <div class="brand">PEPSVAL</div>
-        <div class="muted">Feed</div>
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="/assets/logo.webp" class="top-logo" alt="Pepsval"/>
+      <span class="brand">Pepsval</span>
+    </div>
+
+    <div class="topbar-right">
+      <span id="userName" class="user-name">Loading…</span>
+
+      <button id="avatarBtn" class="avatarBtn" aria-label="Account menu">
+        <img id="userAvatar" class="avatar" alt="Me"/>
+      </button>
+
+      <div id="avatarMenu" class="avatarMenu" hidden>
+        <a href="/profile/home.html" class="menuItem">My profile</a>
+        <a href="/setup/profile-setup.html" class="menuItem">Edit profile</a>
+        <button id="logoutBtn" class="menuItem danger">Logout</button>
       </div>
     </div>
-    <div class="badge">DEBUG FEED V9999</div>
   </header>
 
-  <main class="wrap">
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:10px;">Create a post</div>
-
+  <main class="feed-wrap">
+    <div class="create-post">
       <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
 
-      <div class="row">
+      <div class="post-actions">
         <input type="file" id="postMedia" accept="image/*,video/*" hidden />
-        <button class="ghost" id="addMedia">📷 Photo / 🎥 Video</button>
-        <button class="primary" id="postBtn">Post</button>
+        <button id="addMedia">📷 Photo / 🎥 Video</button>
+        <button id="postBtn" class="primary">Post</button>
       </div>
 
       <div id="mediaPreview"></div>
     </div>
 
-    <div class="list" id="feedList">
-      <div class="post">
-        <div style="font-weight:900;">Feed area</div>
-        <div class="muted">If you can see this card, HTML is loading correctly.</div>
-      </div>
+    <div id="feedList" class="feed-list">
+      <div class="loading">Loading feed…</div>
     </div>
-
-    <div class="spacer"></div>
   </main>
 
-  <nav class="nav">
-    <a href="/feed/index.html">Feed</a>
-    <a href="/jobs/index.html">Jobs</a>
-    <a href="/messages/index.html">Messages</a>
-    <a href="/profile/home.html">Profile</a>
+  <nav class="bottom-nav">
+    <a class="nav-item active" href="/feed/index.html">Feed</a>
+    <a class="nav-item" href="/jobs/index.html">Jobs</a>
+    <a class="nav-item" href="/messages/index.html">Messages</a>
+    <a class="nav-item" href="/profile/home.html">Profile</a>
   </nav>
 
 </body>
