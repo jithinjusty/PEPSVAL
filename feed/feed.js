@@ -43,16 +43,15 @@ function fmt(ts) {
   }
 }
 
-function nameFromProfileRow(row) {
+function displayNameFromProfile(profile) {
   const n =
-    (row?.full_name && String(row.full_name).trim()) ||
-    (row?.username && String(row.username).trim());
+    (profile?.full_name && String(profile.full_name).trim()) ||
+    (profile?.username && String(profile.username).trim());
   return n || "Member";
 }
 
 function setTopBar(profile) {
-  const nm = nameFromProfileRow(profile);
-  userNameEl.textContent = nm;
+  userNameEl.textContent = displayNameFromProfile(profile);
   userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
   userAvatarEl.onerror = () => (userAvatarEl.src = DEFAULT_AVATAR);
 }
@@ -138,14 +137,14 @@ function renderPost(row) {
   const postId = row.id;
   const authorId = row.author_id;
 
-  const authorName = escapeHtml(nameFromProfileRow(row));
+  const authorName = escapeHtml(row.author_display_name || "Member");
   const time = escapeHtml(fmt(row.created_at));
   const text = escapeHtml(row.content || "");
 
   const isMine = authorId && session?.user?.id ? authorId === session.user.id : false;
   const authorLink = `/profile/user.html?id=${encodeURIComponent(authorId || "")}`;
 
-  const avatarUrl = row.avatar_url || DEFAULT_AVATAR;
+  const avatarUrl = row.author_avatar_url || DEFAULT_AVATAR;
 
   let mediaHtml = "";
   if (row.media_url && row.media_type) {
@@ -157,28 +156,45 @@ function renderPost(row) {
     }
   }
 
+  const likeCount = Number(row.like_count || 0);
+  const commentCount = Number(row.comment_count || 0);
+  const iLiked = row.i_liked === true;
+
   const deleteBtn = isMine
     ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
         String(postId)
       )}">Delete</button>`
     : ``;
 
-  // Like/Comment/Share UI (backend next step)
   const actions = `
     <div class="postFooter">
-      <button class="miniBtn" type="button" data-action="like" data-post-id="${escapeHtml(String(postId))}">Like</button>
-      <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(String(postId))}">Comment</button>
-      <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">Share</button>
+      <button class="miniBtn ${iLiked ? "liked" : ""}" type="button" data-action="like" data-post-id="${escapeHtml(
+        String(postId)
+      )}">
+        ${iLiked ? "Liked" : "Like"} (${likeCount})
+      </button>
+
+      <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(
+        String(postId)
+      )}">
+        Comment (${commentCount})
+      </button>
+
+      <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">
+        Share
+      </button>
+
       ${deleteBtn}
     </div>
   `;
 
   return `
-    <article class="postCard">
+    <article class="postCard" id="post-${escapeHtml(String(postId))}">
       <div class="postHeader">
         <div class="postAuthor" style="display:flex;align-items:center;gap:10px;">
           <a href="${authorLink}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-            <img src="${escapeHtml(avatarUrl)}" alt="" style="width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #dbe7ef;background:#fff" onerror="this.src='${DEFAULT_AVATAR}'"/>
+            <img src="${escapeHtml(avatarUrl)}" alt="" style="width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #dbe7ef;background:#fff"
+              onerror="this.src='${DEFAULT_AVATAR}'"/>
             <div>
               <div class="postAuthorName" style="font-weight:900;line-height:1.1;">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
               <div class="postTime">${time}</div>
@@ -200,7 +216,9 @@ async function loadPosts() {
 
   const { data, error } = await supabase
     .from("v_feed_posts")
-    .select("id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url")
+    .select(
+      "id, created_at, content, media_url, media_type, author_id, author_display_name, author_avatar_url, like_count, comment_count, i_liked"
+    )
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -233,6 +251,53 @@ async function deletePost(postId) {
     alert(`Delete failed: ${error.message}`);
     return;
   }
+  await loadPosts();
+}
+
+/* Like toggle */
+async function toggleLike(postId, currentlyLiked) {
+  if (!postId) return;
+
+  if (currentlyLiked) {
+    const { error } = await supabase
+      .from("post_likes")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", session.user.id);
+    if (error) {
+      alert(`Unlike failed: ${error.message}`);
+      return;
+    }
+  } else {
+    const { error } = await supabase
+      .from("post_likes")
+      .insert({ post_id: postId, user_id: session.user.id });
+    if (error) {
+      alert(`Like failed: ${error.message}`);
+      return;
+    }
+  }
+
+  await loadPosts();
+}
+
+/* Add comment (simple prompt for now) */
+async function addComment(postId) {
+  const body = prompt("Write your comment:");
+  if (!body) return;
+
+  const text = body.trim();
+  if (!text) return;
+
+  const { error } = await supabase
+    .from("post_comments")
+    .insert({ post_id: postId, user_id: session.user.id, body: text });
+
+  if (error) {
+    alert(`Comment failed: ${error.message}`);
+    return;
+  }
+
   await loadPosts();
 }
 
@@ -273,7 +338,7 @@ async function createPost() {
 
     const payload = {
       author_id: session.user.id,
-      author_name: nameFromProfileRow(me), // keep for backward compatibility, but feed uses view now
+      author_name: displayNameFromProfile(me),
       content,
       media_url,
       media_type,
@@ -295,13 +360,15 @@ async function createPost() {
 
 postBtn?.addEventListener("click", createPost);
 
-/* Like/Comment/Share buttons (UI now, backend next step) */
+/* Actions: like/comment/share/delete */
 feedListEl?.addEventListener("click", async (e) => {
   const btn = e.target?.closest?.("button[data-action]");
   if (!btn) return;
 
   const action = btn.getAttribute("data-action");
-  const postId = btn.getAttribute("data-post-id");
+  const postId = Number(btn.getAttribute("data-post-id"));
+
+  if (!postId) return;
 
   if (action === "delete") {
     await deletePost(postId);
@@ -309,12 +376,13 @@ feedListEl?.addEventListener("click", async (e) => {
   }
 
   if (action === "like") {
-    alert("Next step: Like system backend (real likes count).");
+    const currentlyLiked = btn.classList.contains("liked");
+    await toggleLike(postId, currentlyLiked);
     return;
   }
 
   if (action === "comment") {
-    alert("Next step: Comment system backend + comment UI.");
+    await addComment(postId);
     return;
   }
 
@@ -323,8 +391,12 @@ feedListEl?.addEventListener("click", async (e) => {
     try {
       await navigator.share({ title: "Pepsval Post", url });
     } catch {
-      await navigator.clipboard.writeText(url);
-      alert("Link copied ✅");
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("Link copied ✅");
+      } catch {
+        alert(url);
+      }
     }
     return;
   }
