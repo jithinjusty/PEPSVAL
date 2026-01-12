@@ -199,3 +199,38 @@ body.app-bg{
   border-radius:12px;
 }
 .nav-item.active{background:#eef6fb}
+.postFooter{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.miniBtn{
+  border:1px solid var(--line);
+  background:#eef6fb;
+  padding:8px 10px;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.miniBtn.liked{
+  background:var(--brand);
+  color:#fff;
+  border-color:var(--brand);
+}
+.dangerBtn{
+  background:#ffe9ea;
+  color:#b00020;
+  border-color:#ffd0d4;
+}
+.youTag{
+  display:inline-block;
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#eaf4fb;
+  border:1px solid var(--line);
+  color:var(--brand);
+  font-weight:900;
+  margin-left:6px;
+}
