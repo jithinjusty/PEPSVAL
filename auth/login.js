@@ -1,5 +1,6 @@
 // /auth/login.js
 import { supabase } from "/js/supabase.js";
+import { routeAfterLogin } from "/js/guard.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -21,7 +22,10 @@ function clearError() {
 
 async function alreadyLoggedInGo() {
   const { data } = await supabase.auth.getUser();
-  if (data?.user) window.location.href = "/dashboard/";
+  if (data?.user) {
+    // If already logged in, route properly (setup -> setup page, else -> Feed)
+    await routeAfterLogin();
+  }
 }
 
 alreadyLoggedInGo();
@@ -45,6 +49,5 @@ form?.addEventListener("submit", async (e) => {
     return;
   }
 
-  // ✅ ALWAYS go to dashboard folder
-  window.location.href = "/dashboard/";
+  await routeAfterLogin();
 });
