@@ -5,11 +5,11 @@
   <title>Pepsval — Feed</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="/feed/feed.css?v=8002" />
+  <link rel="stylesheet" href="/feed/feed.css?v=8001" />
 
   <script type="module" src="/js/supabase.js"></script>
   <script type="module" src="/js/guard.js"></script>
-  <script type="module" src="/feed/feed.js?v=8002"></script>
+  <script type="module" src="/feed/feed.js?v=8001"></script>
 </head>
 
 <body class="app-bg">
@@ -23,13 +23,13 @@
     <div class="topbar-right">
       <span id="userName" class="user-name">Loading…</span>
 
-      <button id="avatarBtn" class="avatarBtn" aria-label="Account menu" type="button">
+      <button id="avatarBtn" class="avatarBtn" aria-label="Account menu">
         <img id="userAvatar" class="avatar" alt="Me"/>
       </button>
 
       <div id="avatarMenu" class="avatarMenu" hidden>
         <a href="/profile/home.html" class="menuItem">My profile</a>
-        <a href="/setup/profile-setup.html" class="menuItem">Edit profile</a>
+        <a href="/dashboard/settings.html" class="menuItem">Settings</a>
         <button id="logoutBtn" class="menuItem danger" type="button">Logout</button>
       </div>
     </div>
@@ -47,6 +47,13 @@
         <label id="addMedia" class="btn" for="postMedia">📷 Photo / 🎥 Video</label>
 
         <button id="postBtn" class="primary" type="button">Post</button>
+      </div>
+
+      <div id="uploadStatus" class="uploadStatus" hidden>
+        <div class="uploadRow">
+          <progress id="uploadBar" max="100" value="0"></progress>
+          <span id="uploadPct" class="uploadPct">0%</span>
+        </div>
       </div>
 
       <div id="mediaPreview"></div>
