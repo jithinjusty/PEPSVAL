@@ -1,487 +1,193 @@
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "/js/supabase.js";
-import { requireAuth, getMyProfile } from "/js/guard.js";
+// /feed/feed.js
+import { supabase } from "/js/supabaseClient.js";
 
-const userNameEl = document.getElementById("userName");
-const userAvatarEl = document.getElementById("userAvatar");
+const elStatus = document.getElementById("feedStatus");
+const elList = document.getElementById("feedList");
 
-const avatarBtn = document.getElementById("avatarBtn");
-const avatarMenu = document.getElementById("avatarMenu");
-const logoutBtn = document.getElementById("logoutBtn");
-
-const postTextEl = document.getElementById("postText");
-const postMediaEl = document.getElementById("postMedia");
-const addMediaBtn = document.getElementById("addMedia");
-const postBtn = document.getElementById("postBtn");
-const mediaPreviewEl = document.getElementById("mediaPreview");
-const feedListEl = document.getElementById("feedList");
-
-const uploadStatusEl = document.getElementById("uploadStatus");
-const uploadBarEl = document.getElementById("uploadBar");
-const uploadPctEl = document.getElementById("uploadPct");
-
-let session = null;
-let me = null;
-
-const BUCKET = "post_media";
-
-const DEFAULT_AVATAR =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
-    <rect width="100%" height="100%" rx="40" ry="40" fill="#e7f4f7"/>
-    <circle cx="40" cy="32" r="14" fill="#1F6F86"/>
-    <rect x="16" y="52" width="48" height="18" rx="9" fill="#1F6F86"/>
-  </svg>`);
-
-function escapeHtml(s) {
-  return (s || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function setStatus(text) {
+  if (elStatus) elStatus.textContent = text || "";
 }
 
-function fmt(ts) {
-  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+function escapeHtml(str = "") {
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function nameFromProfileRow(row) {
-  const n =
-    (row?.full_name && String(row.full_name).trim()) ||
-    (row?.username && String(row.username).trim());
-  return n || "Member";
+function timeAgo(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+  const hr = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+
+  if (day > 0) return `${day}d`;
+  if (hr > 0) return `${hr}h`;
+  if (min > 0) return `${min}m`;
+  return `${sec}s`;
 }
 
-function setTopBar(profile) {
-  const nm = nameFromProfileRow(profile);
-  userNameEl.textContent = nm;
-  userAvatarEl.src = profile?.avatar_url || DEFAULT_AVATAR;
-  userAvatarEl.onerror = () => (userAvatarEl.src = DEFAULT_AVATAR);
-}
-
-/* Dropdown */
-function closeMenu() { if (!avatarMenu) return; avatarMenu.hidden = true; }
-function toggleMenu() { if (!avatarMenu) return; avatarMenu.hidden = !avatarMenu.hidden; }
-avatarBtn?.addEventListener("click", (e) => { e.preventDefault(); toggleMenu(); });
-document.addEventListener("click", (e) => {
-  if (!avatarMenu || avatarMenu.hidden) return;
-  const inside = avatarMenu.contains(e.target) || avatarBtn.contains(e.target);
-  if (!inside) closeMenu();
-});
-logoutBtn?.addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  window.location.href = "/auth/login.html";
-});
-
-/* Media preview */
-let selectedFile = null;
-
-function clearPreview() {
-  selectedFile = null;
-  mediaPreviewEl.innerHTML = "";
-  if (postMediaEl) postMediaEl.value = "";
-  if (uploadStatusEl) uploadStatusEl.hidden = true;
-  if (uploadBarEl) uploadBarEl.value = 0;
-  if (uploadPctEl) uploadPctEl.textContent = "0%";
-}
-
-function showPreview(file) {
-  const type = file.type || "";
-  const url = URL.createObjectURL(file);
-
-  if (type.startsWith("image/")) {
-    mediaPreviewEl.innerHTML = `
-      <div class="previewCard">
-        <img class="previewImg" src="${url}" alt="preview"/>
-        <button class="previewRemove" id="removePreview" type="button">Remove</button>
-      </div>`;
-  } else if (type.startsWith("video/")) {
-    mediaPreviewEl.innerHTML = `
-      <div class="previewCard">
-        <video class="previewVid" src="${url}" controls playsinline></video>
-        <button class="previewRemove" id="removePreview" type="button">Remove</button>
-      </div>`;
-  } else {
-    mediaPreviewEl.innerHTML = `
-      <div class="previewCard">
-        <div class="muted">Selected: ${escapeHtml(file.name)}</div>
-        <button class="previewRemove" id="removePreview" type="button">Remove</button>
-      </div>`;
-  }
-
-  document.getElementById("removePreview")?.addEventListener("click", () => {
-    URL.revokeObjectURL(url);
-    clearPreview();
-  });
-}
-
-addMediaBtn?.addEventListener("click", () => postMediaEl?.click());
-postMediaEl?.addEventListener("change", (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (file.size > 25 * 1024 * 1024) {
-    alert("File too large (max 25MB).");
-    clearPreview();
-    return;
-  }
-  selectedFile = file;
-  showPreview(file);
-});
-
-/* Render posts (from v_feed_posts view) */
-function renderPost(row) {
-  const postId = row.id;
-  const authorId = row.author_id;
-
-  const authorName = escapeHtml(nameFromProfileRow(row));
-  const time = escapeHtml(fmt(row.created_at));
-  const text = escapeHtml(row.content || "");
-
-  const isMine = authorId && session?.user?.id ? authorId === session.user.id : false;
-  const authorLink = `/profile/user.html?id=${encodeURIComponent(authorId || "")}`;
-
-  const avatarUrl = row.avatar_url || DEFAULT_AVATAR;
-
-  let mediaHtml = "";
-  if (row.media_url && row.media_type) {
-    const safeUrl = escapeHtml(row.media_url);
-    if (row.media_type.startsWith("image/")) {
-      mediaHtml = `<img class="postMediaImg" src="${safeUrl}" alt="post media"/>`;
-    } else if (row.media_type.startsWith("video/")) {
-      mediaHtml = `<video class="postMediaVid" src="${safeUrl}" controls playsinline></video>`;
-    }
-  }
-
-  const deleteBtn = isMine
-    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(String(postId))}">Delete</button>`
-    : ``;
-
-  const likeLabel = row.liked_by_me ? "Liked" : "Like";
-  const likeCount = Number(row.like_count || 0);
-  const commentCount = Number(row.comment_count || 0);
-
-  const actions = `
-    <div class="postFooter">
-      <button class="miniBtn ${row.liked_by_me ? "active" : ""}" type="button" data-action="like" data-post-id="${escapeHtml(String(postId))}">
-        ${likeLabel} (${likeCount})
-      </button>
-      <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(String(postId))}">
-        Comment (${commentCount})
-      </button>
-      <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">
-        Share
-      </button>
-      ${deleteBtn}
-    </div>
+function avatarFallback(name = "") {
+  const letter = (name.trim()[0] || "P").toUpperCase();
+  return `
+    <div class="pv-avatar-fallback" aria-hidden="true">${escapeHtml(letter)}</div>
   `;
+}
+
+function renderPost(post, profile) {
+  const name = profile?.full_name || "Pepsval Member";
+  const rank = profile?.rank || "";
+  const company = profile?.company || "";
+  const avatarUrl = profile?.avatar_url || "";
+
+  const headerMeta = [rank, company].filter(Boolean).join(" • ");
+  const created = post?.created_at ? timeAgo(post.created_at) : "";
+
+  const content = (post?.content || "").trim();
+  const imageUrl = (post?.image_url || "").trim();
+  const videoUrl = (post?.video_url || "").trim();
+
+  const media = videoUrl
+    ? `<video class="pv-media" controls preload="metadata" src="${escapeHtml(videoUrl)}"></video>`
+    : imageUrl
+      ? `<img class="pv-media" src="${escapeHtml(imageUrl)}" alt="Post media" loading="lazy" />`
+      : "";
 
   return `
-    <article class="postCard" id="post-${escapeHtml(String(postId))}">
-      <div class="postHeader">
-        <div class="postAuthor" style="display:flex;align-items:center;gap:10px;">
-          <a href="${authorLink}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-            <img src="${escapeHtml(avatarUrl)}" alt="" style="width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #dbe7ef;background:#fff" onerror="this.src='${DEFAULT_AVATAR}'"/>
-            <div>
-              <div class="postAuthorName" style="font-weight:900;line-height:1.1;">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
-              <div class="postTime">${time}</div>
-            </div>
-          </a>
+    <article class="pv-post">
+      <header class="pv-post-hd">
+        <div class="pv-avatar">
+          ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" />` : avatarFallback(name)}
         </div>
-      </div>
-
-      ${text ? `<div class="postText">${text}</div>` : ``}
-      ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
-
-      ${actions}
-
-      <!-- Comments panel (simple) -->
-      <div class="commentsWrap" data-comments-wrap="${escapeHtml(String(postId))}" style="display:none;margin-top:10px;border-top:1px solid #dbe7ef;padding-top:10px;">
-        <div class="commentsList" data-comments-list="${escapeHtml(String(postId))}"></div>
-        <div style="display:flex;gap:10px;margin-top:10px;">
-          <input class="commentInput" data-comment-input="${escapeHtml(String(postId))}" placeholder="Add a comment..." style="flex:1;padding:10px;border:1px solid #dbe7ef;border-radius:12px;" />
-          <button class="miniBtn" data-action="comment-post" data-post-id="${escapeHtml(String(postId))}">Post</button>
+        <div class="pv-hd-text">
+          <div class="pv-name-row">
+            <div class="pv-name">${escapeHtml(name)}</div>
+            <div class="pv-time">${escapeHtml(created)}</div>
+          </div>
+          ${headerMeta ? `<div class="pv-meta">${escapeHtml(headerMeta)}</div>` : ""}
         </div>
-      </div>
+      </header>
+
+      ${content ? `<div class="pv-content">${escapeHtml(content).replaceAll("\n", "<br/>")}</div>` : ""}
+
+      ${media}
+
+      <footer class="pv-post-ft">
+        <button class="pv-btn" type="button" disabled title="Coming soon">❤️ Like</button>
+        <button class="pv-btn" type="button" disabled title="Coming soon">💬 Comment</button>
+        <button class="pv-btn" type="button" disabled title="Coming soon">↗️ Share</button>
+      </footer>
     </article>
   `;
 }
 
-async function loadPosts() {
-  feedListEl.innerHTML = `<div class="loading">Loading feed…</div>`;
+async function fetchProfilesMap(userIds) {
+  // If you DON'T have a foreign key relationship set up,
+  // this will still work by fetching profiles separately.
+  if (!userIds || userIds.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .from("v_feed_posts")
-    .select("id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url, like_count, comment_count, liked_by_me")
+    .from("profiles")
+    .select("id, full_name, avatar_url, rank, company")
+    .in("id", userIds);
+
+  if (error) {
+    console.warn("Profiles fetch failed:", error.message);
+    return new Map();
+  }
+
+  const map = new Map();
+  for (const p of data || []) map.set(p.id, p);
+  return map;
+}
+
+async function loadFeed() {
+  if (!elList) {
+    console.error("feedList element not found in /feed/index.html");
+    return;
+  }
+
+  setStatus("Loading feed…");
+
+  // 1) Ensure session exists (optional — if your app allows viewing feed only after login)
+  const { data: authData, error: authErr } = await supabase.auth.getUser();
+  if (authErr) {
+    setStatus("Not logged in. Please login again.");
+    elList.innerHTML = "";
+    return;
+  }
+  // authData.user can be null if logged out
+  // If you want feed public, remove this check.
+  if (!authData?.user) {
+    setStatus("Please login to view the feed.");
+    elList.innerHTML = "";
+    return;
+  }
+
+  // 2) Fetch posts
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("id, user_id, content, image_url, video_url, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
 
   if (error) {
-    feedListEl.innerHTML = `<div class="errorBox">Error loading feed: ${escapeHtml(error.message)}</div>`;
+    console.error("Feed load error:", error.message);
+    setStatus("Could not load feed (database error).");
+    elList.innerHTML = `
+      <div class="pv-error">
+        <div><b>Feed failed to load.</b></div>
+        <div class="pv-small">${escapeHtml(error.message)}</div>
+      </div>
+    `;
     return;
   }
 
-  if (!data?.length) {
-    feedListEl.innerHTML = `<div class="muted">No posts yet. Be the first to post!</div>`;
+  if (!posts || posts.length === 0) {
+    setStatus("");
+    elList.innerHTML = `<div class="pv-empty">No posts yet.</div>`;
     return;
   }
 
-  feedListEl.innerHTML = data.map(renderPost).join("");
-}
+  // 3) Fetch profiles for those users (safe even without FK relationship)
+  const ids = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
+  const profilesMap = await fetchProfilesMap(ids);
 
-/* Delete post */
-async function deletePost(postId) {
-  if (!postId) return;
-  const ok = confirm("Delete this post?");
-  if (!ok) return;
-
-  const { error } = await supabase
-    .from("posts")
-    .delete()
-    .eq("id", postId)
-    .eq("author_id", session.user.id);
-
-  if (error) {
-    alert(`Delete failed: ${error.message}`);
-    return;
-  }
-  await loadPosts();
-}
-
-/* Upload (with real % progress) */
-async function uploadMedia(file) {
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
-
-  if (uploadStatusEl) uploadStatusEl.hidden = false;
-  if (uploadBarEl) uploadBarEl.value = 0;
-  if (uploadPctEl) uploadPctEl.textContent = "0%";
-
-  const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
-
-  await new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
-    xhr.setRequestHeader("apikey", SUPABASE_ANON_KEY);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-    xhr.setRequestHeader("x-upsert", "false");
-
-    xhr.upload.onprogress = (evt) => {
-      if (!evt.lengthComputable) return;
-      const pct = Math.round((evt.loaded / evt.total) * 100);
-      if (uploadBarEl) uploadBarEl.value = pct;
-      if (uploadPctEl) uploadPctEl.textContent = `${pct}%`;
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        if (uploadBarEl) uploadBarEl.value = 100;
-        if (uploadPctEl) uploadPctEl.textContent = "100%";
-        resolve();
-      } else {
-        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Upload failed (network error)."));
-    xhr.send(file);
-  });
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
-}
-
-/* Create post */
-async function createPost() {
-  const content = (postTextEl.value || "").trim();
-
-  if (!content && !selectedFile) {
-    alert("Write something or add a photo/video.");
-    return;
-  }
-
-  postBtn.disabled = true;
-  postBtn.textContent = "Posting…";
-
-  try {
-    let media_url = null;
-    let media_type = null;
-
-    if (selectedFile) {
-      media_type = selectedFile.type || null;
-      media_url = await uploadMedia(selectedFile);
-    }
-
-    const payload = {
-      author_id: session.user.id,
-      author_name: nameFromProfileRow(me),
-      content,
-      media_url,
-      media_type,
-    };
-
-    const { error } = await supabase.from("posts").insert(payload);
-    if (error) throw error;
-
-    postTextEl.value = "";
-    clearPreview();
-    await loadPosts();
-  } catch (e) {
-    alert(`Post failed: ${e.message || e}`);
-  } finally {
-    postBtn.disabled = false;
-    postBtn.textContent = "Post";
-  }
-}
-
-postBtn?.addEventListener("click", createPost);
-
-/* Likes */
-async function toggleLike(postId) {
-  const { data: existing, error: selErr } = await supabase
-    .from("post_likes")
-    .select("id")
-    .eq("post_id", postId)
-    .eq("user_id", session.user.id)
-    .maybeSingle();
-
-  if (selErr) throw selErr;
-
-  if (existing?.id) {
-    const { error } = await supabase.from("post_likes").delete().eq("id", existing.id);
-    if (error) throw error;
-    return false;
-  } else {
-    const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: session.user.id });
-    if (error) throw error;
-    return true;
-  }
-}
-
-/* Comments */
-async function loadComments(postId) {
-  const wrap = document.querySelector(`[data-comments-wrap="${CSS.escape(String(postId))}"]`);
-  const list = document.querySelector(`[data-comments-list="${CSS.escape(String(postId))}"]`);
-  if (!wrap || !list) return;
-
-  list.innerHTML = `<div class="muted">Loading comments…</div>`;
-
-  const { data, error } = await supabase
-    .from("post_comments")
-    .select("id, post_id, user_id, body, parent_id, created_at")
-    .eq("post_id", postId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    list.innerHTML = `<div class="errorBox">Comment load failed: ${escapeHtml(error.message)}</div>`;
-    return;
-  }
-
-  if (!data?.length) {
-    list.innerHTML = `<div class="muted">No comments yet.</div>`;
-    return;
-  }
-
-  list.innerHTML = data
-    .map((c) => {
-      const mine = c.user_id === session.user.id;
-      return `
-        <div style="padding:10px;border:1px solid #dbe7ef;border-radius:12px;margin-bottom:8px;background:#fff">
-          <div style="font-weight:800">${mine ? "You" : "Member"} <span style="font-weight:600;color:#5a6b76;font-size:12px">• ${escapeHtml(fmt(c.created_at))}</span></div>
-          <div style="margin-top:6px;white-space:pre-wrap">${escapeHtml(c.body || "")}</div>
-        </div>
-      `;
-    })
+  // 4) Render
+  setStatus("");
+  elList.innerHTML = posts
+    .map(p => renderPost(p, profilesMap.get(p.user_id)))
     .join("");
 }
 
-async function addComment(postId, text) {
-  const content = (text || "").trim();
-  if (!content) throw new Error("Write a comment first.");
+document.addEventListener("DOMContentLoaded", () => {
+  // Minimal styling injected (so you don’t need a new CSS file)
+  const style = document.createElement("style");
+  style.textContent = `
+    .pv-error,.pv-empty{padding:14px;border-radius:14px;background:rgba(0,0,0,.04);font-size:14px}
+    .pv-small{opacity:.7;margin-top:6px;font-size:12px}
+    .pv-post{padding:14px;border-radius:18px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.06);margin:12px 0;backdrop-filter: blur(6px)}
+    .pv-post-hd{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .pv-avatar{width:40px;height:40px;border-radius:999px;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+    .pv-avatar img{width:100%;height:100%;object-fit:cover}
+    .pv-avatar-fallback{font-weight:700;opacity:.8}
+    .pv-hd-text{flex:1}
+    .pv-name-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .pv-name{font-weight:700}
+    .pv-time{font-size:12px;opacity:.6}
+    .pv-meta{font-size:12px;opacity:.65;margin-top:2px}
+    .pv-content{font-size:14px;line-height:1.4;margin:8px 0 10px}
+    .pv-media{width:100%;border-radius:16px;border:1px solid rgba(0,0,0,.06);max-height:520px;object-fit:cover}
+    .pv-post-ft{display:flex;gap:10px;margin-top:10px}
+    .pv-btn{border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.8);padding:8px 10px;border-radius:999px;font-size:13px}
+    .pv-btn:disabled{opacity:.55}
+  `;
+  document.head.appendChild(style);
 
-  const { error } = await supabase
-    .from("post_comments")
-    .insert({ post_id: postId, user_id: session.user.id, body: content });
-
-  if (error) throw error;
-}
-
-/* Share */
-async function sharePost(postId) {
-  const url = `${location.origin}/feed/index.html#post-${postId}`;
-  try {
-    await navigator.share({ title: "Pepsval Post", url });
-  } catch {
-    await navigator.clipboard.writeText(url);
-    alert("Link copied ✅");
-  }
-}
-
-/* Events */
-feedListEl?.addEventListener("click", async (e) => {
-  const btn = e.target?.closest?.("button[data-action]");
-  if (!btn) return;
-
-  const action = btn.getAttribute("data-action");
-  const postId = btn.getAttribute("data-post-id");
-
-  try {
-    if (action === "delete") {
-      await deletePost(postId);
-      return;
-    }
-
-    if (action === "like") {
-      await toggleLike(postId);
-      await loadPosts();
-      return;
-    }
-
-    if (action === "comment") {
-      const wrap = document.querySelector(`[data-comments-wrap="${CSS.escape(String(postId))}"]`);
-      if (!wrap) return;
-      const isOpen = wrap.style.display !== "none";
-      wrap.style.display = isOpen ? "none" : "block";
-      if (!isOpen) await loadComments(postId);
-      return;
-    }
-
-    if (action === "comment-post") {
-      const input = document.querySelector(`[data-comment-input="${CSS.escape(String(postId))}"]`);
-      if (!input) return;
-      await addComment(postId, input.value);
-      input.value = "";
-      await loadComments(postId);
-      await loadPosts();
-      return;
-    }
-
-    if (action === "share") {
-      await sharePost(postId);
-      return;
-    }
-  } catch (err) {
-    alert(err?.message || String(err));
-  }
+  loadFeed();
 });
-
-/* Init */
-(async function init() {
-  session = await requireAuth();
-  if (!session) return;
-
-  const mini = await getMyProfile(session.user.id);
-  if (!mini || mini.setup_complete !== true) {
-    window.location.href = "/setup/profile-setup.html";
-    return;
-  }
-
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("id, full_name, username, avatar_url")
-    .eq("id", session.user.id)
-    .single();
-
-  me = prof || {};
-  setTopBar(me);
-  await loadPosts();
-})();
