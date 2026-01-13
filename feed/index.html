@@ -14,12 +14,10 @@
       color:#0f172a;
     }
 
-    /* Fixed top bar (true fixed) */
+    /* Fixed top bar */
     .top{
       position:fixed;
-      top:0;
-      left:0;
-      right:0;
+      top:0; left:0; right:0;
       z-index:50;
       padding:10px 12px;
       background:rgba(255,255,255,.96);
@@ -34,7 +32,8 @@
       justify-content:space-between;
       gap:10px;
     }
-    .brandLeft{ display:flex; align-items:center; gap:10px; }
+
+    .brandLeft{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
     .logo{
       width:30px; height:30px; border-radius:10px;
       object-fit:contain;
@@ -43,24 +42,105 @@
       padding:4px;
     }
     .brand{ font-weight:950; letter-spacing:.2px; }
-    #feedStatus{ font-size:13px; opacity:.7; margin-top:2px; }
 
-    .meAvatar{
-      width:36px; height:36px; border-radius:999px;
+    .mid{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .searchWrap{
+      flex:1;
+      position:relative;
+      min-width:0;
+    }
+    .searchInput{
+      width:100%;
+      box-sizing:border-box;
+      border:1px solid rgba(0,0,0,.10);
+      background:#fff;
+      border-radius:999px;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+    }
+    .searchDrop{
+      position:absolute;
+      left:0; right:0;
+      top:44px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      display:none;
+      z-index:999;
+    }
+    .searchItem{
+      padding:10px 12px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .searchItem:hover{ background:rgba(31,111,134,.08); }
+    .sAvatar{
+      width:32px;height:32px;border-radius:999px;overflow:hidden;
+      background:rgba(0,0,0,.06);
+      border:1px solid rgba(0,0,0,.06);
+      display:flex;align-items:center;justify-content:center;font-weight:900;
+      flex:0 0 auto;
+    }
+    .sAvatar img{ width:100%;height:100%;object-fit:cover; }
+    .sText{ min-width:0; }
+    .sName{ font-weight:900; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sMeta{ font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    #feedStatus{ font-size:12px; opacity:.7; margin-left:8px; white-space:nowrap; }
+
+    .meWrap{ position:relative; flex:0 0 auto; }
+    .meAvatarBtn{
+      width:38px; height:38px; border-radius:999px;
       overflow:hidden;
       background:rgba(0,0,0,.06);
       border:1px solid rgba(0,0,0,.08);
       display:flex; align-items:center; justify-content:center;
       font-weight:900;
-      flex:0 0 auto;
+      cursor:pointer;
     }
-    .meAvatar img{ width:100%; height:100%; object-fit:cover; }
+    .meAvatarBtn img{ width:100%; height:100%; object-fit:cover; }
 
-    /* Page content spacing for fixed bars */
+    .menu{
+      position:absolute;
+      right:0;
+      top:48px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.10);
+      display:none;
+      min-width:180px;
+      z-index:999;
+    }
+    .menu button{
+      width:100%;
+      text-align:left;
+      padding:12px 12px;
+      border:0;
+      background:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .menu button:hover{ background:rgba(31,111,134,.08); }
+
+    /* Layout padding */
     .wrap{
       max-width:720px;
       margin:0 auto;
-      padding:72px 14px 86px; /* top + bottom safe padding */
+      padding:72px 14px 86px;
     }
 
     /* Composer */
@@ -89,7 +169,6 @@
       margin-top:10px;
     }
     .leftRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .hint{ font-size:12px; opacity:.75; }
 
     .btn{
       border:1px solid rgba(0,0,0,.10);
@@ -119,11 +198,10 @@
 
     #feedList{ margin-top:12px; }
 
-    /* Fixed bottom nav (true fixed) */
+    /* Fixed bottom nav */
     .bottomNav{
       position:fixed;
-      left:0;
-      right:0;
+      left:0; right:0;
       bottom:0;
       z-index:60;
       padding:10px 12px;
@@ -181,13 +259,24 @@
     <div class="topInner">
       <div class="brandLeft">
         <img class="logo" src="/assets/logo.webp" alt="Pepsval logo" />
-        <div>
-          <div class="brand">Pepsval</div>
-          <div id="feedStatus">Loading feed…</div>
-        </div>
+        <div class="brand">Pepsval</div>
       </div>
 
-      <div class="meAvatar" id="meAvatar" title="Your profile">P</div>
+      <div class="mid">
+        <div class="searchWrap">
+          <input id="searchInput" class="searchInput" placeholder="Search seafarers, companies…" />
+          <div id="searchDrop" class="searchDrop"></div>
+        </div>
+        <div id="feedStatus"></div>
+      </div>
+
+      <div class="meWrap">
+        <div id="meAvatarBtn" class="meAvatarBtn" title="Menu">P</div>
+        <div id="meMenu" class="menu">
+          <button type="button" id="menuProfile">My Profile</button>
+          <button type="button" id="menuLogout">Logout</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -199,7 +288,6 @@
         <div class="leftRow">
           <input id="postFile" type="file" accept="image/*,video/*" hidden />
           <button class="fileBtn" id="fileBtn" type="button">Photo / Video</button>
-          <div class="hint" id="postHint"></div>
         </div>
 
         <button class="btn" id="postBtn" type="button">Post</button>
@@ -226,7 +314,7 @@
     </div>
   </nav>
 
-  <div class="toast" id="toast">Copied</div>
+  <div class="toast" id="toast">Done</div>
 
   <script type="module" src="/feed/feed.js"></script>
 </body>
