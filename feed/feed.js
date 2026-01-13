@@ -85,7 +85,8 @@ async function getMyProfile() {
 function setTopAvatar(profile) {
   if (!elMeAvatar) return;
   const name = profile?.full_name || "Pepsval Member";
-  const url = profile?.avatar_url || "";
+  const url = (profile?.avatar_url || "").trim();
+
   if (url) {
     elMeAvatar.innerHTML = `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" />`;
   } else {
@@ -138,11 +139,43 @@ function avatarFallback(name = "") {
   return `<div class="pv-avatar-fallback">${escapeHtml(letter)}</div>`;
 }
 
+function injectStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .pv-post{padding:14px;border-radius:18px;background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.06);margin:12px 0}
+    .pv-post-hd{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .pv-avatar{width:40px;height:40px;border-radius:999px;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+    .pv-avatar img{width:100%;height:100%;object-fit:cover}
+    .pv-avatar-fallback{font-weight:900;opacity:.9}
+    .pv-hd-text{flex:1}
+    .pv-name-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .pv-name{font-weight:950}
+    .pv-time{font-size:12px;opacity:.6}
+    .pv-meta{font-size:12px;opacity:.7;margin-top:2px}
+    .pv-content{font-size:14px;line-height:1.45;margin:8px 0 10px}
+    .pv-media{width:100%;border-radius:16px;border:1px solid rgba(0,0,0,.06);max-height:520px;object-fit:cover}
+    .pv-post-ft{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .pv-btn{border:1px solid rgba(0,0,0,.08);background:#fff;padding:8px 10px;border-radius:999px;font-size:13px;font-weight:900}
+    .pv-mini{border:1px solid rgba(0,0,0,.10);background:#fff;padding:8px 10px;border-radius:999px;font-size:12px;font-weight:900}
+    .pv-count{opacity:.7}
+    .pv-comments{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06)}
+    .pv-comments-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+    .pv-comment{font-size:13px;line-height:1.35;padding:10px;border-radius:14px;background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06)}
+    .pv-comment-actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+    .pv-comments-box{display:flex;gap:8px;align-items:center}
+    .pv-comment-input{flex:1;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 12px;font-size:13px;outline:none}
+    .pv-reply{margin-left:14px;border-left:2px solid rgba(31,111,134,.2);padding-left:10px}
+    .pv-replying{margin-top:8px;opacity:.75;font-size:12px}
+  `;
+  document.head.appendChild(style);
+}
+
 function renderPost(post, profile, likeCount, likedByMe, commentCount) {
   const name = profile?.full_name || "Pepsval Member";
   const rank = profile?.rank || "";
   const company = profile?.company || "";
-  const avatarUrl = profile?.avatar_url || "";
+  const avatarUrl = (profile?.avatar_url || "").trim();
+
   const headerMeta = [rank, company].filter(Boolean).join(" • ");
   const created = post?.created_at ? timeAgo(post.created_at) : "";
 
@@ -206,39 +239,7 @@ function renderPost(post, profile, likeCount, likedByMe, commentCount) {
   `;
 }
 
-function injectStyles() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .pv-post{padding:14px;border-radius:18px;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.06);margin:12px 0}
-    .pv-post-hd{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-    .pv-avatar{width:40px;height:40px;border-radius:999px;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-    .pv-avatar img{width:100%;height:100%;object-fit:cover}
-    .pv-avatar-fallback{font-weight:900;opacity:.9}
-    .pv-hd-text{flex:1}
-    .pv-name-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
-    .pv-name{font-weight:950}
-    .pv-time{font-size:12px;opacity:.6}
-    .pv-meta{font-size:12px;opacity:.7;margin-top:2px}
-    .pv-content{font-size:14px;line-height:1.45;margin:8px 0 10px}
-    .pv-media{width:100%;border-radius:16px;border:1px solid rgba(0,0,0,.06);max-height:520px;object-fit:cover}
-    .pv-post-ft{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
-    .pv-btn{border:1px solid rgba(0,0,0,.08);background:#fff;padding:8px 10px;border-radius:999px;font-size:13px;font-weight:900}
-    .pv-mini{border:1px solid rgba(0,0,0,.10);background:#fff;padding:8px 10px;border-radius:999px;font-size:12px;font-weight:900}
-    .pv-count{opacity:.7}
-    .pv-comments{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06)}
-    .pv-comments-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
-    .pv-comment{font-size:13px;line-height:1.35;padding:10px;border-radius:14px;background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06)}
-    .pv-comment-actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
-    .pv-comments-box{display:flex;gap:8px;align-items:center}
-    .pv-comment-input{flex:1;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 12px;font-size:13px;outline:none}
-    .pv-reply{margin-left:14px;border-left:2px solid rgba(31,111,134,.2);padding-left:10px}
-    .pv-replying{margin-top:8px;opacity:.75;font-size:12px}
-  `;
-  document.head.appendChild(style);
-}
-
 async function uploadMedia(file) {
-  // Clean % animation (browser doesn’t expose real % reliably)
   showProgress(true);
   setProgress(0, "Uploading…");
 
@@ -280,7 +281,7 @@ async function createPost() {
   if (!text && !file) { setHint("Write something or choose a file."); return; }
 
   if (elPostBtn) elPostBtn.disabled = true;
-  setHint("Posting…");
+  setHint("");
 
   let image_url = null;
   let video_url = null;
@@ -296,21 +297,230 @@ async function createPost() {
       content: text || null,
       image_url,
       video_url
-      // user_id default handled by DB
     });
 
     if (error) throw new Error(error.message);
 
     elPostText.value = "";
     elPostFile.value = "";
-    setHint("Posted ✅");
-    elPostBtn.disabled = false;
+    if (elPostBtn) elPostBtn.disabled = false;
 
     await loadFeed();
   } catch (e) {
     setHint(`Post failed: ${e.message}`);
-    elPostBtn.disabled = false;
+    if (elPostBtn) elPostBtn.disabled = false;
   }
+}
+
+/* ---------- LIKE (instant, no refresh) ---------- */
+async function togglePostLike(postEl) {
+  const postId = postEl.dataset.postId;
+  const liked = postEl.dataset.liked === "1";
+
+  const countEl = postEl.querySelector("[data-like-count]");
+  const heartEl = postEl.querySelector(".pv-heart");
+  const currentCount = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
+
+  // optimistic UI
+  postEl.dataset.liked = liked ? "0" : "1";
+  if (heartEl) heartEl.textContent = liked ? "🤍" : "❤️";
+  if (countEl) countEl.textContent = `(${liked ? Math.max(0, currentCount - 1) : currentCount + 1})`;
+
+  if (!liked) {
+    const { error } = await supabase.from("post_likes").insert({ post_id: postId });
+    if (error) {
+      // revert
+      postEl.dataset.liked = "0";
+      if (heartEl) heartEl.textContent = "🤍";
+      if (countEl) countEl.textContent = `(${currentCount})`;
+      toast("Like failed");
+    }
+  } else {
+    const { error } = await supabase
+      .from("post_likes")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", currentUserId);
+
+    if (error) {
+      // revert
+      postEl.dataset.liked = "1";
+      if (heartEl) heartEl.textContent = "❤️";
+      if (countEl) countEl.textContent = `(${currentCount})`;
+      toast("Unlike failed");
+    }
+  }
+}
+
+/* ---------- COMMENTS + REPLIES ---------- */
+const replyState = new Map(); // postId -> commentId
+
+async function loadComments(postEl) {
+  const postId = postEl.dataset.postId;
+  const box = postEl.querySelector(".pv-comments");
+  const list = postEl.querySelector(".pv-comments-list");
+  if (!box || !list) return;
+
+  box.hidden = false;
+  list.innerHTML = `<div style="opacity:.7;font-size:12px">Loading comments…</div>`;
+
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("id, post_id, user_id, content, created_at, parent_id")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true })
+    .limit(200);
+
+  if (error) {
+    list.innerHTML = `<div style="opacity:.7;font-size:12px">Could not load comments.</div>`;
+    return;
+  }
+
+  const comments = data || [];
+  if (!comments.length) {
+    list.innerHTML = `<div style="opacity:.7;font-size:12px">No comments yet.</div>`;
+    return;
+  }
+
+  const userIds = [...new Set(comments.map(c => c.user_id).filter(Boolean))];
+  const profilesMap = await fetchProfilesMap(userIds);
+
+  // comment likes
+  const commentIds = comments.map(c => c.id);
+  const { data: likeRows } = await supabase
+    .from("comment_likes")
+    .select("comment_id, user_id")
+    .in("comment_id", commentIds);
+
+  const likeCount = new Map();
+  const likedMine = new Set();
+  for (const r of likeRows || []) {
+    likeCount.set(r.comment_id, (likeCount.get(r.comment_id) || 0) + 1);
+    if (r.user_id === currentUserId) likedMine.add(r.comment_id);
+  }
+
+  // tree
+  const roots = comments.filter(c => !c.parent_id);
+  const children = new Map();
+  for (const c of comments) {
+    if (!c.parent_id) continue;
+    children.set(c.parent_id, [...(children.get(c.parent_id) || []), c]);
+  }
+
+  function renderComment(c) {
+    const name = profilesMap.get(c.user_id)?.full_name || "Member";
+    const mine = c.user_id === currentUserId;
+    const lc = likeCount.get(c.id) || 0;
+    const lm = likedMine.has(c.id);
+
+    const kids = children.get(c.id) || [];
+    const kidsHtml = kids.map(k => `<div class="pv-reply">${renderComment(k)}</div>`).join("");
+
+    return `
+      <div class="pv-comment" data-comment-id="${escapeHtml(c.id)}">
+        <div><b>${escapeHtml(name)}</b> ${escapeHtml(c.content)}
+          <span style="opacity:.6;font-size:12px">• ${escapeHtml(timeAgo(c.created_at))}</span>
+        </div>
+        <div class="pv-comment-actions">
+          <button class="pv-mini" data-action="like-comment">${lm ? "❤️" : "🤍"} (${lc})</button>
+          <button class="pv-mini" data-action="reply-comment">Reply</button>
+          ${mine ? `<button class="pv-mini" data-action="delete-comment">Delete</button>` : ""}
+        </div>
+        ${kidsHtml}
+      </div>
+    `;
+  }
+
+  list.innerHTML = roots.map(renderComment).join("");
+}
+
+async function sendComment(postEl) {
+  const postId = postEl.dataset.postId;
+  const input = postEl.querySelector(".pv-comment-input");
+  const replyingEl = postEl.querySelector(".pv-replying");
+  const text = (input?.value || "").trim();
+  if (!text) return;
+
+  const parentId = replyState.get(postId) || null;
+
+  const { error } = await supabase.from("post_comments").insert({
+    post_id: postId,
+    content: text,
+    parent_id: parentId
+  });
+
+  if (error) return toast("Comment failed");
+
+  input.value = "";
+  replyState.delete(postId);
+  if (replyingEl) replyingEl.hidden = true;
+  if (input) input.placeholder = "Write a comment…";
+
+  // update count instantly
+  const countEl = postEl.querySelector("[data-comment-count]");
+  const current = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
+  if (countEl) countEl.textContent = `(${current + 1})`;
+
+  await loadComments(postEl);
+  toast("Commented");
+}
+
+async function deleteComment(postEl, commentId) {
+  const { error } = await supabase
+    .from("post_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", currentUserId);
+
+  if (error) return toast("Delete failed");
+  toast("Deleted");
+  await loadComments(postEl);
+}
+
+async function toggleCommentLike(postEl, commentId) {
+  // check if liked by me by querying single row (simple & reliable)
+  const { data } = await supabase
+    .from("comment_likes")
+    .select("comment_id")
+    .eq("comment_id", commentId)
+    .eq("user_id", currentUserId)
+    .maybeSingle();
+
+  if (!data) {
+    const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId });
+    if (error) return toast("Like failed");
+  } else {
+    const { error } = await supabase
+      .from("comment_likes")
+      .delete()
+      .eq("comment_id", commentId)
+      .eq("user_id", currentUserId);
+    if (error) return toast("Unlike failed");
+  }
+
+  await loadComments(postEl);
+}
+
+async function sharePost(postId) {
+  const url = `${location.origin}/feed/?post=${encodeURIComponent(postId)}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: "Pepsval Post", url }); return; } catch {}
+  }
+  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
+  catch { prompt("Copy this link:", url); }
+}
+
+async function deletePost(postId) {
+  const ok = confirm("Delete this post?");
+  if (!ok) return;
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq("user_id", currentUserId);
+  if (error) return toast("Delete failed");
+  toast("Deleted");
+  await loadFeed();
 }
 
 async function loadFeed() {
@@ -366,228 +576,14 @@ async function loadFeed() {
   }).join("");
 }
 
-/* ---------- Likes (instant UI update) ---------- */
-async function togglePostLike(postEl) {
-  const postId = postEl.dataset.postId;
-  const liked = postEl.dataset.liked === "1";
-
-  const countEl = postEl.querySelector("[data-like-count]");
-  const heartEl = postEl.querySelector(".pv-heart");
-
-  // current count
-  const currentCount = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
-
-  // optimistic update
-  postEl.dataset.liked = liked ? "0" : "1";
-  if (heartEl) heartEl.textContent = liked ? "🤍" : "❤️";
-  if (countEl) countEl.textContent = `(${liked ? Math.max(0, currentCount - 1) : currentCount + 1})`;
-
-  if (!liked) {
-    // insert like (user_id default auth.uid())
-    const { error } = await supabase.from("post_likes").insert({ post_id: postId });
-    if (error) {
-      // revert on failure
-      postEl.dataset.liked = "0";
-      if (heartEl) heartEl.textContent = "🤍";
-      if (countEl) countEl.textContent = `(${currentCount})`;
-      return toast("Like failed");
-    }
-    return;
-  } else {
-    const { error } = await supabase
-      .from("post_likes")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", currentUserId);
-    if (error) {
-      // revert on failure
-      postEl.dataset.liked = "1";
-      if (heartEl) heartEl.textContent = "❤️";
-      if (countEl) countEl.textContent = `(${currentCount})`;
-      return toast("Unlike failed");
-    }
-    return;
-  }
-}
-
-/* ---------- Comments + Replies + Comment Like ---------- */
-const replyState = new Map(); // postId -> commentId
-
-async function loadComments(postEl) {
-  const postId = postEl.dataset.postId;
-  const box = postEl.querySelector(".pv-comments");
-  const list = postEl.querySelector(".pv-comments-list");
-  if (!box || !list) return;
-
-  box.hidden = false;
-  list.innerHTML = `<div style="opacity:.7;font-size:12px">Loading comments…</div>`;
-
-  const { data, error } = await supabase
-    .from("post_comments")
-    .select("id, post_id, user_id, content, created_at, parent_id")
-    .eq("post_id", postId)
-    .order("created_at", { ascending: true })
-    .limit(200);
-
-  if (error) {
-    list.innerHTML = `<div style="opacity:.7;font-size:12px">Could not load comments.</div>`;
-    return;
-  }
-
-  const comments = data || [];
-  if (!comments.length) {
-    list.innerHTML = `<div style="opacity:.7;font-size:12px">No comments yet.</div>`;
-    return;
-  }
-
-  const userIds = [...new Set(comments.map(c => c.user_id).filter(Boolean))];
-  const profilesMap = await fetchProfilesMap(userIds);
-
-  // fetch comment likes
-  const commentIds = comments.map(c => c.id);
-  const { data: likesRows } = await supabase
-    .from("comment_likes")
-    .select("comment_id, user_id")
-    .in("comment_id", commentIds);
-
-  const likeCount = new Map();
-  const likedMine = new Set();
-  for (const r of likesRows || []) {
-    likeCount.set(r.comment_id, (likeCount.get(r.comment_id) || 0) + 1);
-    if (r.user_id === currentUserId) likedMine.add(r.comment_id);
-  }
-
-  // build tree
-  const roots = comments.filter(c => !c.parent_id);
-  const children = new Map();
-  for (const c of comments) {
-    if (!c.parent_id) continue;
-    children.set(c.parent_id, [...(children.get(c.parent_id) || []), c]);
-  }
-
-  function renderComment(c, isReply = false) {
-    const name = profilesMap.get(c.user_id)?.full_name || "Member";
-    const mine = c.user_id === currentUserId;
-    const lc = likeCount.get(c.id) || 0;
-    const lm = likedMine.has(c.id);
-
-    const kids = children.get(c.id) || [];
-    const kidsHtml = kids.map(k => `<div class="pv-reply">${renderComment(k, true)}</div>`).join("");
-
-    return `
-      <div class="pv-comment" data-comment-id="${escapeHtml(c.id)}" data-is-reply="${isReply ? "1" : "0"}">
-        <div><b>${escapeHtml(name)}</b> ${escapeHtml(c.content)} <span style="opacity:.6;font-size:12px">• ${escapeHtml(timeAgo(c.created_at))}</span></div>
-        <div class="pv-comment-actions">
-          <button class="pv-mini" data-action="like-comment">${lm ? "❤️" : "🤍"} (${lc})</button>
-          <button class="pv-mini" data-action="reply-comment">Reply</button>
-          ${mine ? `<button class="pv-mini" data-action="delete-comment">Delete</button>` : ""}
-        </div>
-        ${kidsHtml}
-      </div>
-    `;
-  }
-
-  list.innerHTML = roots.map(c => renderComment(c, false)).join("");
-}
-
-async function sendComment(postEl) {
-  const postId = postEl.dataset.postId;
-  const input = postEl.querySelector(".pv-comment-input");
-  const replyingEl = postEl.querySelector(".pv-replying");
-  const text = (input?.value || "").trim();
-  if (!text) return;
-
-  const parentId = replyState.get(postId) || null;
-
-  const { error } = await supabase.from("post_comments").insert({
-    post_id: postId,
-    content: text,
-    parent_id: parentId
-  });
-
-  if (error) return toast("Comment failed");
-
-  input.value = "";
-  replyState.delete(postId);
-  if (replyingEl) replyingEl.hidden = true;
-
-  // update count quickly
-  const countEl = postEl.querySelector("[data-comment-count]");
-  const current = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
-  if (countEl) countEl.textContent = `(${current + 1})`;
-
-  await loadComments(postEl);
-  toast("Commented");
-}
-
-async function deleteComment(postEl, commentId) {
-  const { error } = await supabase
-    .from("post_comments")
-    .delete()
-    .eq("id", commentId)
-    .eq("user_id", currentUserId);
-
-  if (error) return toast("Delete failed");
-  toast("Deleted");
-  await loadComments(postEl);
-}
-
-async function toggleCommentLike(postEl, commentId, btn) {
-  const liked = btn.textContent.includes("❤️");
-
-  if (!liked) {
-    const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId });
-    if (error) return toast("Like failed");
-  } else {
-    const { error } = await supabase
-      .from("comment_likes")
-      .delete()
-      .eq("comment_id", commentId)
-      .eq("user_id", currentUserId);
-    if (error) return toast("Unlike failed");
-  }
-
-  await loadComments(postEl);
-}
-
-/* ---------- Share ---------- */
-async function sharePost(postId) {
-  const url = `${location.origin}/feed/?post=${encodeURIComponent(postId)}`;
-  // Try native share first
-  if (navigator.share) {
-    try { await navigator.share({ title: "Pepsval Post", url }); return; } catch {}
-  }
-  // Fallback copy
-  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
-  catch { prompt("Copy this link:", url); }
-}
-
-/* ---------- Delete Post ---------- */
-async function deletePost(postId) {
-  const ok = confirm("Delete this post?");
-  if (!ok) return;
-  const { error } = await supabase
-    .from("posts")
-    .delete()
-    .eq("id", postId)
-    .eq("user_id", currentUserId);
-  if (error) return toast("Delete failed");
-  toast("Deleted");
-  await loadFeed();
-}
-
-/* ---------- Events ---------- */
+/* ---------- EVENTS ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   injectStyles();
   await initAuth();
+  setHint(""); // remove wording completely
 
   if (elFileBtn && elPostFile) {
     elFileBtn.addEventListener("click", () => elPostFile.click());
-    elPostFile.addEventListener("change", () => {
-      const f = elPostFile.files?.[0];
-      if (!f) return;
-      setHint(`Selected: ${f.name}`);
-    });
   }
 
   if (elPostBtn) elPostBtn.addEventListener("click", createPost);
@@ -603,13 +599,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const postId = postEl.dataset.postId;
 
     if (action === "like-post") return togglePostLike(postEl);
+
     if (action === "toggle-comments") {
       const box = postEl.querySelector(".pv-comments");
       if (!box) return;
       if (!box.hidden) { box.hidden = true; return; }
       return loadComments(postEl);
     }
+
     if (action === "send-comment") return sendComment(postEl);
+
     if (action === "cancel-reply") {
       replyState.delete(postId);
       const replyingEl = postEl.querySelector(".pv-replying");
@@ -618,10 +617,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (input) input.placeholder = "Write a comment…";
       return;
     }
+
     if (action === "share-post") return sharePost(postId);
     if (action === "delete-post") return deletePost(postId);
 
-    // comment-level actions
     const commentEl = e.target.closest(".pv-comment");
     const commentId = commentEl?.dataset?.commentId;
 
@@ -638,7 +637,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (action === "delete-comment" && commentId) return deleteComment(postEl, commentId);
-    if (action === "like-comment" && commentId) return toggleCommentLike(postEl, commentId, btn);
+    if (action === "like-comment" && commentId) return toggleCommentLike(postEl, commentId);
   });
 
   await loadFeed();
