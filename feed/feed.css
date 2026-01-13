@@ -206,3 +206,53 @@ body.app-bg{
   border-radius:12px;
 }
 .nav-item.active{background:#eef6fb}
+
+/* ✅ FIX: Post footer buttons (Like / Comment / Share / Delete) */
+.postFooter{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.miniBtn{
+  border:1px solid var(--line);
+  background:#eef6fb;
+  color:var(--text);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.miniBtn.active{
+  background:var(--brand);
+  color:#fff;
+  border-color:transparent;
+}
+.dangerBtn{
+  background:#ffe9ea;
+  color:#b00020;
+  border-color:#ffd1d5;
+}
+
+/* Author row on each post */
+.postAuthor a{ text-decoration:none; color:inherit; }
+.postAuthorName{font-weight:900;line-height:1.1}
+.youTag{
+  display:inline-block;
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#eef6fb;
+  border:1px solid var(--line);
+  margin-left:6px;
+  vertical-align:middle;
+}
+
+/* Comments inline panel (temporary until we upgrade to Instagram bottom-sheet) */
+.commentsWrap{
+  background:#fbfdff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+}
+.commentsList .muted{font-weight:900}
