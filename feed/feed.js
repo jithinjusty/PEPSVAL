@@ -1,7 +1,3 @@
-// /feed/feed.js
-// Auto-adapts to your Supabase schema (no FK join required)
-// Fixes: posts not appearing even after "Posted"
-
 import { supabase, getCurrentUser } from "/js/supabase.js";
 
 const MEDIA_BUCKET = "post_media";
@@ -30,6 +26,7 @@ const elSearchDrop = document.getElementById("searchDrop");
 const elMeAvatarBtn = document.getElementById("meAvatarBtn");
 const elMeMenu = document.getElementById("meMenu");
 const elMenuProfile = document.getElementById("menuProfile");
+const elMenuSettings = document.getElementById("menuSettings");
 const elMenuLogout = document.getElementById("menuLogout");
 
 const elToast = document.getElementById("toast");
@@ -37,14 +34,16 @@ const elToast = document.getElementById("toast");
 let me = null;
 let selectedFile = null;
 
-/* UI helpers */
+/* Helpers */
 function setStatus(txt) { if (elStatus) elStatus.textContent = txt || ""; }
+
 function toast(msg) {
   if (!elToast) return;
   elToast.textContent = msg || "Done";
   elToast.classList.add("show");
   setTimeout(() => elToast.classList.remove("show"), 1600);
 }
+
 function showProgress(on, label = "Uploading…", pct = 0) {
   if (!elProgressWrap) return;
   elProgressWrap.style.display = on ? "block" : "none";
@@ -52,11 +51,13 @@ function showProgress(on, label = "Uploading…", pct = 0) {
   if (elProgressFill) elProgressFill.style.width = `${pct}%`;
   if (elProgressPct) elProgressPct.textContent = `${pct}%`;
 }
+
 function safeText(s) {
   return (s ?? "").toString().replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
 }
+
 function setMeAvatar(profile) {
   if (!elMeAvatarBtn) return;
   const url = profile?.avatar_url;
@@ -65,6 +66,7 @@ function setMeAvatar(profile) {
   if (url) elMeAvatarBtn.innerHTML = `<img src="${url}" alt="Me" />`;
   else elMeAvatarBtn.textContent = letter;
 }
+
 function mediaHTML(mediaUrl) {
   if (!mediaUrl) return "";
   const u = mediaUrl.toLowerCase();
@@ -97,7 +99,7 @@ async function requireLogin() {
   return true;
 }
 
-/* Upload helper */
+/* Upload */
 async function uploadMedia(file) {
   if (!file) return null;
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
@@ -130,38 +132,49 @@ async function uploadMedia(file) {
   return data?.publicUrl || null;
 }
 
-/* Detect keys in posts rows */
+/* Key detection (robust) */
 function detectKeys(row) {
   const keys = row ? Object.keys(row) : [];
   const pick = (cands) => cands.find(k => keys.includes(k)) || null;
 
-  const idKey = pick(["id", "post_id"]);
-  const userKey = pick(["user_id", "author_id", "profile_id", "uid", "user"]);
-  const contentKey = pick(["content", "text", "body", "caption", "post_text", "message"]);
-  const mediaKey = pick(["media_url", "image_url", "image", "photo_url", "video_url", "media"]);
-  const createdKey = pick(["created_at", "created", "createdOn", "timestamp"]);
-
-  return { idKey, userKey, contentKey, mediaKey, createdKey };
+  return {
+    idKey: pick(["id", "post_id"]),
+    userKey: pick(["user_id", "author_id", "profile_id", "uid", "user"]),
+    contentKey: pick(["content", "text", "body", "caption", "post_text", "message"]),
+    mediaKey: pick(["media_url", "image_url", "image", "photo_url", "video_url", "media"]),
+    createdKey: pick(["created_at", "created", "timestamp"])
+  };
 }
 
-/* Fetch posts (no join) */
+/* Fetch posts with order fallback */
 async function fetchPostsRaw() {
-  const { data, error } = await supabase
+  // Try created_at first
+  let res = await supabase
     .from("posts")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) {
-    console.error("Feed fetch error:", error);
+  if (res.error) {
+    // Fallback: order by id if created_at is missing
+    res = await supabase
+      .from("posts")
+      .select("*")
+      .order("id", { ascending: false })
+      .limit(50);
+  }
+
+  if (res.error) {
+    console.error("Feed fetch error:", res.error);
     setStatus("Feed error");
     toast("Feed error");
     return [];
   }
-  return data || [];
+
+  return res.data || [];
 }
 
-/* Fetch profiles by ids */
+/* Profiles map */
 async function fetchProfilesMap(ids) {
   if (!ids.length) return new Map();
   const { data, error } = await supabase
@@ -179,8 +192,65 @@ async function fetchProfilesMap(ids) {
   return map;
 }
 
-/* Render posts */
-function renderPosts(rows, profMap, keyset) {
+/* Likes & Comments batch */
+async function fetchLikesForPosts(postIds) {
+  if (!postIds.length) return { counts: new Map(), iLiked: new Set() };
+
+  const { data, error } = await supabase
+    .from("post_likes")
+    .select("post_id, user_id")
+    .in("post_id", postIds);
+
+  if (error) {
+    console.error("Likes fetch error:", error);
+    return { counts: new Map(), iLiked: new Set() };
+  }
+
+  const counts = new Map();
+  const iLiked = new Set();
+
+  for (const r of (data || [])) {
+    counts.set(r.post_id, (counts.get(r.post_id) || 0) + 1);
+    if (r.user_id === me.id) iLiked.add(r.post_id);
+  }
+
+  return { counts, iLiked };
+}
+
+async function fetchCommentsForPosts(postIds) {
+  if (!postIds.length) return { counts: new Map(), latest: new Map() };
+
+  // Pull latest comments (limit per table, then we show latest 2 per post)
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("id, post_id, user_id, content, created_at")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    console.error("Comments fetch error:", error);
+    return { counts: new Map(), latest: new Map() };
+  }
+
+  const counts = new Map();
+  const latest = new Map(); // post_id -> array (max 2)
+
+  for (const c of (data || [])) {
+    counts.set(c.post_id, (counts.get(c.post_id) || 0) + 1);
+
+    const arr = latest.get(c.post_id) || [];
+    if (arr.length < 2) arr.push(c);
+    latest.set(c.post_id, arr);
+  }
+
+  return { counts, latest };
+}
+
+/* Render */
+let cachedKeyset = null;
+
+function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
   if (!elList) return;
 
   if (!rows.length) {
@@ -200,12 +270,18 @@ function renderPosts(rows, profMap, keyset) {
 
     const when = keyset.createdKey && r[keyset.createdKey]
       ? new Date(r[keyset.createdKey]).toLocaleString()
-      : (r.created_at ? new Date(r.created_at).toLocaleString() : "");
+      : "";
 
     const content = keyset.contentKey ? (r[keyset.contentKey] || "") : "";
     const mediaUrl = keyset.mediaKey ? (r[keyset.mediaKey] || "") : "";
 
     const mine = me && uid && uid === me.id;
+
+    const likes = likeInfo.counts.get(pid) || 0;
+    const liked = likeInfo.iLiked.has(pid);
+
+    const cCount = commentInfo.counts.get(pid) || 0;
+    const latest = commentInfo.latest.get(pid) || [];
 
     return `
       <article class="pv-post" data-post-id="${safeText(pid)}">
@@ -228,19 +304,84 @@ function renderPosts(rows, profMap, keyset) {
         ${content ? `<div class="pv-content">${safeText(content)}</div>` : ""}
         ${mediaUrl ? mediaHTML(mediaUrl) : ""}
 
-        <div class="pv-post-ft">
+        <div class="pv-post-ft" style="justify-content:space-between;">
+          <div style="display:flex;gap:8px;">
+            <button class="pv-btn" type="button" data-action="like">
+              ${liked ? "Unlike" : "Like"} (${likes})
+            </button>
+            <button class="pv-btn" type="button" data-action="toggleComments">
+              Comments (${cCount})
+            </button>
+          </div>
+
           ${mine ? `<button class="pv-btn" type="button" data-action="delete">Delete</button>` : ""}
+        </div>
+
+        <div class="pv-comments" data-comments-wrap style="display:none;margin-top:10px;">
+          <div style="opacity:.8;font-weight:800;font-size:12px;margin-bottom:8px;">
+            Comments
+          </div>
+
+          <div data-comments-list style="display:flex;flex-direction:column;gap:8px;">
+            ${latest.map(c => `
+              <div style="font-size:13px;line-height:1.25;">
+                <div style="opacity:.7;font-size:11px;">${new Date(c.created_at).toLocaleString()}</div>
+                <div>${safeText(c.content)}</div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input data-comment-input
+              placeholder="Write a comment…"
+              style="flex:1;padding:10px 12px;border-radius:999px;border:1px solid rgba(0,0,0,.12);outline:none;"
+            />
+            <button class="pv-btn" type="button" data-action="sendComment">Send</button>
+          </div>
         </div>
       </article>
     `;
   }).join("");
 }
 
+/* Actions */
+async function toggleLike(postId, liked) {
+  if (liked) {
+    const { error } = await supabase
+      .from("post_likes")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", me.id);
+
+    if (error) { console.error(error); toast("Unlike failed"); return; }
+  } else {
+    const { error } = await supabase
+      .from("post_likes")
+      .insert([{ post_id: postId, user_id: me.id }]);
+
+    if (error) { console.error(error); toast("Like failed"); return; }
+  }
+  await loadFeed();
+}
+
+async function sendComment(postId, inputEl) {
+  const txt = (inputEl?.value || "").trim();
+  if (!txt) return;
+
+  const { error } = await supabase
+    .from("post_comments")
+    .insert([{ post_id: postId, user_id: me.id, content: txt }]);
+
+  if (error) { console.error(error); toast("Comment failed"); return; }
+
+  inputEl.value = "";
+  await loadFeed();
+}
+
 async function deletePost(postId, keyset) {
   const ok = confirm("Delete this post?");
   if (!ok) return;
 
-  // Try delete by id column name (usually "id")
   const idCol = keyset.idKey || "id";
 
   const { error } = await supabase
@@ -250,35 +391,29 @@ async function deletePost(postId, keyset) {
 
   if (error) {
     console.error("Delete error:", error);
-    toast("Delete failed");
+    toast("Delete failed (RLS?)");
     return;
   }
+
   toast("Deleted");
   await loadFeed();
 }
 
-/* Insert post with fallback schema attempts */
+/* Insert post with fallback */
 async function insertPostWithFallback(content, mediaUrl) {
   const attempts = [
-    // Common schema
     { user_id: me.id, content: content || "", media_url: mediaUrl || null },
-    // Alt schema
     { author_id: me.id, text: content || "", image_url: mediaUrl || null },
-    // Another alt
     { user_id: me.id, text: content || "", image_url: mediaUrl || null },
-    // Another alt
     { author_id: me.id, content: content || "", media_url: mediaUrl || null }
   ];
 
   let lastErr = null;
-
   for (const payload of attempts) {
     const { error } = await supabase.from("posts").insert([payload]);
     if (!error) return true;
     lastErr = error;
 
-    // If error is about missing column, try next attempt
-    // Otherwise stop early.
     const msg = (error.message || "").toLowerCase();
     if (!msg.includes("column") && !msg.includes("does not exist")) break;
   }
@@ -304,16 +439,16 @@ async function createPost() {
     if (selectedFile) mediaUrl = await uploadMedia(selectedFile);
 
     const ok = await insertPostWithFallback(content, mediaUrl);
-    if (!ok) {
-      toast("Post failed (schema mismatch)");
-      return;
-    }
+    if (!ok) { toast("Post failed"); return; }
 
     if (elPostText) elPostText.value = "";
     setFileUI(null);
-    toast("Posted");
+
+    // Force a refresh (prevents “posted but not showing”)
+    await new Promise(r => setTimeout(r, 350));
     await loadFeed();
 
+    toast("Posted");
   } catch (e) {
     console.error(e);
     toast("Upload/Save failed");
@@ -323,7 +458,7 @@ async function createPost() {
   }
 }
 
-/* Search */
+/* Search (unchanged logic) */
 let searchTimer = null;
 async function runSearch(q) {
   const query = (q || "").trim();
@@ -371,9 +506,7 @@ async function runSearch(q) {
   elSearchDrop.style.display = "block";
 }
 
-/* Main load */
-let cachedKeyset = null;
-
+/* Load feed */
 async function loadFeed() {
   setStatus("Loading…");
   const ok = await requireLogin();
@@ -381,25 +514,28 @@ async function loadFeed() {
 
   const rows = await fetchPostsRaw();
   const first = rows[0] || null;
+
   cachedKeyset = detectKeys(first);
 
-  // collect user ids
-  const userIds = [];
   const uKey = cachedKeyset.userKey;
-  if (uKey) {
-    for (const r of rows) {
-      const uid = r[uKey];
-      if (uid && !userIds.includes(uid)) userIds.push(uid);
-    }
+  const postIds = [];
+  const userIds = [];
+
+  for (const r of rows) {
+    if (cachedKeyset.idKey && r[cachedKeyset.idKey]) postIds.push(r[cachedKeyset.idKey]);
+    if (uKey && r[uKey] && !userIds.includes(r[uKey])) userIds.push(r[uKey]);
   }
 
   const profMap = await fetchProfilesMap(userIds);
-  renderPosts(rows, profMap, cachedKeyset);
+  const likeInfo = await fetchLikesForPosts(postIds);
+  const commentInfo = await fetchCommentsForPosts(postIds);
+
+  renderPosts(rows, profMap, likeInfo, commentInfo, cachedKeyset);
 
   setStatus("");
 }
 
-/* Wire events */
+/* Events */
 function wireEvents() {
   // Menu toggle
   if (elMeAvatarBtn && elMeMenu) {
@@ -407,6 +543,7 @@ function wireEvents() {
       const open = elMeMenu.style.display === "block";
       elMeMenu.style.display = open ? "none" : "block";
     });
+
     document.addEventListener("click", (e) => {
       if (!elMeMenu.contains(e.target) && !elMeAvatarBtn.contains(e.target)) {
         elMeMenu.style.display = "none";
@@ -416,6 +553,7 @@ function wireEvents() {
 
   // Menu actions
   if (elMenuProfile) elMenuProfile.addEventListener("click", () => window.location.href = "/profile/home.html");
+  if (elMenuSettings) elMenuSettings.addEventListener("click", () => window.location.href = "/dashboard/settings.html");
   if (elMenuLogout) elMenuLogout.addEventListener("click", async () => {
     await supabase.auth.signOut();
     window.location.href = "/auth/login.html";
@@ -429,18 +567,40 @@ function wireEvents() {
   // Post
   if (elPostBtn) elPostBtn.addEventListener("click", createPost);
 
-  // Delete post (delegation)
+  // Post actions
   if (elList) {
     elList.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-action]");
       if (!btn) return;
+
       const postEl = e.target.closest("[data-post-id]");
       if (!postEl) return;
 
       const postId = postEl.getAttribute("data-post-id");
       const action = btn.getAttribute("data-action");
 
-      if (action === "delete") await deletePost(postId, cachedKeyset || { idKey: "id" });
+      if (action === "delete") {
+        await deletePost(postId, cachedKeyset || { idKey: "id" });
+        return;
+      }
+
+      if (action === "like") {
+        const liked = btn.textContent.trim().toLowerCase().startsWith("unlike");
+        await toggleLike(postId, liked);
+        return;
+      }
+
+      if (action === "toggleComments") {
+        const wrap = postEl.querySelector("[data-comments-wrap]");
+        if (wrap) wrap.style.display = (wrap.style.display === "none" ? "block" : "none");
+        return;
+      }
+
+      if (action === "sendComment") {
+        const input = postEl.querySelector("[data-comment-input]");
+        await sendComment(postId, input);
+        return;
+      }
     });
   }
 
@@ -450,6 +610,7 @@ function wireEvents() {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => runSearch(elSearchInput.value), 250);
     });
+
     elSearchDrop.addEventListener("click", (e) => {
       const item = e.target.closest(".searchItem");
       if (!item) return;
@@ -458,6 +619,7 @@ function wireEvents() {
       elSearchInput.value = "";
       window.location.href = `/profile/user.html?uid=${encodeURIComponent(uid)}`;
     });
+
     document.addEventListener("click", (e) => {
       if (!elSearchDrop.contains(e.target) && !elSearchInput.contains(e.target)) {
         elSearchDrop.style.display = "none";
