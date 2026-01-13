@@ -109,6 +109,7 @@
       display:flex; align-items:center; justify-content:center;
       font-weight:900;
       cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .meAvatarBtn img{ width:100%; height:100%; object-fit:cover; }
 
@@ -191,6 +192,30 @@
       font-size:14px;
     }
 
+    .fileInfo{
+      font-size:12px;
+      opacity:.75;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      max-width:100%;
+    }
+    .fileName{
+      max-width:220px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .clearFile{
+      border:1px solid rgba(0,0,0,.12);
+      background:#fff;
+      border-radius:999px;
+      padding:6px 10px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+    }
+
     .progressWrap{ width:100%; margin-top:10px; display:none; }
     .progressBar{ width:100%; height:10px; border-radius:999px; background:rgba(0,0,0,.08); overflow:hidden; }
     .progressFill{ height:100%; width:0%; background:#1F6F86; border-radius:999px; transition: width .15s linear; }
@@ -264,7 +289,7 @@
 
       <div class="mid">
         <div class="searchWrap">
-          <input id="searchInput" class="searchInput" placeholder="Search seafarers, companies…" />
+          <input id="searchInput" class="searchInput" placeholder="Search seafarers, companies…" autocomplete="off" />
           <div id="searchDrop" class="searchDrop"></div>
         </div>
         <div id="feedStatus"></div>
@@ -288,6 +313,11 @@
         <div class="leftRow">
           <input id="postFile" type="file" accept="image/*,video/*" hidden />
           <button class="fileBtn" id="fileBtn" type="button">Photo / Video</button>
+
+          <div id="fileInfo" class="fileInfo" style="display:none;">
+            <span class="fileName" id="fileName"></span>
+            <button type="button" class="clearFile" id="clearFile">✕</button>
+          </div>
         </div>
 
         <button class="btn" id="postBtn" type="button">Post</button>
