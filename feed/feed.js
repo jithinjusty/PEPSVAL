@@ -1,4 +1,3 @@
-// /feed/feed.js
 import { supabase } from "/js/supabaseClient.js";
 
 const MEDIA_BUCKET = "post_media";
@@ -593,4 +592,141 @@ function toggleMenu(show) {
 }
 function closeMenuOnOutsideClick(e) {
   if (!elMeMenu || !elMeAvatarBtn) return;
-  if (elMeMenu.contains(e.target) || elMeAvatarBtn.contains(e.tar
+  if (elMeMenu.contains(e.target) || elMeAvatarBtn.contains(e.target)) return;
+  toggleMenu(false);
+}
+
+/* Search */
+let searchTimer = null;
+
+function showSearchDrop(show) {
+  if (!elSearchDrop) return;
+  elSearchDrop.style.display = show ? "block" : "none";
+}
+function clearSearchDrop() {
+  if (!elSearchDrop) return;
+  elSearchDrop.innerHTML = "";
+  showSearchDrop(false);
+}
+
+async function runSearch(q) {
+  const query = (q || "").trim();
+  if (!query || query.length < 2) return clearSearchDrop();
+
+  // Search profiles by name/company/rank
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, rank, company")
+    .or(`full_name.ilike.%${query}%,company.ilike.%${query}%,rank.ilike.%${query}%`)
+    .limit(8);
+
+  const rows = data || [];
+  if (!rows.length) {
+    elSearchDrop.innerHTML = `<div style="padding:10px 12px;opacity:.7;font-size:13px">No results</div>`;
+    showSearchDrop(true);
+    return;
+  }
+
+  elSearchDrop.innerHTML = rows.map(p => {
+    const name = p.full_name || "Member";
+    const meta = [p.rank, p.company].filter(Boolean).join(" • ");
+    const av = (p.avatar_url || "").trim();
+
+    return `
+      <div class="searchItem" data-id="${escapeHtml(p.id)}">
+        <div class="sAvatar">${av ? `<img src="${escapeHtml(av)}" alt="${escapeHtml(name)}" />` : escapeHtml((name[0]||"P").toUpperCase())}</div>
+        <div class="sText">
+          <div class="sName">${escapeHtml(name)}</div>
+          <div class="sMeta">${escapeHtml(meta)}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  showSearchDrop(true);
+}
+
+function wireSearchClicks() {
+  elSearchDrop.addEventListener("click", (e) => {
+    const item = e.target.closest(".searchItem");
+    if (!item) return;
+    const id = item.dataset.id;
+    clearSearchDrop();
+    elSearchInput.blur();
+
+    // open public profile page
+    window.location.href = `/profile/user.html?id=${encodeURIComponent(id)}`;
+  });
+}
+
+/* Main */
+document.addEventListener("DOMContentLoaded", async () => {
+  injectStyles();
+  await initAuth();
+
+  // file picker
+  if (elFileBtn && elPostFile) elFileBtn.addEventListener("click", () => elPostFile.click());
+  if (elPostBtn) elPostBtn.addEventListener("click", createPost);
+
+  // avatar menu
+  if (elMeAvatarBtn) {
+    elMeAvatarBtn.addEventListener("click", () => {
+      const open = elMeMenu?.style?.display === "block";
+      toggleMenu(!open);
+    });
+  }
+  document.addEventListener("click", closeMenuOnOutsideClick);
+
+  if (elMenuProfile) elMenuProfile.addEventListener("click", () => window.location.href = "/profile/home.html");
+  if (elMenuLogout) elMenuLogout.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/auth/login.html";
+  });
+
+  // search
+  wireSearchClicks();
+  if (elSearchInput) {
+    elSearchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => runSearch(elSearchInput.value), 250);
+    });
+    elSearchInput.addEventListener("blur", () => setTimeout(clearSearchDrop, 200));
+    elSearchInput.addEventListener("focus", () => {
+      if (elSearchDrop.innerHTML.trim()) showSearchDrop(true);
+    });
+  }
+
+  // click actions inside posts
+  elList.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const postEl = e.target.closest(".pv-post");
+    const action = btn.dataset.action;
+
+    if (action === "like-post" && postEl) return togglePostLike(postEl, btn);
+
+    if (action === "toggle-comments" && postEl) {
+      const box = postEl.querySelector(".pv-comments");
+      if (!box) return;
+      if (!box.hidden) { box.hidden = true; return; }
+      return loadComments(postEl);
+    }
+
+    if (action === "send-comment" && postEl) return sendComment(postEl, btn);
+
+    if (action === "like-comment") return toggleCommentLike(btn);
+
+    if (action === "reply-comment" && postEl) {
+      const commentEl = e.target.closest(".pv-comment");
+      const commentId = commentEl?.dataset?.commentId;
+      if (commentId) return setReplyMode(postEl, commentId);
+    }
+
+    if (action === "share-post" && postEl) return sharePost(postEl.dataset.postId);
+
+    if (action === "delete-post" && postEl) return deletePost(postEl.dataset.postId);
+  });
+
+  await loadFeed();
+});
