@@ -4,12 +4,16 @@ import { supabase } from "/js/supabaseClient.js";
 const elStatus = document.getElementById("feedStatus");
 const elList = document.getElementById("feedList");
 
+const elPostText = document.getElementById("postText");
+const elPostBtn = document.getElementById("postBtn");
+const elPostHint = document.getElementById("postHint");
+
 function setStatus(text) {
   if (elStatus) elStatus.textContent = text || "";
 }
 
 function escapeHtml(str = "") {
-  return str
+  return String(str)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -25,7 +29,6 @@ function timeAgo(iso) {
   const min = Math.floor(sec / 60);
   const hr = Math.floor(min / 60);
   const day = Math.floor(hr / 24);
-
   if (day > 0) return `${day}d`;
   if (hr > 0) return `${hr}h`;
   if (min > 0) return `${min}m`;
@@ -34,9 +37,7 @@ function timeAgo(iso) {
 
 function avatarFallback(name = "") {
   const letter = (name.trim()[0] || "P").toUpperCase();
-  return `
-    <div class="pv-avatar-fallback" aria-hidden="true">${escapeHtml(letter)}</div>
-  `;
+  return `<div class="pv-avatar-fallback" aria-hidden="true">${escapeHtml(letter)}</div>`;
 }
 
 function renderPost(post, profile) {
@@ -48,15 +49,20 @@ function renderPost(post, profile) {
   const headerMeta = [rank, company].filter(Boolean).join(" • ");
   const created = post?.created_at ? timeAgo(post.created_at) : "";
 
-  const content = (post?.content || "").trim();
-  const imageUrl = (post?.image_url || "").trim();
-  const videoUrl = (post?.video_url || "").trim();
+  const content = (post?.content ?? "").toString().trim();
+  const imageUrl = (post?.image_url ?? "").toString().trim();
+  const videoUrl = (post?.video_url ?? "").toString().trim();
 
   const media = videoUrl
     ? `<video class="pv-media" controls preload="metadata" src="${escapeHtml(videoUrl)}"></video>`
     : imageUrl
       ? `<img class="pv-media" src="${escapeHtml(imageUrl)}" alt="Post media" loading="lazy" />`
       : "";
+
+  // IMPORTANT: Force visible text color here (in case other CSS overrides)
+  const contentHtml = content
+    ? `<div class="pv-content">${escapeHtml(content).replaceAll("\n", "<br/>")}</div>`
+    : "";
 
   return `
     <article class="pv-post">
@@ -73,8 +79,7 @@ function renderPost(post, profile) {
         </div>
       </header>
 
-      ${content ? `<div class="pv-content">${escapeHtml(content).replaceAll("\n", "<br/>")}</div>` : ""}
-
+      ${contentHtml}
       ${media}
 
       <footer class="pv-post-ft">
@@ -87,8 +92,6 @@ function renderPost(post, profile) {
 }
 
 async function fetchProfilesMap(userIds) {
-  // If you DON'T have a foreign key relationship set up,
-  // this will still work by fetching profiles separately.
   if (!userIds || userIds.length === 0) return new Map();
 
   const { data, error } = await supabase
@@ -106,30 +109,29 @@ async function fetchProfilesMap(userIds) {
   return map;
 }
 
+let currentUserId = null;
+
+async function initAuth() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) return null;
+  currentUserId = data?.user?.id || null;
+  return currentUserId;
+}
+
 async function loadFeed() {
-  if (!elList) {
-    console.error("feedList element not found in /feed/index.html");
-    return;
-  }
+  if (!elList) return;
 
   setStatus("Loading feed…");
 
-  // 1) Ensure session exists (optional — if your app allows viewing feed only after login)
-  const { data: authData, error: authErr } = await supabase.auth.getUser();
-  if (authErr) {
-    setStatus("Not logged in. Please login again.");
-    elList.innerHTML = "";
-    return;
-  }
-  // authData.user can be null if logged out
-  // If you want feed public, remove this check.
-  if (!authData?.user) {
+  const uid = await initAuth();
+  if (!uid) {
     setStatus("Please login to view the feed.");
     elList.innerHTML = "";
+    if (elPostBtn) elPostBtn.disabled = true;
     return;
   }
 
-  // 2) Fetch posts
+  // Fetch posts
   const { data: posts, error } = await supabase
     .from("posts")
     .select("id, user_id, content, image_url, video_url, created_at")
@@ -154,40 +156,72 @@ async function loadFeed() {
     return;
   }
 
-  // 3) Fetch profiles for those users (safe even without FK relationship)
   const ids = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
   const profilesMap = await fetchProfilesMap(ids);
 
-  // 4) Render
   setStatus("");
-  elList.innerHTML = posts
-    .map(p => renderPost(p, profilesMap.get(p.user_id)))
-    .join("");
+  elList.innerHTML = posts.map(p => renderPost(p, profilesMap.get(p.user_id))).join("");
+}
+
+async function createTextPost() {
+  if (!currentUserId) {
+    if (elPostHint) elPostHint.textContent = "Please login first.";
+    return;
+  }
+
+  const text = (elPostText?.value || "").trim();
+  if (!text) {
+    if (elPostHint) elPostHint.textContent = "Write something before posting.";
+    return;
+  }
+
+  if (elPostBtn) elPostBtn.disabled = true;
+  if (elPostHint) elPostHint.textContent = "Posting…";
+
+  const { error } = await supabase.from("posts").insert({
+    user_id: currentUserId,
+    content: text
+  });
+
+  if (error) {
+    console.error("Post insert error:", error.message);
+    if (elPostHint) elPostHint.textContent = `Post failed: ${error.message}`;
+    if (elPostBtn) elPostBtn.disabled = false;
+    return;
+  }
+
+  if (elPostText) elPostText.value = "";
+  if (elPostHint) elPostHint.textContent = "Posted ✅";
+  if (elPostBtn) elPostBtn.disabled = false;
+
+  await loadFeed();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Minimal styling injected (so you don’t need a new CSS file)
+  // Minimal styling for posts (force readable text)
   const style = document.createElement("style");
   style.textContent = `
-    .pv-error,.pv-empty{padding:14px;border-radius:14px;background:rgba(0,0,0,.04);font-size:14px}
+    .pv-error,.pv-empty{padding:14px;border-radius:14px;background:rgba(0,0,0,.04);font-size:14px;color:#0f172a}
     .pv-small{opacity:.7;margin-top:6px;font-size:12px}
-    .pv-post{padding:14px;border-radius:18px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.06);margin:12px 0;backdrop-filter: blur(6px)}
+    .pv-post{padding:14px;border-radius:18px;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.06);margin:12px 0;backdrop-filter: blur(6px);color:#0f172a}
     .pv-post-hd{display:flex;gap:10px;align-items:center;margin-bottom:10px}
     .pv-avatar{width:40px;height:40px;border-radius:999px;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .pv-avatar img{width:100%;height:100%;object-fit:cover}
-    .pv-avatar-fallback{font-weight:700;opacity:.8}
+    .pv-avatar-fallback{font-weight:800;opacity:.85;color:#0f172a}
     .pv-hd-text{flex:1}
     .pv-name-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
-    .pv-name{font-weight:700}
-    .pv-time{font-size:12px;opacity:.6}
-    .pv-meta{font-size:12px;opacity:.65;margin-top:2px}
-    .pv-content{font-size:14px;line-height:1.4;margin:8px 0 10px}
+    .pv-name{font-weight:800;color:#0f172a}
+    .pv-time{font-size:12px;opacity:.6;color:#0f172a}
+    .pv-meta{font-size:12px;opacity:.65;margin-top:2px;color:#0f172a}
+    .pv-content{font-size:14px;line-height:1.45;margin:8px 0 10px;color:#0f172a}
     .pv-media{width:100%;border-radius:16px;border:1px solid rgba(0,0,0,.06);max-height:520px;object-fit:cover}
     .pv-post-ft{display:flex;gap:10px;margin-top:10px}
-    .pv-btn{border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.8);padding:8px 10px;border-radius:999px;font-size:13px}
+    .pv-btn{border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);padding:8px 10px;border-radius:999px;font-size:13px;color:#0f172a}
     .pv-btn:disabled{opacity:.55}
   `;
   document.head.appendChild(style);
+
+  if (elPostBtn) elPostBtn.addEventListener("click", createTextPost);
 
   loadFeed();
 });
