@@ -6,17 +6,17 @@
   <title>PEPSVAL — Profile</title>
 
   <link rel="stylesheet" href="/css/style.css?v=3001" />
-<link rel="stylesheet" href="/profile/profile.css?v=20260109cm" />
+  <link rel="stylesheet" href="/profile/profile.css?v=20260113fix" />
 </head>
 
 <body>
   <header class="topbar">
-    <a class="brand" href="/dashboard/index.html" aria-label="Go to dashboard">
+    <a class="brand" href="/feed/index.html" aria-label="Go to feed">
       <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
     </a>
 
-    <a class="btnGhost" href="/dashboard/index.html">Back</a>
+    <a class="btnGhost" href="/feed/index.html">Back</a>
   </header>
 
   <main class="wrap">
@@ -52,6 +52,13 @@
       <!-- Panes -->
       <section id="tab_about" class="pane">
         <div class="paneTitle">Overview</div>
+
+        <!-- Edit + Save -->
+        <div style="margin:10px 0;">
+          <button id="editProfileBtn" class="btnGhost">Edit</button>
+          <button id="saveProfileBtn" class="btnPrimary hidden">Save</button>
+        </div>
+
         <p class="muted">
           Your profile is your identity on Pepsval. Verified details increase trust and visibility.
         </p>
@@ -87,7 +94,6 @@
             <div class="v" id="availability">—</div>
           </div>
 
-          <!-- ✅ Bio column (full width on desktop) -->
           <div class="box span2">
             <div class="k">Bio</div>
             <div class="v bioText" id="bio">—</div>
@@ -117,7 +123,6 @@
     </section>
   </main>
 
-  <!-- ✅ Important: this file is NOT module now (simple + stable) -->
-  <script type="module" src="/profile/profile.js?v=20260109fix"></script>
+  <script type="module" src="/profile/profile.js?v=20260113fix"></script>
 </body>
 </html>
