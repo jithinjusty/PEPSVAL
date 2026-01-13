@@ -43,10 +43,10 @@ function toast(msg) {
   if (!el) return alert(msg);
   el.textContent = msg;
   el.style.opacity = "1";
-  el.style.transform = "translateY(0)";
+  el.style.transform = "translateX(-50%) translateY(0)";
   setTimeout(() => {
     el.style.opacity = "0";
-    el.style.transform = "translateY(8px)";
+    el.style.transform = "translateX(-50%) translateY(8px)";
   }, 2600);
 }
 
@@ -139,13 +139,6 @@ async function supabaseSelfTest() {
   const t3 = await supabase.from("post_likes").select("*").limit(1);
   if (t3.error) throw new Error(`post_likes SELECT blocked: ${t3.error.message}`);
 
-  // profiles select test (fallback safe)
-  let t4 = await supabase.from("profiles").select("id, full_name, avatar_url, rank, country").limit(1);
-  if (t4.error && /column .*country.* does not exist/i.test(t4.error.message)) {
-    t4 = await supabase.from("profiles").select("id, full_name, avatar_url, rank").limit(1);
-  }
-  if (t4.error) throw new Error(`profiles SELECT blocked: ${t4.error.message}`);
-
   setStatus("");
 }
 
@@ -161,7 +154,6 @@ async function fetchPostsRaw() {
 async function fetchProfilesMap(userIds) {
   if (!userIds.length) return new Map();
 
-  // try with country, fallback without if column missing
   let res = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, rank, country")
@@ -255,11 +247,12 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
 
     const isMine = (me && (r.user_id === me.id || r.author_id === me.id));
 
+    // ✅ UI fix: class-based media wrapper
     const mediaHtml = media ? `
-      <div style="margin-top:10px;border-radius:14px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#fff;">
+      <div class="pv-media">
         ${String(media).match(/\.(mp4|mov|webm)(\?|$)/i)
-          ? `<video src="${safeAttr(media)}" controls style="width:100%;display:block"></video>`
-          : `<img src="${safeAttr(media)}" alt="media" style="width:100%;display:block" />`}
+          ? `<video src="${safeAttr(media)}" class="pv-mediaEl" controls></video>`
+          : `<img src="${safeAttr(media)}" class="pv-mediaEl" alt="media" />`}
       </div>` : "";
 
     const commentsHtml = comments.map(c => {
@@ -364,7 +357,6 @@ async function uploadMedia(file) {
 }
 
 async function insertPost(content, mediaUrl) {
-  // Always write BOTH columns so all your mixed policies pass
   const authorName =
     me?.full_name ||
     me?.profile?.full_name ||
@@ -378,7 +370,6 @@ async function insertPost(content, mediaUrl) {
     author_name: authorName,
     content: content || ""
   };
-
   if (mediaUrl) payload.media_url = mediaUrl;
 
   const { error } = await supabase.from("posts").insert([payload]);
@@ -440,7 +431,6 @@ async function sendComment(postId, inputEl) {
   const txt = (inputEl?.value || "").trim();
   if (!txt) return;
 
-  // IMPORTANT: your table requires BOTH body + content, and your policies sometimes use author_id
   const payload = {
     post_id: postId,
     user_id: me.id,
@@ -457,7 +447,6 @@ async function sendComment(postId, inputEl) {
 }
 
 async function deleteComment(commentId) {
-  // Delete only by ID. Ownership is enforced by RLS.
   const { error } = await supabase.from("post_comments").delete().eq("id", commentId);
   if (error) throw new Error(`Delete comment blocked: ${error.message}`);
   await loadFeed();
@@ -525,7 +514,6 @@ async function loadFeed() {
     for (const r of rows) {
       if (cachedKeyset.idKey && r[cachedKeyset.idKey]) postIds.push(r[cachedKeyset.idKey]);
 
-      // include both potential owner keys so profile map is always complete
       if (r.user_id) userIds.push(r.user_id);
       if (r.author_id) userIds.push(r.author_id);
       if (cachedKeyset.userKey && r[cachedKeyset.userKey]) userIds.push(r[cachedKeyset.userKey]);
@@ -534,7 +522,6 @@ async function loadFeed() {
     const likeInfo = await fetchLikesForPosts(postIds);
     const commentInfo = await fetchCommentsForPosts(postIds);
 
-    // include commenter ids so we can show who commented
     for (const arr of commentInfo.latest.values()) {
       for (const c of arr) {
         if (c.user_id) userIds.push(c.user_id);
