@@ -15,26 +15,6 @@ body.app-bg{
   color:var(--text);
 }
 
-/* Top bar */
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:50;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
-  padding:12px 14px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
-.topbar-left{display:flex;align-items:center;gap:10px}
-.top-logo{width:34px;height:34px;border-radius:10px}
-.brand{font-weight:900;letter-spacing:.3px}
-
-.topbar-right{display:flex;align-items:center;gap:10px;position:relative}
-.user-name{font-weight:900;color:var(--text)}
-
 .avatarBtn{border:0;background:transparent;padding:0;cursor:pointer;border-radius:999px}
 .avatar{
   width:34px;height:34px;border-radius:999px;object-fit:cover;
@@ -49,210 +29,122 @@ body.app-bg{
   border-radius:14px;
   padding:8px;
   min-width:170px;
-  box-shadow:0 10px 24px rgba(0,0,0,.08);
-  z-index:99;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  display:none;
+  z-index:40;
 }
-.menuItem{
-  display:block;width:100%;
-  text-decoration:none;
-  color:var(--text);
-  font-weight:900;
-  padding:10px 10px;
-  border-radius:12px;
-  border:0;background:transparent;
+.avatarMenu button{
+  width:100%;
   text-align:left;
+  border:0;
+  background:transparent;
+  padding:10px 10px;
+  border-radius:10px;
+  font-weight:700;
   cursor:pointer;
 }
-.menuItem:hover{background:#eef6fb}
-.menuItem.danger{color:#b00020}
+.avatarMenu button:hover{background:rgba(31,111,134,.08)}
 
-/* Page container */
-.feed-wrap{
-  max-width:760px;
-  margin:14px auto;
-  padding:0 14px 90px;
-}
-
-/* Cards */
-.create-post, .postCard{
+/* ---------- Feed (Instagram-like) ---------- */
+.pv-post{
   background:var(--card);
-  border:1px solid var(--line);
-  border-radius:16px;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:18px;
   padding:12px;
-  box-shadow:0 10px 24px rgba(0,0,0,.06);
+  margin:12px 12px;
+  box-shadow:0 1px 0 rgba(0,0,0,.03);
 }
-
-.create-post textarea{
-  width:100%;
-  min-height:90px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px;
-  font:inherit;
-  outline:none;
-}
-
-/* Hide the native file picker line ("Choose file") */
-.fileInput{
-  position:absolute;
-  left:-9999px;
-  width:1px;
-  height:1px;
-  opacity:0;
-}
-
-.post-actions{
+.pv-postHead{
   display:flex;
-  gap:10px;
-  align-items:center;
   justify-content:space-between;
-  margin-top:10px;
-  flex-wrap:wrap;
+  gap:12px;
+  align-items:flex-start;
 }
-.btn, .post-actions button{
-  border:0;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  cursor:pointer;
-  background:#eaf4fb;
-  text-decoration:none;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
+.pv-user{display:flex;gap:10px;align-items:center;min-width:0;}
+.pv-userAvatar{
+  width:40px;height:40px;border-radius:999px;
+  border:1px solid rgba(0,0,0,.10);
+  overflow:hidden;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;
 }
-.post-actions .primary{
-  background:var(--brand);
-  color:#fff;
-}
+.pv-userAvatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.pv-userAvatar span{font-weight:800;color:var(--brand);}
+.pv-userMeta{min-width:0;}
+.pv-userName{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pv-userSub{font-size:12px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-/* Upload progress */
-.uploadStatus{
-  margin-top:10px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:#fbfdff;
-}
-.uploadRow{display:flex;align-items:center;gap:10px}
-.uploadRow progress{width:100%;height:12px}
-.uploadPct{min-width:44px;text-align:right;font-weight:900;color:var(--muted)}
+.pv-postRight{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto;}
+.pv-time{font-size:11px;opacity:.6;}
 
-#mediaPreview{margin-top:10px}
-.previewCard{
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px;
-  background:#fbfdff;
-}
-.previewImg,.previewVid{
-  width:100%;
-  border-radius:12px;
-  display:block;
-  border:1px solid var(--line);
-}
-.previewRemove{
-  margin-top:10px;
-  border:0;
-  background:#ffe9ea;
-  color:#b00020;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  cursor:pointer;
-}
+.pv-postText{font-size:14px;line-height:1.35;margin-top:10px;white-space:pre-wrap;word-break:break-word;}
 
-/* Feed list */
-.feed-list{margin-top:14px;display:flex;flex-direction:column;gap:12px}
-
-.postHeader{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.authorLink{font-weight:900;color:var(--text);text-decoration:none}
-.postTime{font-size:12px;color:var(--muted)}
-.postText{margin-top:10px;white-space:pre-wrap;line-height:1.35}
-
-.postMedia{margin-top:10px}
-.postMediaImg,.postMediaVid{
-  width:100%;
-  border-radius:14px;
-  border:1px solid var(--line);
-  display:block;
-}
-
-.muted{color:var(--muted)}
-.loading{color:var(--muted);font-weight:900}
-.errorBox{color:#b00020;font-weight:900}
-
-/* Bottom nav */
-.bottom-nav{
-  position:fixed;
-  left:0;right:0;bottom:0;
-  height:60px;
-  background:var(--card);
-  border-top:1px solid var(--line);
-  display:flex;
-  justify-content:space-around;
-  align-items:center;
-  padding:6px 10px;
-  z-index:60;
-}
-.nav-item{
-  flex:1;
-  text-align:center;
-  text-decoration:none;
-  color:var(--text);
-  font-weight:900;
-  font-size:13px;
-  padding:10px 6px;
-  border-radius:12px;
-}
-.nav-item.active{background:#eef6fb}
-
-/* ✅ FIX: Post footer buttons (Like / Comment / Share / Delete) */
-.postFooter{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.miniBtn{
-  border:1px solid var(--line);
-  background:#eef6fb;
-  color:var(--text);
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  cursor:pointer;
-}
-.miniBtn.active{
-  background:var(--brand);
-  color:#fff;
-  border-color:transparent;
-}
-.dangerBtn{
-  background:#ffe9ea;
-  color:#b00020;
-  border-color:#ffd1d5;
-}
-
-/* Author row on each post */
-.postAuthor a{ text-decoration:none; color:inherit; }
-.postAuthorName{font-weight:900;line-height:1.1}
-.youTag{
-  display:inline-block;
-  font-size:11px;
-  padding:2px 8px;
+.pv-actions{display:flex;gap:10px;margin-top:10px;}
+.pv-pillBtn{
+  border:1px solid rgba(0,0,0,.10);
+  background:#fff;
   border-radius:999px;
-  background:#eef6fb;
-  border:1px solid var(--line);
-  margin-left:6px;
-  vertical-align:middle;
+  padding:10px 12px;
+  font-weight:700;
+  font-size:13px;
+  cursor:pointer;
+}
+.pv-pillBtn:active{transform:scale(.99);}
+
+.pv-btn{
+  border:0;
+  background:var(--brand);
+  color:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+.pv-btn:disabled{opacity:.6;cursor:not-allowed;}
+
+.pv-linkBtn{
+  border:0;background:transparent;
+  color:var(--brand);
+  font-weight:800;
+  cursor:pointer;
+  padding:6px 8px;
 }
 
-/* Comments inline panel (temporary until we upgrade to Instagram bottom-sheet) */
-.commentsWrap{
-  background:#fbfdff;
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px;
+.pv-commentsWrap{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(0,0,0,.08);
 }
-.commentsList .muted{font-weight:900}
+.pv-commentsTitle{font-weight:900;font-size:13px;margin-bottom:8px;}
+.pv-commentsList{display:flex;flex-direction:column;gap:10px;}
+
+.pv-commentRow{display:flex;gap:10px;align-items:flex-start;}
+.pv-commentAvatar{
+  width:30px;height:30px;border-radius:999px;
+  border:1px solid rgba(0,0,0,.10);
+  overflow:hidden;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;
+}
+.pv-commentAvatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.pv-commentAvatar span{font-weight:900;color:var(--brand);font-size:12px;}
+
+.pv-commentBody{flex:1;min-width:0;}
+.pv-commentTop{display:flex;gap:10px;align-items:baseline;}
+.pv-commentName{font-weight:900;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pv-commentMeta{font-size:11px;opacity:.6;white-space:nowrap;}
+.pv-commentText{font-size:13px;line-height:1.3;white-space:pre-wrap;word-break:break-word;margin-top:2px;}
+
+.pv-commentComposer{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.pv-commentComposer input{
+  flex:1;
+  padding:10px 12px;
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,.12);
+  outline:none;
+  background:#fff;
+}
