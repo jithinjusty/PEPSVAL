@@ -14,14 +14,13 @@
       color:#0f172a;
     }
     .wrap{ max-width:720px; margin:0 auto; padding:16px; }
-
     .top{
       display:flex; align-items:center; justify-content:space-between;
       padding:10px 12px; border-radius:14px;
-      background:rgba(255,255,255,.9);
+      background:rgba(255,255,255,.92);
       border:1px solid rgba(0,0,0,.08);
       position:sticky; top:12px; backdrop-filter: blur(8px);
-      z-index:5;
+      z-index:10;
     }
     .brand{ font-weight:900; letter-spacing:.2px; }
     #feedStatus{ font-size:13px; opacity:.75; }
@@ -30,12 +29,12 @@
       margin-top:12px;
       padding:12px;
       border-radius:16px;
-      background:rgba(255,255,255,.9);
+      background:rgba(255,255,255,.92);
       border:1px solid rgba(0,0,0,.08);
     }
     .composer textarea{
       width:100%;
-      min-height:90px;
+      min-height:88px;
       resize:vertical;
       border-radius:14px;
       border:1px solid rgba(0,0,0,.12);
@@ -46,26 +45,80 @@
       color:#0f172a;
       box-sizing:border-box;
     }
-    .composerRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
       margin-top:10px;
     }
-    .hint{ font-size:12px; opacity:.65; }
+    .leftRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .hint{ font-size:12px; opacity:.7; }
+
     .btn{
       border:1px solid rgba(0,0,0,.10);
-      background:#1f6f86;
+      background:#1F6F86;
       color:#fff;
       padding:10px 14px;
       border-radius:999px;
-      font-weight:700;
+      font-weight:800;
       font-size:14px;
     }
     .btn:disabled{ opacity:.55; }
 
+    .fileBtn{
+      border:1px solid rgba(0,0,0,.10);
+      background:#ffffff;
+      color:#0f172a;
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:14px;
+    }
+
+    .progressWrap{
+      width:100%;
+      margin-top:10px;
+      display:none;
+    }
+    .progressBar{
+      width:100%;
+      height:10px;
+      border-radius:999px;
+      background:rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .progressFill{
+      height:100%;
+      width:0%;
+      background:#1F6F86;
+      border-radius:999px;
+      transition: width .15s linear;
+    }
+    .progressText{
+      margin-top:6px;
+      font-size:12px;
+      opacity:.75;
+      display:flex;
+      justify-content:space-between;
+    }
+
     #feedList{ margin-top:12px; }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:rgba(15,23,42,.92);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .2s ease;
+      z-index:999;
+    }
+    .toast.show{ opacity:1; }
   </style>
 </head>
 
@@ -79,15 +132,33 @@
     <!-- Create Post -->
     <section class="composer">
       <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
-      <div class="composerRow">
-        <div class="hint" id="postHint">Text post for now. Media upload next.</div>
-        <button class="btn" id="postBtn">Post</button>
+
+      <div class="row">
+        <div class="leftRow">
+          <input id="postFile" type="file" accept="image/*,video/*" hidden />
+          <button class="fileBtn" id="fileBtn" type="button">Photo / Video</button>
+          <div class="hint" id="postHint">Text, photo & video supported.</div>
+        </div>
+
+        <button class="btn" id="postBtn" type="button">Post</button>
+      </div>
+
+      <div class="progressWrap" id="progressWrap">
+        <div class="progressBar">
+          <div class="progressFill" id="progressFill"></div>
+        </div>
+        <div class="progressText">
+          <span id="progressLabel">Uploading…</span>
+          <span id="progressPct">0%</span>
+        </div>
       </div>
     </section>
 
     <!-- Feed -->
     <section id="feedList"></section>
   </main>
+
+  <div class="toast" id="toast">Copied</div>
 
   <script type="module" src="/feed/feed.js"></script>
 </body>
