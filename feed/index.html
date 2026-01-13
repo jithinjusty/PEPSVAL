@@ -13,17 +13,26 @@
       background:#f6fbff;
       color:#0f172a;
     }
-    .wrap{ max-width:720px; margin:0 auto; padding:12px 14px 88px; }
 
-    /* Top bar */
+    /* Fixed top bar (true fixed) */
     .top{
-      display:flex; align-items:center; justify-content:space-between;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      z-index:50;
+      padding:10px 12px;
+      background:rgba(255,255,255,.96);
+      border-bottom:1px solid rgba(0,0,0,.08);
+      backdrop-filter: blur(10px);
+    }
+    .topInner{
+      max-width:720px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:10px;
-      padding:10px 12px; border-radius:16px;
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(0,0,0,.08);
-      position:sticky; top:12px; backdrop-filter: blur(8px);
-      z-index:20;
     }
     .brandLeft{ display:flex; align-items:center; gap:10px; }
     .logo{
@@ -34,27 +43,31 @@
       padding:4px;
     }
     .brand{ font-weight:950; letter-spacing:.2px; }
-    #feedStatus{ font-size:13px; opacity:.75; }
+    #feedStatus{ font-size:13px; opacity:.7; margin-top:2px; }
 
-    .me{
-      display:flex; align-items:center; gap:10px;
-    }
     .meAvatar{
-      width:34px; height:34px; border-radius:999px;
+      width:36px; height:36px; border-radius:999px;
       overflow:hidden;
       background:rgba(0,0,0,.06);
-      border:1px solid rgba(0,0,0,.06);
+      border:1px solid rgba(0,0,0,.08);
       display:flex; align-items:center; justify-content:center;
       font-weight:900;
+      flex:0 0 auto;
     }
     .meAvatar img{ width:100%; height:100%; object-fit:cover; }
 
+    /* Page content spacing for fixed bars */
+    .wrap{
+      max-width:720px;
+      margin:0 auto;
+      padding:72px 14px 86px; /* top + bottom safe padding */
+    }
+
     /* Composer */
     .composer{
-      margin-top:12px;
       padding:12px;
       border-radius:18px;
-      background:rgba(255,255,255,.94);
+      background:rgba(255,255,255,.96);
       border:1px solid rgba(0,0,0,.08);
     }
     .composer textarea{
@@ -76,7 +89,7 @@
       margin-top:10px;
     }
     .leftRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .hint{ font-size:12px; opacity:.7; }
+    .hint{ font-size:12px; opacity:.75; }
 
     .btn{
       border:1px solid rgba(0,0,0,.10);
@@ -106,28 +119,30 @@
 
     #feedList{ margin-top:12px; }
 
-    /* Bottom nav */
+    /* Fixed bottom nav (true fixed) */
     .bottomNav{
       position:fixed;
-      left:50%;
-      bottom:12px;
-      transform:translateX(-50%);
-      width:min(720px, calc(100% - 24px));
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(0,0,0,.10);
-      border-radius:18px;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:60;
       padding:10px 12px;
+      background:rgba(255,255,255,.96);
+      border-top:1px solid rgba(0,0,0,.10);
+      backdrop-filter: blur(10px);
+    }
+    .bottomInner{
+      max-width:720px;
+      margin:0 auto;
       display:flex;
       justify-content:space-between;
       gap:8px;
-      backdrop-filter: blur(10px);
-      z-index:30;
     }
     .tab{
       flex:1;
       text-decoration:none;
       color:#0f172a;
-      font-weight:800;
+      font-weight:900;
       font-size:12px;
       display:flex;
       align-items:center;
@@ -142,11 +157,10 @@
       border-color: rgba(31,111,134,.25);
     }
 
-    /* Toast */
     .toast{
       position:fixed;
       left:50%;
-      bottom:96px;
+      bottom:78px;
       transform:translateX(-50%);
       background:rgba(15,23,42,.92);
       color:#fff;
@@ -163,8 +177,8 @@
 </head>
 
 <body>
-  <main class="wrap">
-    <div class="top">
+  <header class="top">
+    <div class="topInner">
       <div class="brandLeft">
         <img class="logo" src="/assets/logo.webp" alt="Pepsval logo" />
         <div>
@@ -173,11 +187,11 @@
         </div>
       </div>
 
-      <div class="me">
-        <div class="meAvatar" id="meAvatar" title="Your profile">P</div>
-      </div>
+      <div class="meAvatar" id="meAvatar" title="Your profile">P</div>
     </div>
+  </header>
 
+  <main class="wrap">
     <section class="composer">
       <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
 
@@ -185,7 +199,7 @@
         <div class="leftRow">
           <input id="postFile" type="file" accept="image/*,video/*" hidden />
           <button class="fileBtn" id="fileBtn" type="button">Photo / Video</button>
-          <div class="hint" id="postHint">Text, photo, video supported.</div>
+          <div class="hint" id="postHint"></div>
         </div>
 
         <button class="btn" id="postBtn" type="button">Post</button>
@@ -204,11 +218,12 @@
   </main>
 
   <nav class="bottomNav">
-    <a class="tab" href="/dashboard/index.html">Dashboard</a>
-    <a class="tab active" href="/feed/">Feed</a>
-    <a class="tab" href="/jobs/">Jobs</a>
-    <a class="tab" href="/messages/">Messages</a>
-    <a class="tab" href="/profile/home.html">Profile</a>
+    <div class="bottomInner">
+      <a class="tab active" href="/feed/">Feed</a>
+      <a class="tab" href="/jobs/">Jobs</a>
+      <a class="tab" href="/messages/">Messages</a>
+      <a class="tab" href="/profile/home.html">Profile</a>
+    </div>
   </nav>
 
   <div class="toast" id="toast">Copied</div>
