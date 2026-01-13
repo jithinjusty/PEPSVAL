@@ -1,4 +1,3 @@
-// /feed/feed.js
 import { supabase } from "/js/supabaseClient.js";
 
 const elStatus = document.getElementById("feedStatus");
@@ -10,6 +9,10 @@ const elPostHint = document.getElementById("postHint");
 
 function setStatus(text) {
   if (elStatus) elStatus.textContent = text || "";
+}
+
+function setHint(text) {
+  if (elPostHint) elPostHint.textContent = text || "";
 }
 
 function escapeHtml(str = "") {
@@ -59,7 +62,6 @@ function renderPost(post, profile) {
       ? `<img class="pv-media" src="${escapeHtml(imageUrl)}" alt="Post media" loading="lazy" />`
       : "";
 
-  // IMPORTANT: Force visible text color here (in case other CSS overrides)
   const contentHtml = content
     ? `<div class="pv-content">${escapeHtml(content).replaceAll("\n", "<br/>")}</div>`
     : "";
@@ -128,10 +130,13 @@ async function loadFeed() {
     setStatus("Please login to view the feed.");
     elList.innerHTML = "";
     if (elPostBtn) elPostBtn.disabled = true;
+    setHint("Login required.");
     return;
   }
 
-  // Fetch posts
+  if (elPostBtn) elPostBtn.disabled = false;
+  setHint("Text post for now. Media upload next.");
+
   const { data: posts, error } = await supabase
     .from("posts")
     .select("id, user_id, content, image_url, video_url, created_at")
@@ -164,41 +169,42 @@ async function loadFeed() {
 }
 
 async function createTextPost() {
-  if (!currentUserId) {
-    if (elPostHint) elPostHint.textContent = "Please login first.";
+  const uid = await initAuth();
+  if (!uid) {
+    setHint("Please login first.");
     return;
   }
 
   const text = (elPostText?.value || "").trim();
   if (!text) {
-    if (elPostHint) elPostHint.textContent = "Write something before posting.";
+    setHint("Write something before posting.");
     return;
   }
 
   if (elPostBtn) elPostBtn.disabled = true;
-  if (elPostHint) elPostHint.textContent = "Posting…";
+  setHint("Posting…");
 
+  // IMPORTANT: user_id is filled automatically by DB default auth.uid()
   const { error } = await supabase.from("posts").insert({
-    user_id: currentUserId,
     content: text
   });
 
   if (error) {
     console.error("Post insert error:", error.message);
-    if (elPostHint) elPostHint.textContent = `Post failed: ${error.message}`;
+    setHint(`Post failed: ${error.message}`);
     if (elPostBtn) elPostBtn.disabled = false;
     return;
   }
 
   if (elPostText) elPostText.value = "";
-  if (elPostHint) elPostHint.textContent = "Posted ✅";
+  setHint("Posted ✅");
   if (elPostBtn) elPostBtn.disabled = false;
 
   await loadFeed();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Minimal styling for posts (force readable text)
+  // Force readable styles for posts (prevents “text invisible” issues)
   const style = document.createElement("style");
   style.textContent = `
     .pv-error,.pv-empty{padding:14px;border-radius:14px;background:rgba(0,0,0,.04);font-size:14px;color:#0f172a}
