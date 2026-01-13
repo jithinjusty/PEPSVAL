@@ -11,6 +11,10 @@ const elPostBtn = document.getElementById("postBtn");
 const elPostFile = document.getElementById("postFile");
 const elFileBtn = document.getElementById("fileBtn");
 
+const elFileInfo = document.getElementById("fileInfo");
+const elFileName = document.getElementById("fileName");
+const elClearFile = document.getElementById("clearFile");
+
 const elProgressWrap = document.getElementById("progressWrap");
 const elProgressFill = document.getElementById("progressFill");
 const elProgressPct = document.getElementById("progressPct");
@@ -65,6 +69,12 @@ function setProgress(pct, label = "Uploading…") {
   if (elProgressPct) elProgressPct.textContent = `${p}%`;
   if (elProgressLabel) elProgressLabel.textContent = label;
 }
+function setBusy(btn, busy) {
+  if (!btn) return;
+  btn.style.opacity = busy ? "0.55" : "1";
+  btn.style.pointerEvents = busy ? "none" : "auto";
+  btn.dataset.busy = busy ? "1" : "0";
+}
 
 /* Styles injected for posts/comments only */
 function injectStyles() {
@@ -93,13 +103,21 @@ function injectStyles() {
     .pv-comments-box{display:flex;gap:8px;align-items:center}
     .pv-comment-input{flex:1;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 12px;font-size:13px;outline:none}
     .pv-reply{margin-left:14px;border-left:2px solid rgba(31,111,134,.2);padding-left:10px;margin-top:8px}
-    .pv-busy{opacity:.55;pointer-events:none}
+    .pv-loading-inline{display:inline-flex;align-items:center;gap:6px}
+    .pv-dot{width:6px;height:6px;border-radius:999px;background:rgba(15,23,42,.55);animation: pvB 1s infinite}
+    .pv-dot:nth-child(2){animation-delay:.15s}
+    .pv-dot:nth-child(3){animation-delay:.3s}
+    @keyframes pvB{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-2px);opacity:1}}
   `;
   document.head.appendChild(style);
+}
+function inlineSpinner() {
+  return `<span class="pv-loading-inline"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span></span>`;
 }
 
 /* Auth + profile */
 let currentUserId = null;
+let myProfileCache = null;
 
 async function initAuth() {
   const { data } = await supabase.auth.getUser();
@@ -176,7 +194,7 @@ function renderPost(post, profile, likeCount, likedByMe, commentCount) {
           </div>
           ${headerMeta ? `<div class="pv-meta">${escapeHtml(headerMeta)}</div>` : ""}
         </div>
-        ${isMine ? `<button class="pv-mini" data-action="delete-post">Delete</button>` : ""}
+        ${isMine ? `<button class="pv-mini" type="button" data-action="delete-post">Delete</button>` : ""}
       </header>
 
       ${contentHtml}
@@ -195,11 +213,11 @@ function renderPost(post, profile, likeCount, likedByMe, commentCount) {
         <button class="pv-btn" type="button" data-action="share-post">↗️ Share</button>
       </footer>
 
-      <section class="pv-comments" hidden>
+      <section class="pv-comments" hidden data-loaded="0">
         <div class="pv-comments-list"></div>
         <div class="pv-comments-box">
           <input class="pv-comment-input" type="text" placeholder="Write a comment…" maxlength="300" />
-          <button class="pv-mini" data-action="send-comment">Send</button>
+          <button class="pv-mini" type="button" data-action="send-comment">Send</button>
         </div>
       </section>
     </article>
@@ -267,11 +285,11 @@ async function createPost() {
     if (error) throw new Error(error.message);
 
     elPostText.value = "";
-    elPostFile.value = "";
+    clearSelectedFileUI();
     toast("Posted");
     await loadFeed();
-  } catch (e) {
-    toast(`Post failed`);
+  } catch {
+    toast("Post failed");
   } finally {
     elPostBtn.disabled = false;
   }
@@ -291,8 +309,8 @@ async function loadFeed() {
 
   elPostBtn.disabled = false;
 
-  const myProfile = await getMyProfile();
-  setTopAvatar(myProfile);
+  myProfileCache = await getMyProfile();
+  setTopAvatar(myProfileCache);
 
   const { data: posts, error } = await supabase
     .from("posts")
@@ -347,17 +365,19 @@ async function loadFeed() {
   }).join("");
 }
 
-/* Comments (load once, then update DOM without reload) */
+/* Comments (load once only; after that update DOM only) */
 const replyState = new Map(); // postId -> parentCommentId
 
-async function loadComments(postEl) {
-  const postId = postEl.dataset.postId;
+async function ensureCommentsLoaded(postEl) {
   const box = postEl.querySelector(".pv-comments");
   const list = postEl.querySelector(".pv-comments-list");
   if (!box || !list) return;
 
-  box.hidden = false;
+  if (box.dataset.loaded === "1") return;
+
   list.innerHTML = `<div style="opacity:.7;font-size:12px">Loading…</div>`;
+
+  const postId = postEl.dataset.postId;
 
   const { data: comments, error } = await supabase
     .from("post_comments")
@@ -374,69 +394,37 @@ async function loadComments(postEl) {
   const rows = comments || [];
   if (!rows.length) {
     list.innerHTML = `<div style="opacity:.7;font-size:12px">No comments yet.</div>`;
+    box.dataset.loaded = "1";
     return;
   }
 
   const userIds = [...new Set(rows.map(c => c.user_id).filter(Boolean))];
   const profilesMap = await fetchProfilesMap(userIds);
 
-  const commentIds = rows.map(c => c.id);
-  const { data: likeRows } = await supabase
-    .from("comment_likes")
-    .select("comment_id, user_id")
-    .in("comment_id", commentIds);
-
-  const likeCount = new Map();
-  const likedMine = new Set();
-  for (const r of likeRows || []) {
-    likeCount.set(r.comment_id, (likeCount.get(r.comment_id) || 0) + 1);
-    if (r.user_id === currentUserId) likedMine.add(r.comment_id);
-  }
-
-  const children = new Map();
-  const roots = [];
-  for (const c of rows) {
-    if (c.parent_id) {
-      children.set(c.parent_id, [...(children.get(c.parent_id) || []), c]);
-    } else {
-      roots.push(c);
-    }
-  }
-
-  const renderComment = (c) => {
+  const renderOne = (c) => {
     const name = profilesMap.get(c.user_id)?.full_name || "Member";
     const mine = c.user_id === currentUserId;
-    const lc = likeCount.get(c.id) || 0;
-    const lm = likedMine.has(c.id);
-
-    const kids = children.get(c.id) || [];
-    const kidsHtml = kids.map(k => `<div class="pv-reply">${renderComment(k)}</div>`).join("");
-
+    const isReply = !!c.parent_id;
     return `
-      <div class="pv-comment" data-comment-id="${escapeHtml(c.id)}">
+      <div class="pv-comment ${isReply ? "pv-reply" : ""}" data-comment-id="${escapeHtml(c.id)}" data-liked="0">
         <div><b>${escapeHtml(name)}</b> ${escapeHtml(c.content)}
           <span style="opacity:.6;font-size:12px">• ${escapeHtml(timeAgo(c.created_at))}</span>
         </div>
         <div class="pv-comment-actions">
-          <button class="pv-mini" data-action="like-comment">${lm ? "❤️" : "🤍"} <span data-c-like>(${lc})</span></button>
-          <button class="pv-mini" data-action="reply-comment">Reply</button>
-          ${mine ? `<button class="pv-mini" data-action="delete-comment">Delete</button>` : ""}
+          <button class="pv-mini" type="button" data-action="like-comment">🤍 <span data-c-like>(0)</span></button>
+          <button class="pv-mini" type="button" data-action="reply-comment">Reply</button>
+          ${mine ? `<button class="pv-mini" type="button" data-action="delete-comment">Delete</button>` : ""}
         </div>
-        ${kidsHtml}
       </div>
     `;
   };
 
-  list.innerHTML = roots.map(renderComment).join("");
+  // We insert flat; replies will be appended under parent later
+  list.innerHTML = rows.map(renderOne).join("");
+  box.dataset.loaded = "1";
 }
 
-function setBusy(btn, busy) {
-  if (!btn) return;
-  btn.classList.toggle("pv-busy", !!busy);
-  btn.dataset.busy = busy ? "1" : "0";
-}
-
-/* Like post (no comment reload) */
+/* Like post (no refresh) */
 async function togglePostLike(postEl, btn) {
   if (btn?.dataset?.busy === "1") return;
 
@@ -451,6 +439,8 @@ async function togglePostLike(postEl, btn) {
   if (heartEl) heartEl.textContent = liked ? "🤍" : "❤️";
   if (countEl) countEl.textContent = `(${liked ? Math.max(0, currentCount - 1) : currentCount + 1})`;
 
+  const oldText = btn.innerHTML;
+  btn.innerHTML = `${oldText} ${inlineSpinner()}`;
   setBusy(btn, true);
 
   try {
@@ -465,17 +455,33 @@ async function togglePostLike(postEl, btn) {
       if (error) throw error;
     }
   } catch {
-    // revert if fail
+    // revert
     postEl.dataset.liked = liked ? "1" : "0";
     if (heartEl) heartEl.textContent = liked ? "❤️" : "🤍";
     if (countEl) countEl.textContent = `(${currentCount})`;
     toast("Like failed");
   } finally {
+    btn.innerHTML = oldText;
     setBusy(btn, false);
   }
 }
 
-/* Send comment (append immediately, no reload) */
+/* Send comment/reply WITHOUT reloading list (smooth) */
+function buildCommentHtml({ id, userName, text, created_at, mine, isReply }) {
+  return `
+    <div class="pv-comment ${isReply ? "pv-reply" : ""}" data-comment-id="${escapeHtml(id)}" data-liked="0">
+      <div><b>${escapeHtml(userName)}</b> ${escapeHtml(text)}
+        <span style="opacity:.6;font-size:12px">• ${escapeHtml(timeAgo(created_at))}</span>
+      </div>
+      <div class="pv-comment-actions">
+        <button class="pv-mini" type="button" data-action="like-comment">🤍 <span data-c-like>(0)</span></button>
+        <button class="pv-mini" type="button" data-action="reply-comment">Reply</button>
+        ${mine ? `<button class="pv-mini" type="button" data-action="delete-comment">Delete</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
 async function sendComment(postEl, btn) {
   if (btn?.dataset?.busy === "1") return;
 
@@ -486,36 +492,59 @@ async function sendComment(postEl, btn) {
   if (!text) return;
 
   const parentId = replyState.get(postId) || null;
+
+  const oldText = btn.innerHTML;
+  btn.innerHTML = `${oldText} ${inlineSpinner()}`;
   setBusy(btn, true);
 
   try {
     const { data, error } = await supabase
       .from("post_comments")
       .insert({ post_id: postId, content: text, parent_id: parentId })
-      .select("id, post_id, user_id, content, created_at, parent_id")
+      .select("id, user_id, content, created_at, parent_id")
       .single();
 
     if (error) throw error;
 
-    // update count instantly
+    // Update count instantly
     const countEl = postEl.querySelector("[data-comment-count]");
     const cur = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
     if (countEl) countEl.textContent = `(${cur + 1})`;
 
-    // insert into DOM (simple: reload only this post comments area)
-    // but no "Loading..." full refresh, just call loadComments quietly
+    // Insert into DOM instantly (no reload)
+    const myName = myProfileCache?.full_name || "You";
+    const html = buildCommentHtml({
+      id: data.id,
+      userName: myName,
+      text: data.content,
+      created_at: data.created_at,
+      mine: true,
+      isReply: !!data.parent_id
+    });
+
+    if (!parentId) {
+      // root comment: append at end
+      list.insertAdjacentHTML("beforeend", html);
+    } else {
+      // reply: insert after parent comment
+      const parentEl = list.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`);
+      if (parentEl) parentEl.insertAdjacentHTML("beforeend", html);
+      else list.insertAdjacentHTML("beforeend", html); // fallback
+      replyState.delete(postId);
+      if (input) input.placeholder = "Write a comment…";
+    }
+
     input.value = "";
-    replyState.delete(postId);
-    await loadComments(postEl);
-    toast("Commented");
+    toast("Saved");
   } catch {
     toast("Comment failed");
   } finally {
+    btn.innerHTML = oldText;
     setBusy(btn, false);
   }
 }
 
-/* Like comment (update only that button, no reload) */
+/* Like comment WITHOUT reloading list */
 async function toggleCommentLike(btn) {
   if (btn?.dataset?.busy === "1") return;
 
@@ -523,16 +552,20 @@ async function toggleCommentLike(btn) {
   const commentId = commentEl?.dataset?.commentId;
   if (!commentId) return;
 
-  const likedNow = btn.textContent.includes("❤️");
+  const liked = commentEl.dataset.liked === "1";
   const countSpan = btn.querySelector("[data-c-like]");
   const cur = Number((countSpan?.textContent || "0").replace(/[^\d]/g, "")) || 0;
 
   // optimistic
-  btn.innerHTML = `${likedNow ? "🤍" : "❤️"} <span data-c-like>(${likedNow ? Math.max(0, cur - 1) : cur + 1})</span>`;
+  commentEl.dataset.liked = liked ? "0" : "1";
+  btn.innerHTML = `${liked ? "🤍" : "❤️"} <span data-c-like>(${liked ? Math.max(0, cur - 1) : cur + 1})</span>`;
+
+  const oldHtml = btn.innerHTML;
+  btn.innerHTML = `${oldHtml} ${inlineSpinner()}`;
   setBusy(btn, true);
 
   try {
-    if (!likedNow) {
+    if (!liked) {
       const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId });
       if (error) throw error;
     } else {
@@ -543,15 +576,16 @@ async function toggleCommentLike(btn) {
       if (error) throw error;
     }
   } catch {
-    // revert if fail
-    btn.innerHTML = `${likedNow ? "❤️" : "🤍"} <span data-c-like>(${cur})</span>`;
+    // revert
+    commentEl.dataset.liked = liked ? "1" : "0";
+    btn.innerHTML = `${liked ? "❤️" : "🤍"} <span data-c-like>(${cur})</span>`;
     toast("Failed");
   } finally {
     setBusy(btn, false);
   }
 }
 
-/* Reply mode */
+/* Reply mode (no refresh) */
 function setReplyMode(postEl, commentId) {
   const postId = postEl.dataset.postId;
   const input = postEl.querySelector(".pv-comment-input");
@@ -560,7 +594,6 @@ function setReplyMode(postEl, commentId) {
     input.placeholder = "Write a reply…";
     input.focus();
   }
-  toast("Reply mode");
 }
 
 /* Delete post */
@@ -590,7 +623,10 @@ function toggleMenu(show) {
   if (!elMeMenu) return;
   elMeMenu.style.display = show ? "block" : "none";
 }
-function closeMenuOnOutsideClick(e) {
+function isMenuOpen() {
+  return elMeMenu && elMeMenu.style.display === "block";
+}
+function closeMenuOnOutside(e) {
   if (!elMeMenu || !elMeAvatarBtn) return;
   if (elMeMenu.contains(e.target) || elMeAvatarBtn.contains(e.target)) return;
   toggleMenu(false);
@@ -613,12 +649,21 @@ async function runSearch(q) {
   const query = (q || "").trim();
   if (!query || query.length < 2) return clearSearchDrop();
 
-  // Search profiles by name/company/rank
-  const { data } = await supabase
+  // Show immediate "Searching..." so user sees it works
+  elSearchDrop.innerHTML = `<div style="padding:10px 12px;opacity:.7;font-size:13px">Searching…</div>`;
+  showSearchDrop(true);
+
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, rank, company")
     .or(`full_name.ilike.%${query}%,company.ilike.%${query}%,rank.ilike.%${query}%`)
     .limit(8);
+
+  if (error) {
+    elSearchDrop.innerHTML = `<div style="padding:10px 12px;opacity:.7;font-size:13px">Search failed</div>`;
+    showSearchDrop(true);
+    return;
+  }
 
   const rows = data || [];
   if (!rows.length) {
@@ -631,7 +676,6 @@ async function runSearch(q) {
     const name = p.full_name || "Member";
     const meta = [p.rank, p.company].filter(Boolean).join(" • ");
     const av = (p.avatar_url || "").trim();
-
     return `
       <div class="searchItem" data-id="${escapeHtml(p.id)}">
         <div class="sAvatar">${av ? `<img src="${escapeHtml(av)}" alt="${escapeHtml(name)}" />` : escapeHtml((name[0]||"P").toUpperCase())}</div>
@@ -647,16 +691,41 @@ async function runSearch(q) {
 }
 
 function wireSearchClicks() {
+  if (!elSearchDrop) return;
+  elSearchDrop.addEventListener("mousedown", (e) => {
+    // prevent blur clearing before click (mobile/desktop)
+    e.preventDefault();
+  });
+
   elSearchDrop.addEventListener("click", (e) => {
     const item = e.target.closest(".searchItem");
     if (!item) return;
     const id = item.dataset.id;
     clearSearchDrop();
     elSearchInput.blur();
-
-    // open public profile page
     window.location.href = `/profile/user.html?id=${encodeURIComponent(id)}`;
   });
+}
+
+/* File attached UI */
+function humanSize(bytes) {
+  const b = Number(bytes || 0);
+  if (b < 1024) return `${b} B`;
+  const kb = b / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(1)} MB`;
+}
+function updateSelectedFileUI() {
+  const file = elPostFile?.files?.[0] || null;
+  if (!file) return clearSelectedFileUI();
+  if (elFileInfo) elFileInfo.style.display = "flex";
+  if (elFileName) elFileName.textContent = `${file.name} • ${humanSize(file.size)}`;
+}
+function clearSelectedFileUI() {
+  if (elPostFile) elPostFile.value = "";
+  if (elFileInfo) elFileInfo.style.display = "none";
+  if (elFileName) elFileName.textContent = "";
 }
 
 /* Main */
@@ -664,18 +733,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   injectStyles();
   await initAuth();
 
-  // file picker
-  if (elFileBtn && elPostFile) elFileBtn.addEventListener("click", () => elPostFile.click());
+  // File picker
+  if (elFileBtn && elPostFile) {
+    elFileBtn.addEventListener("click", () => elPostFile.click());
+    elPostFile.addEventListener("change", updateSelectedFileUI);
+  }
+  if (elClearFile) elClearFile.addEventListener("click", clearSelectedFileUI);
+
+  // Post
   if (elPostBtn) elPostBtn.addEventListener("click", createPost);
 
-  // avatar menu
+  // Avatar menu (add touchstart too for mobile)
+  const openCloseMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleMenu(!isMenuOpen());
+  };
   if (elMeAvatarBtn) {
-    elMeAvatarBtn.addEventListener("click", () => {
-      const open = elMeMenu?.style?.display === "block";
-      toggleMenu(!open);
-    });
+    elMeAvatarBtn.addEventListener("click", openCloseMenu);
+    elMeAvatarBtn.addEventListener("touchstart", openCloseMenu, { passive: false });
   }
-  document.addEventListener("click", closeMenuOnOutsideClick);
+  document.addEventListener("click", closeMenuOnOutside);
 
   if (elMenuProfile) elMenuProfile.addEventListener("click", () => window.location.href = "/profile/home.html");
   if (elMenuLogout) elMenuLogout.addEventListener("click", async () => {
@@ -683,20 +761,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "/auth/login.html";
   });
 
-  // search
+  // Search
   wireSearchClicks();
+
   if (elSearchInput) {
+    // prevent Enter from moving focus to post textbox
+    elSearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        runSearch(elSearchInput.value);
+      }
+    });
+
     elSearchInput.addEventListener("input", () => {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => runSearch(elSearchInput.value), 250);
+      searchTimer = setTimeout(() => runSearch(elSearchInput.value), 220);
     });
-    elSearchInput.addEventListener("blur", () => setTimeout(clearSearchDrop, 200));
+
+    // keep dropdown while interacting
+    elSearchInput.addEventListener("blur", () => setTimeout(clearSearchDrop, 250));
     elSearchInput.addEventListener("focus", () => {
       if (elSearchDrop.innerHTML.trim()) showSearchDrop(true);
     });
   }
 
-  // click actions inside posts
+  // Click actions inside posts
   elList.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
@@ -710,7 +800,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const box = postEl.querySelector(".pv-comments");
       if (!box) return;
       if (!box.hidden) { box.hidden = true; return; }
-      return loadComments(postEl);
+      box.hidden = false;
+      await ensureCommentsLoaded(postEl);
+      return;
     }
 
     if (action === "send-comment" && postEl) return sendComment(postEl, btn);
