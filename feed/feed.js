@@ -76,7 +76,7 @@ function setBusy(btn, busy) {
   btn.dataset.busy = busy ? "1" : "0";
 }
 
-/* Styles injected for posts/comments only */
+/* Inline spinner */
 function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
@@ -365,7 +365,7 @@ async function loadFeed() {
   }).join("");
 }
 
-/* Comments (load once only; after that update DOM only) */
+/* Comments (load once; after that update DOM only) */
 const replyState = new Map(); // postId -> parentCommentId
 
 async function ensureCommentsLoaded(postEl) {
@@ -419,7 +419,6 @@ async function ensureCommentsLoaded(postEl) {
     `;
   };
 
-  // We insert flat; replies will be appended under parent later
   list.innerHTML = rows.map(renderOne).join("");
   box.dataset.loaded = "1";
 }
@@ -434,7 +433,6 @@ async function togglePostLike(postEl, btn) {
   const heartEl = postEl.querySelector(".pv-heart");
   const currentCount = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
 
-  // optimistic
   postEl.dataset.liked = liked ? "0" : "1";
   if (heartEl) heartEl.textContent = liked ? "🤍" : "❤️";
   if (countEl) countEl.textContent = `(${liked ? Math.max(0, currentCount - 1) : currentCount + 1})`;
@@ -455,7 +453,6 @@ async function togglePostLike(postEl, btn) {
       if (error) throw error;
     }
   } catch {
-    // revert
     postEl.dataset.liked = liked ? "1" : "0";
     if (heartEl) heartEl.textContent = liked ? "❤️" : "🤍";
     if (countEl) countEl.textContent = `(${currentCount})`;
@@ -466,8 +463,8 @@ async function togglePostLike(postEl, btn) {
   }
 }
 
-/* Send comment/reply WITHOUT reloading list (smooth) */
-function buildCommentHtml({ id, userName, text, created_at, mine, isReply }) {
+/* Send comment/reply WITHOUT reloading list */
+function buildCommentHtml({({ id, userName, text, created_at, mine, isReply }) {
   return `
     <div class="pv-comment ${isReply ? "pv-reply" : ""}" data-comment-id="${escapeHtml(id)}" data-liked="0">
       <div><b>${escapeHtml(userName)}</b> ${escapeHtml(text)}
@@ -506,12 +503,10 @@ async function sendComment(postEl, btn) {
 
     if (error) throw error;
 
-    // Update count instantly
     const countEl = postEl.querySelector("[data-comment-count]");
     const cur = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
     if (countEl) countEl.textContent = `(${cur + 1})`;
 
-    // Insert into DOM instantly (no reload)
     const myName = myProfileCache?.full_name || "You";
     const html = buildCommentHtml({
       id: data.id,
@@ -522,14 +517,16 @@ async function sendComment(postEl, btn) {
       isReply: !!data.parent_id
     });
 
+    // If it previously showed "No comments yet.", remove that line
+    const emptyMsg = list.querySelector("[data-empty-msg]");
+    if (emptyMsg) emptyMsg.remove();
+
     if (!parentId) {
-      // root comment: append at end
       list.insertAdjacentHTML("beforeend", html);
     } else {
-      // reply: insert after parent comment
       const parentEl = list.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`);
       if (parentEl) parentEl.insertAdjacentHTML("beforeend", html);
-      else list.insertAdjacentHTML("beforeend", html); // fallback
+      else list.insertAdjacentHTML("beforeend", html);
       replyState.delete(postId);
       if (input) input.placeholder = "Write a comment…";
     }
@@ -540,6 +537,44 @@ async function sendComment(postEl, btn) {
     toast("Comment failed");
   } finally {
     btn.innerHTML = oldText;
+    setBusy(btn, false);
+  }
+}
+
+/* Delete comment (FIX) — removes instantly + updates count */
+async function deleteComment(postEl, commentEl, btn) {
+  if (!commentEl) return;
+  const commentId = commentEl.dataset.commentId;
+  if (!commentId) return;
+
+  if (btn?.dataset?.busy === "1") return;
+  if (!confirm("Delete this comment?")) return;
+
+  const oldHtml = btn.innerHTML;
+  btn.innerHTML = `${oldHtml} ${inlineSpinner()}`;
+  setBusy(btn, true);
+
+  try {
+    const { error } = await supabase
+      .from("post_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", currentUserId);
+
+    if (error) throw error;
+
+    // Remove from DOM
+    commentEl.remove();
+
+    // decrement comment count
+    const countEl = postEl.querySelector("[data-comment-count]");
+    const cur = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
+    if (countEl) countEl.textContent = `(${Math.max(0, cur - 1)})`;
+
+    toast("Deleted");
+  } catch {
+    toast("Delete failed");
+  } finally {
     setBusy(btn, false);
   }
 }
@@ -556,7 +591,6 @@ async function toggleCommentLike(btn) {
   const countSpan = btn.querySelector("[data-c-like]");
   const cur = Number((countSpan?.textContent || "0").replace(/[^\d]/g, "")) || 0;
 
-  // optimistic
   commentEl.dataset.liked = liked ? "0" : "1";
   btn.innerHTML = `${liked ? "🤍" : "❤️"} <span data-c-like>(${liked ? Math.max(0, cur - 1) : cur + 1})</span>`;
 
@@ -576,7 +610,6 @@ async function toggleCommentLike(btn) {
       if (error) throw error;
     }
   } catch {
-    // revert
     commentEl.dataset.liked = liked ? "1" : "0";
     btn.innerHTML = `${liked ? "❤️" : "🤍"} <span data-c-like>(${cur})</span>`;
     toast("Failed");
@@ -585,7 +618,7 @@ async function toggleCommentLike(btn) {
   }
 }
 
-/* Reply mode (no refresh) */
+/* Reply mode */
 function setReplyMode(postEl, commentId) {
   const postId = postEl.dataset.postId;
   const input = postEl.querySelector(".pv-comment-input");
@@ -649,7 +682,6 @@ async function runSearch(q) {
   const query = (q || "").trim();
   if (!query || query.length < 2) return clearSearchDrop();
 
-  // Show immediate "Searching..." so user sees it works
   elSearchDrop.innerHTML = `<div style="padding:10px 12px;opacity:.7;font-size:13px">Searching…</div>`;
   showSearchDrop(true);
 
@@ -692,11 +724,7 @@ async function runSearch(q) {
 
 function wireSearchClicks() {
   if (!elSearchDrop) return;
-  elSearchDrop.addEventListener("mousedown", (e) => {
-    // prevent blur clearing before click (mobile/desktop)
-    e.preventDefault();
-  });
-
+  elSearchDrop.addEventListener("mousedown", (e) => e.preventDefault());
   elSearchDrop.addEventListener("click", (e) => {
     const item = e.target.closest(".searchItem");
     if (!item) return;
@@ -707,7 +735,7 @@ function wireSearchClicks() {
   });
 }
 
-/* File attached UI */
+/* File attached UI (FIX) */
 function humanSize(bytes) {
   const b = Number(bytes || 0);
   if (b < 1024) return `${b} B`;
@@ -719,8 +747,12 @@ function humanSize(bytes) {
 function updateSelectedFileUI() {
   const file = elPostFile?.files?.[0] || null;
   if (!file) return clearSelectedFileUI();
+
   if (elFileInfo) elFileInfo.style.display = "flex";
   if (elFileName) elFileName.textContent = `${file.name} • ${humanSize(file.size)}`;
+
+  // small confirmation so you KNOW it worked
+  toast("File attached");
 }
 function clearSelectedFileUI() {
   if (elPostFile) elPostFile.value = "";
@@ -736,14 +768,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   // File picker
   if (elFileBtn && elPostFile) {
     elFileBtn.addEventListener("click", () => elPostFile.click());
+
+    // Some mobiles fire input instead of change
     elPostFile.addEventListener("change", updateSelectedFileUI);
+    elPostFile.addEventListener("input", updateSelectedFileUI);
   }
   if (elClearFile) elClearFile.addEventListener("click", clearSelectedFileUI);
 
   // Post
   if (elPostBtn) elPostBtn.addEventListener("click", createPost);
 
-  // Avatar menu (add touchstart too for mobile)
+  // Avatar menu
   const openCloseMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -763,9 +798,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Search
   wireSearchClicks();
-
   if (elSearchInput) {
-    // prevent Enter from moving focus to post textbox
     elSearchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -773,13 +806,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         runSearch(elSearchInput.value);
       }
     });
-
     elSearchInput.addEventListener("input", () => {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => runSearch(elSearchInput.value), 220);
     });
-
-    // keep dropdown while interacting
     elSearchInput.addEventListener("blur", () => setTimeout(clearSearchDrop, 250));
     elSearchInput.addEventListener("focus", () => {
       if (elSearchDrop.innerHTML.trim()) showSearchDrop(true);
@@ -813,6 +843,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const commentEl = e.target.closest(".pv-comment");
       const commentId = commentEl?.dataset?.commentId;
       if (commentId) return setReplyMode(postEl, commentId);
+    }
+
+    // ✅ DELETE COMMENT FIX
+    if (action === "delete-comment" && postEl) {
+      const commentEl = e.target.closest(".pv-comment");
+      return deleteComment(postEl, commentEl, btn);
     }
 
     if (action === "share-post" && postEl) return sharePost(postEl.dataset.postId);
