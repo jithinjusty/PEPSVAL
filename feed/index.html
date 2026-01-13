@@ -4,24 +4,91 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Feed</title>
+
   <style>
     :root { color-scheme: light; }
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6fbff;color:#0f172a}
-    .wrap{max-width:720px;margin:0 auto;padding:16px}
-    .top{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.08);position:sticky;top:12px;backdrop-filter:blur(8px)}
-    .brand{font-weight:900;letter-spacing:.2px}
-    #feedStatus{font-size:13px;opacity:.75}
-    #feedList{margin-top:12px}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#f6fbff;
+      color:#0f172a;
+    }
+    .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-radius:14px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(0,0,0,.08);
+      position:sticky; top:12px; backdrop-filter: blur(8px);
+      z-index:5;
+    }
+    .brand{ font-weight:900; letter-spacing:.2px; }
+    #feedStatus{ font-size:13px; opacity:.75; }
+
+    .composer{
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .composer textarea{
+      width:100%;
+      min-height:90px;
+      resize:vertical;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.12);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      background:#fff;
+      color:#0f172a;
+      box-sizing:border-box;
+    }
+    .composerRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+    }
+    .hint{ font-size:12px; opacity:.65; }
+    .btn{
+      border:1px solid rgba(0,0,0,.10);
+      background:#1f6f86;
+      color:#fff;
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:14px;
+    }
+    .btn:disabled{ opacity:.55; }
+
+    #feedList{ margin-top:12px; }
   </style>
 </head>
+
 <body>
   <main class="wrap">
     <div class="top">
       <div class="brand">Pepsval</div>
       <div id="feedStatus">Loading feed…</div>
     </div>
+
+    <!-- Create Post -->
+    <section class="composer">
+      <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
+      <div class="composerRow">
+        <div class="hint" id="postHint">Text post for now. Media upload next.</div>
+        <button class="btn" id="postBtn">Post</button>
+      </div>
+    </section>
+
+    <!-- Feed -->
     <section id="feedList"></section>
   </main>
+
   <script type="module" src="/feed/feed.js"></script>
 </body>
 </html>
