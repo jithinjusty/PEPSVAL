@@ -404,3 +404,9 @@ button,input,textarea{font-family:inherit}
   background: rgba(31,111,134,.10);
   border-color: rgba(31,111,134,.35);
 }
+/* Show comment actions (Like, Reply, Delete) */
+.pv-commentActions{
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
