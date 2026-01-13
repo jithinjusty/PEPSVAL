@@ -1,4 +1,4 @@
-import { supabase } from "/js/supabase.js";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "/js/supabase.js";
 import { requireAuth, getMyProfile } from "/js/guard.js";
 
 const userNameEl = document.getElementById("userName");
@@ -14,6 +14,10 @@ const addMediaBtn = document.getElementById("addMedia");
 const postBtn = document.getElementById("postBtn");
 const mediaPreviewEl = document.getElementById("mediaPreview");
 const feedListEl = document.getElementById("feedList");
+
+const uploadStatusEl = document.getElementById("uploadStatus");
+const uploadBarEl = document.getElementById("uploadBar");
+const uploadPctEl = document.getElementById("uploadPct");
 
 let session = null;
 let me = null;
@@ -36,11 +40,7 @@ function escapeHtml(s) {
 }
 
 function fmt(ts) {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return "";
-  }
+  try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
 
 function nameFromProfileRow(row) {
@@ -58,18 +58,9 @@ function setTopBar(profile) {
 }
 
 /* Dropdown */
-function closeMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = true;
-}
-function toggleMenu() {
-  if (!avatarMenu) return;
-  avatarMenu.hidden = !avatarMenu.hidden;
-}
-avatarBtn?.addEventListener("click", (e) => {
-  e.preventDefault();
-  toggleMenu();
-});
+function closeMenu() { if (!avatarMenu) return; avatarMenu.hidden = true; }
+function toggleMenu() { if (!avatarMenu) return; avatarMenu.hidden = !avatarMenu.hidden; }
+avatarBtn?.addEventListener("click", (e) => { e.preventDefault(); toggleMenu(); });
 document.addEventListener("click", (e) => {
   if (!avatarMenu || avatarMenu.hidden) return;
   const inside = avatarMenu.contains(e.target) || avatarBtn.contains(e.target);
@@ -87,6 +78,9 @@ function clearPreview() {
   selectedFile = null;
   mediaPreviewEl.innerHTML = "";
   if (postMediaEl) postMediaEl.value = "";
+  if (uploadStatusEl) uploadStatusEl.hidden = true;
+  if (uploadBarEl) uploadBarEl.value = 0;
+  if (uploadPctEl) uploadPctEl.textContent = "0%";
 }
 
 function showPreview(file) {
@@ -119,10 +113,7 @@ function showPreview(file) {
   });
 }
 
-addMediaBtn?.addEventListener("click", (e) => {
-  e.preventDefault();
-  postMediaEl?.click();
-});
+addMediaBtn?.addEventListener("click", () => postMediaEl?.click());
 postMediaEl?.addEventListener("change", (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -136,9 +127,7 @@ postMediaEl?.addEventListener("change", (e) => {
   showPreview(file);
 });
 
-/* ---- Feed rendering ---- */
-const postsCache = new Map(); // postId -> row
-
+/* Render posts (from v_feed_posts view) */
 function renderPost(row) {
   const postId = row.id;
   const authorId = row.author_id;
@@ -162,45 +151,37 @@ function renderPost(row) {
     }
   }
 
-  const liked = row.liked_by_me === true;
+  const deleteBtn = isMine
+    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(String(postId))}">Delete</button>`
+    : ``;
+
+  const likeLabel = row.liked_by_me ? "Liked" : "Like";
   const likeCount = Number(row.like_count || 0);
   const commentCount = Number(row.comment_count || 0);
 
-  const likeLabel = liked ? "Liked" : "Like";
-  const likeCls = liked ? "miniBtn miniBtn--active" : "miniBtn";
-
-  const deleteBtn = isMine
-    ? `<button class="miniBtn dangerBtn" type="button" data-action="delete" data-post-id="${escapeHtml(
-        String(postId)
-      )}">Delete</button>`
-    : ``;
-
   const actions = `
     <div class="postFooter">
-      <button class="${likeCls}" type="button" data-action="like" data-post-id="${escapeHtml(String(postId))}">
-        ${likeLabel} <span class="count" data-count="like">${likeCount}</span>
+      <button class="miniBtn ${row.liked_by_me ? "active" : ""}" type="button" data-action="like" data-post-id="${escapeHtml(String(postId))}">
+        ${likeLabel} (${likeCount})
       </button>
-
       <button class="miniBtn" type="button" data-action="comment" data-post-id="${escapeHtml(String(postId))}">
-        Comment <span class="count" data-count="comment">${commentCount}</span>
+        Comment (${commentCount})
       </button>
-
       <button class="miniBtn" type="button" data-action="share" data-post-id="${escapeHtml(String(postId))}">
         Share
       </button>
-
       ${deleteBtn}
     </div>
   `;
 
   return `
-    <article class="postCard" id="post-${escapeHtml(String(postId))}" data-post-id="${escapeHtml(String(postId))}">
+    <article class="postCard" id="post-${escapeHtml(String(postId))}">
       <div class="postHeader">
-        <div class="postAuthor">
-          <a class="authorRow" href="${authorLink}">
-            <img class="authorAvatar" src="${escapeHtml(avatarUrl)}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
-            <div class="authorMeta">
-              <div class="postAuthorName">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
+        <div class="postAuthor" style="display:flex;align-items:center;gap:10px;">
+          <a href="${authorLink}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+            <img src="${escapeHtml(avatarUrl)}" alt="" style="width:34px;height:34px;border-radius:999px;object-fit:cover;border:1px solid #dbe7ef;background:#fff" onerror="this.src='${DEFAULT_AVATAR}'"/>
+            <div>
+              <div class="postAuthorName" style="font-weight:900;line-height:1.1;">${authorName}${isMine ? ` <span class="youTag">you</span>` : ``}</div>
               <div class="postTime">${time}</div>
             </div>
           </a>
@@ -211,6 +192,15 @@ function renderPost(row) {
       ${mediaHtml ? `<div class="postMedia">${mediaHtml}</div>` : ``}
 
       ${actions}
+
+      <!-- Comments panel (simple) -->
+      <div class="commentsWrap" data-comments-wrap="${escapeHtml(String(postId))}" style="display:none;margin-top:10px;border-top:1px solid #dbe7ef;padding-top:10px;">
+        <div class="commentsList" data-comments-list="${escapeHtml(String(postId))}"></div>
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <input class="commentInput" data-comment-input="${escapeHtml(String(postId))}" placeholder="Add a comment..." style="flex:1;padding:10px;border:1px solid #dbe7ef;border-radius:12px;" />
+          <button class="miniBtn" data-action="comment-post" data-post-id="${escapeHtml(String(postId))}">Post</button>
+        </div>
+      </div>
     </article>
   `;
 }
@@ -220,9 +210,7 @@ async function loadPosts() {
 
   const { data, error } = await supabase
     .from("v_feed_posts")
-    .select(
-      "id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url, like_count, comment_count, liked_by_me"
-    )
+    .select("id, content, created_at, media_url, media_type, author_id, full_name, username, avatar_url, like_count, comment_count, liked_by_me")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -236,18 +224,11 @@ async function loadPosts() {
     return;
   }
 
-  postsCache.clear();
-  for (const row of data) postsCache.set(String(row.id), row);
-
   feedListEl.innerHTML = data.map(renderPost).join("");
 }
 
 /* Delete post */
 async function deletePost(postId) {
-  if (!session?.user?.id) {
-    alert("Please login again.");
-    return;
-  }
   if (!postId) return;
   const ok = confirm("Delete this post?");
   if (!ok) return;
@@ -262,35 +243,59 @@ async function deletePost(postId) {
     alert(`Delete failed: ${error.message}`);
     return;
   }
-
-  document.getElementById(`post-${postId}`)?.remove();
+  await loadPosts();
 }
 
-/* Upload + create post */
+/* Upload (with real % progress) */
 async function uploadMedia(file) {
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${session.user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
 
-  const { error: upErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "3600" });
+  if (uploadStatusEl) uploadStatusEl.hidden = false;
+  if (uploadBarEl) uploadBarEl.value = 0;
+  if (uploadPctEl) uploadPctEl.textContent = "0%";
 
-  if (upErr) throw upErr;
+  const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
+
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
+    xhr.setRequestHeader("apikey", SUPABASE_ANON_KEY);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("x-upsert", "false");
+
+    xhr.upload.onprogress = (evt) => {
+      if (!evt.lengthComputable) return;
+      const pct = Math.round((evt.loaded / evt.total) * 100);
+      if (uploadBarEl) uploadBarEl.value = pct;
+      if (uploadPctEl) uploadPctEl.textContent = `${pct}%`;
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (uploadBarEl) uploadBarEl.value = 100;
+        if (uploadPctEl) uploadPctEl.textContent = "100%";
+        resolve();
+      } else {
+        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Upload failed (network error)."));
+    xhr.send(file);
+  });
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
 
+/* Create post */
 async function createPost() {
   const content = (postTextEl.value || "").trim();
 
   if (!content && !selectedFile) {
     alert("Write something or add a photo/video.");
-    return;
-  }
-
-  if (!session?.user?.id) {
-    alert("Please login again.");
     return;
   }
 
@@ -308,7 +313,7 @@ async function createPost() {
 
     const payload = {
       author_id: session.user.id,
-      author_name: nameFromProfileRow(me), // legacy
+      author_name: nameFromProfileRow(me),
       content,
       media_url,
       media_type,
@@ -319,7 +324,6 @@ async function createPost() {
 
     postTextEl.value = "";
     clearPreview();
-
     await loadPosts();
   } catch (e) {
     alert(`Post failed: ${e.message || e}`);
@@ -331,332 +335,133 @@ async function createPost() {
 
 postBtn?.addEventListener("click", createPost);
 
-/* ---- Like system (no full refresh) ---- */
-function findPostCard(postId) {
-  return feedListEl?.querySelector?.(`.postCard[data-post-id="${CSS.escape(String(postId))}"]`) || null;
-}
-function setLikeUI(postId, liked, likeCount) {
-  const card = findPostCard(postId);
-  if (!card) return;
-
-  const likeBtn = card.querySelector('button[data-action="like"]');
-  if (!likeBtn) return;
-
-  const countEl = likeBtn.querySelector('span[data-count="like"]');
-  if (countEl) countEl.textContent = String(Math.max(0, Number(likeCount || 0)));
-
-  likeBtn.classList.toggle("miniBtn--active", liked === true);
-  likeBtn.childNodes[0].textContent = liked ? "Liked " : "Like ";
-}
-
+/* Likes */
 async function toggleLike(postId) {
-  if (!session?.user?.id) {
-    alert("Please login again.");
-    return;
-  }
+  const { data: existing, error: selErr } = await supabase
+    .from("post_likes")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("user_id", session.user.id)
+    .maybeSingle();
 
-  const row = postsCache.get(String(postId));
-  const currentlyLiked = row?.liked_by_me === true;
-  const currentCount = Number(row?.like_count || 0);
+  if (selErr) throw selErr;
 
-  const nextLiked = !currentlyLiked;
-  const nextCount = currentCount + (nextLiked ? 1 : -1);
-
-  setLikeUI(postId, nextLiked, nextCount);
-
-  if (row) {
-    row.liked_by_me = nextLiked;
-    row.like_count = nextCount;
-    postsCache.set(String(postId), row);
-  }
-
-  try {
-    if (nextLiked) {
-      const { error } = await supabase.from("post_likes").insert({
-        post_id: postId,
-        user_id: session.user.id,
-      });
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", session.user.id);
-      if (error) throw error;
-    }
-  } catch (e) {
-    setLikeUI(postId, currentlyLiked, currentCount);
-    if (row) {
-      row.liked_by_me = currentlyLiked;
-      row.like_count = currentCount;
-      postsCache.set(String(postId), row);
-    }
-    alert(`Like failed: ${e.message || e}`);
+  if (existing?.id) {
+    const { error } = await supabase.from("post_likes").delete().eq("id", existing.id);
+    if (error) throw error;
+    return false;
+  } else {
+    const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: session.user.id });
+    if (error) throw error;
+    return true;
   }
 }
 
-/* ---- Comments bottom-sheet ---- */
-let commentsUI = null;
-
-function ensureCommentsUI() {
-  if (commentsUI) return commentsUI;
-
-  const overlay = document.createElement("div");
-  overlay.className = "sheetOverlay";
-  overlay.hidden = true;
-
-  overlay.innerHTML = `
-    <div class="sheet" role="dialog" aria-modal="true" aria-label="Comments">
-      <div class="sheetHeader">
-        <button type="button" class="sheetClose" aria-label="Close">×</button>
-        <div class="sheetTitle">Comments</div>
-      </div>
-
-      <div class="sheetBody">
-        <div class="commentsList" id="commentsList"><div class="muted">Loading…</div></div>
-      </div>
-
-      <div class="sheetComposer">
-        <div class="replyHint" id="replyHint" hidden></div>
-        <input id="commentInput" class="commentInput" placeholder="Write a comment…" autocomplete="off" />
-        <button id="commentSend" class="commentSend" type="button">Post</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const sheet = overlay.querySelector(".sheet");
-  const closeBtn = overlay.querySelector(".sheetClose");
-
-  closeBtn?.addEventListener("click", () => closeComments());
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeComments();
-  });
-  sheet?.addEventListener("click", (e) => e.stopPropagation());
-
-  commentsUI = {
-    overlay,
-    listEl: overlay.querySelector("#commentsList"),
-    inputEl: overlay.querySelector("#commentInput"),
-    sendEl: overlay.querySelector("#commentSend"),
-    replyHintEl: overlay.querySelector("#replyHint"),
-    activePostId: null,
-    replyToId: null,
-  };
-
-  commentsUI.sendEl?.addEventListener("click", async () => {
-    await submitComment();
-  });
-  commentsUI.inputEl?.addEventListener("keydown", async (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      await submitComment();
-    }
-  });
-
-  commentsUI.listEl?.addEventListener("click", (e) => {
-    const btn = e.target?.closest?.("button[data-reply-id]");
-    if (!btn) return;
-
-    const id = btn.getAttribute("data-reply-id");
-    const name = btn.getAttribute("data-reply-name") || "Member";
-
-    commentsUI.replyToId = id;
-    commentsUI.replyHintEl.hidden = false;
-    commentsUI.replyHintEl.innerHTML = `Replying to <b>${escapeHtml(name)}</b> <button type="button" class="replyCancel" id="replyCancel">Cancel</button>`;
-
-    commentsUI.replyHintEl.querySelector("#replyCancel")?.addEventListener("click", () => {
-      commentsUI.replyToId = null;
-      commentsUI.replyHintEl.hidden = true;
-      commentsUI.replyHintEl.innerHTML = "";
-      commentsUI.inputEl.focus();
-    });
-
-    commentsUI.inputEl.focus();
-  });
-
-  return commentsUI;
-}
-
-function openComments(postId) {
-  const ui = ensureCommentsUI();
-  ui.activePostId = String(postId);
-  ui.replyToId = null;
-  ui.replyHintEl.hidden = true;
-  ui.replyHintEl.innerHTML = "";
-  ui.inputEl.value = "";
-  ui.overlay.hidden = false;
-  document.body.style.overflow = "hidden";
-  loadComments(postId);
-  setTimeout(() => ui.inputEl.focus(), 200);
-}
-
-function closeComments() {
-  const ui = ensureCommentsUI();
-  ui.overlay.hidden = true;
-  ui.activePostId = null;
-  ui.replyToId = null;
-  document.body.style.overflow = "";
-}
-
+/* Comments */
 async function loadComments(postId) {
-  const ui = ensureCommentsUI();
-  ui.listEl.innerHTML = `<div class="muted">Loading…</div>`;
+  const wrap = document.querySelector(`[data-comments-wrap="${CSS.escape(String(postId))}"]`);
+  const list = document.querySelector(`[data-comments-list="${CSS.escape(String(postId))}"]`);
+  if (!wrap || !list) return;
+
+  list.innerHTML = `<div class="muted">Loading comments…</div>`;
 
   const { data, error } = await supabase
     .from("post_comments")
-    .select("id, post_id, user_id, parent_id, body, created_at")
+    .select("id, post_id, user_id, body, parent_id, created_at")
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
 
   if (error) {
-    ui.listEl.innerHTML = `<div class="errorBox">Error loading comments: ${escapeHtml(error.message)}</div>`;
+    list.innerHTML = `<div class="errorBox">Comment load failed: ${escapeHtml(error.message)}</div>`;
     return;
   }
 
   if (!data?.length) {
-    ui.listEl.innerHTML = `<div class="muted">No comments yet.</div>`;
+    list.innerHTML = `<div class="muted">No comments yet.</div>`;
     return;
   }
 
-  const ids = [...new Set(data.map((c) => c.user_id).filter(Boolean))];
-  let profMap = new Map();
-
-  if (ids.length) {
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, full_name, username, avatar_url")
-      .in("id", ids);
-
-    (profs || []).forEach((p) => profMap.set(p.id, p));
-  }
-
-  const byParent = new Map();
-  for (const c of data) {
-    const key = c.parent_id ? String(c.parent_id) : "root";
-    if (!byParent.has(key)) byParent.set(key, []);
-    byParent.get(key).push(c);
-  }
-
-  const renderOne = (c, depth = 0) => {
-    const p = profMap.get(c.user_id) || {};
-    const nm = escapeHtml(nameFromProfileRow(p));
-    const av = escapeHtml(p.avatar_url || DEFAULT_AVATAR);
-    const body = escapeHtml(c.body || "");
-    const time = escapeHtml(fmt(c.created_at));
-    const pad = depth > 0 ? `style="margin-left:${Math.min(28, depth * 18)}px"` : "";
-
-    return `
-      <div class="cItem" ${pad}>
-        <img class="cAvatar" src="${av}" alt="" onerror="this.src='${DEFAULT_AVATAR}'"/>
-        <div class="cMain">
-          <div class="cTop">
-            <div class="cName">${nm}</div>
-            <div class="cTime">${time}</div>
-          </div>
-          <div class="cBody">${body}</div>
-          <div class="cActions">
-            <button type="button" class="cReply" data-reply-id="${escapeHtml(String(c.id))}" data-reply-name="${nm}">Reply</button>
-          </div>
+  list.innerHTML = data
+    .map((c) => {
+      const mine = c.user_id === session.user.id;
+      return `
+        <div style="padding:10px;border:1px solid #dbe7ef;border-radius:12px;margin-bottom:8px;background:#fff">
+          <div style="font-weight:800">${mine ? "You" : "Member"} <span style="font-weight:600;color:#5a6b76;font-size:12px">• ${escapeHtml(fmt(c.created_at))}</span></div>
+          <div style="margin-top:6px;white-space:pre-wrap">${escapeHtml(c.body || "")}</div>
         </div>
-      </div>
-      ${(byParent.get(String(c.id)) || []).map((r) => renderOne(r, depth + 1)).join("")}
-    `;
-  };
-
-  const roots = byParent.get("root") || [];
-  ui.listEl.innerHTML = roots.map((c) => renderOne(c, 0)).join("");
+      `;
+    })
+    .join("");
 }
 
-async function submitComment() {
-  const ui = ensureCommentsUI();
-  const postId = ui.activePostId;
-  if (!postId) return;
+async function addComment(postId, text) {
+  const content = (text || "").trim();
+  if (!content) throw new Error("Write a comment first.");
 
-  if (!session?.user?.id) {
-    alert("Please login again.");
-    return;
-  }
+  const { error } = await supabase
+    .from("post_comments")
+    .insert({ post_id: postId, user_id: session.user.id, body: content });
 
-  const body = (ui.inputEl.value || "").trim();
-  if (!body) return;
-
-  ui.sendEl.disabled = true;
-  ui.sendEl.textContent = "…";
-
-  try {
-    const payload = {
-      post_id: postId,
-      user_id: session.user.id,
-      body, // IMPORTANT
-      parent_id: ui.replyToId ? ui.replyToId : null,
-    };
-
-    const { error } = await supabase.from("post_comments").insert(payload);
-    if (error) throw error;
-
-    ui.inputEl.value = "";
-    ui.replyToId = null;
-    ui.replyHintEl.hidden = true;
-    ui.replyHintEl.innerHTML = "";
-
-    const row = postsCache.get(String(postId));
-    const current = Number(row?.comment_count || 0) + 1;
-
-    if (row) {
-      row.comment_count = current;
-      postsCache.set(String(postId), row);
-    }
-
-    const card = findPostCard(postId);
-    const countEl = card?.querySelector('button[data-action="comment"] span[data-count="comment"]');
-    if (countEl) countEl.textContent = String(current);
-
-    await loadComments(postId);
-  } catch (e) {
-    alert(`Comment failed: ${e.message || e}`);
-  } finally {
-    ui.sendEl.disabled = false;
-    ui.sendEl.textContent = "Post";
-  }
+  if (error) throw error;
 }
 
-/* ---- Share ---- */
+/* Share */
 async function sharePost(postId) {
   const url = `${location.origin}/feed/index.html#post-${postId}`;
-
   try {
-    if (navigator.share) {
-      await navigator.share({ title: "Pepsval Post", url });
-      return;
-    }
+    await navigator.share({ title: "Pepsval Post", url });
   } catch {
-    // fallthrough
-  }
-
-  try {
     await navigator.clipboard.writeText(url);
     alert("Link copied ✅");
-  } catch {
-    prompt("Copy this link:", url);
   }
 }
 
-/* ---- Actions ---- */
+/* Events */
 feedListEl?.addEventListener("click", async (e) => {
   const btn = e.target?.closest?.("button[data-action]");
   if (!btn) return;
 
   const action = btn.getAttribute("data-action");
   const postId = btn.getAttribute("data-post-id");
-  if (!postId) return;
 
-  if (action === "delete") return deletePost(postId);
-  if (action === "like") return toggleLike(postId);
-  if (action === "comment") return openComments(postId);
-  if (action === "share") return sharePost(postId);
+  try {
+    if (action === "delete") {
+      await deletePost(postId);
+      return;
+    }
+
+    if (action === "like") {
+      await toggleLike(postId);
+      await loadPosts();
+      return;
+    }
+
+    if (action === "comment") {
+      const wrap = document.querySelector(`[data-comments-wrap="${CSS.escape(String(postId))}"]`);
+      if (!wrap) return;
+      const isOpen = wrap.style.display !== "none";
+      wrap.style.display = isOpen ? "none" : "block";
+      if (!isOpen) await loadComments(postId);
+      return;
+    }
+
+    if (action === "comment-post") {
+      const input = document.querySelector(`[data-comment-input="${CSS.escape(String(postId))}"]`);
+      if (!input) return;
+      await addComment(postId, input.value);
+      input.value = "";
+      await loadComments(postId);
+      await loadPosts();
+      return;
+    }
+
+    if (action === "share") {
+      await sharePost(postId);
+      return;
+    }
+  } catch (err) {
+    alert(err?.message || String(err));
+  }
 });
 
 /* Init */
