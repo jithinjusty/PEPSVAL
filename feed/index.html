@@ -5,442 +5,84 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Feed</title>
 
-  <style>
-    :root { color-scheme: light; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#f6fbff;
-      color:#0f172a;
-    }
-
-    /* Fixed top bar */
-    .top{
-      position:fixed;
-      top:0; left:0; right:0;
-      z-index:50;
-      padding:10px 12px;
-      background:rgba(255,255,255,.96);
-      border-bottom:1px solid rgba(0,0,0,.08);
-      backdrop-filter: blur(10px);
-    }
-    .topInner{
-      max-width:720px;
-      margin:0 auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .brandLeft{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
-    .logo{
-      width:30px; height:30px; border-radius:10px;
-      object-fit:contain;
-      background:rgba(31,111,134,.08);
-      border:1px solid rgba(0,0,0,.06);
-      padding:4px;
-    }
-    .brand{ font-weight:950; letter-spacing:.2px; }
-
-    .mid{
-      flex:1;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:0;
-    }
-
-    .searchWrap{
-      flex:1;
-      position:relative;
-      min-width:0;
-    }
-    .searchInput{
-      width:100%;
-      box-sizing:border-box;
-      border:1px solid rgba(0,0,0,.10);
-      background:#fff;
-      border-radius:999px;
-      padding:10px 12px;
-      font-size:13px;
-      outline:none;
-    }
-    .searchDrop{
-      position:absolute;
-      left:0; right:0;
-      top:44px;
-      background:#fff;
-      border:1px solid rgba(0,0,0,.10);
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      display:none;
-      z-index:999;
-    }
-    .searchItem{
-      padding:10px 12px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .searchItem:hover{ background:rgba(31,111,134,.08); }
-    .sAvatar{
-      width:32px;height:32px;border-radius:999px;overflow:hidden;
-      background:rgba(0,0,0,.06);
-      border:1px solid rgba(0,0,0,.06);
-      display:flex;align-items:center;justify-content:center;font-weight:900;
-      flex:0 0 auto;
-    }
-    .sAvatar img{ width:100%;height:100%;object-fit:cover; }
-    .sText{ min-width:0; }
-    .sName{ font-weight:900; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .sMeta{ font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-    #feedStatus{ font-size:12px; opacity:.7; margin-left:8px; white-space:nowrap; }
-
-    .meWrap{ position:relative; flex:0 0 auto; }
-    .meAvatarBtn{
-      width:38px; height:38px; border-radius:999px;
-      overflow:hidden;
-      background:rgba(0,0,0,.06);
-      border:1px solid rgba(0,0,0,.08);
-      display:flex; align-items:center; justify-content:center;
-      font-weight:900;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .meAvatarBtn img{ width:100%; height:100%; object-fit:cover; }
-
-    .menu{
-      position:absolute;
-      right:0;
-      top:48px;
-      background:#fff;
-      border:1px solid rgba(0,0,0,.10);
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.10);
-      display:none;
-      min-width:180px;
-      z-index:999;
-    }
-    .menu button{
-      width:100%;
-      text-align:left;
-      padding:12px 12px;
-      border:0;
-      background:#fff;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .menu button:hover{ background:rgba(31,111,134,.08); }
-
-    /* Layout padding */
-    .wrap{
-      max-width:720px;
-      margin:0 auto;
-      padding:72px 14px 86px;
-    }
-
-    /* Composer */
-    .composer{
-      padding:12px;
-      border-radius:18px;
-      background:rgba(255,255,255,.96);
-      border:1px solid rgba(0,0,0,.08);
-    }
-    .composer textarea{
-      width:100%;
-      min-height:86px;
-      resize:vertical;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.12);
-      padding:10px 12px;
-      font-size:14px;
-      outline:none;
-      background:#fff;
-      color:#0f172a;
-      box-sizing:border-box;
-    }
-    .row{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px; flex-wrap:wrap;
-      margin-top:10px;
-    }
-    .leftRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-
-    .btn{
-      border:1px solid rgba(0,0,0,.10);
-      background:#1F6F86;
-      color:#fff;
-      padding:10px 14px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:14px;
-    }
-    .btn:disabled{ opacity:.55; }
-
-    .fileBtn{
-      border:1px solid rgba(0,0,0,.10);
-      background:#fff;
-      color:#0f172a;
-      padding:10px 12px;
-      border-radius:999px;
-      font-weight:800;
-      font-size:14px;
-    }
-
-    .fileInfo{
-      font-size:12px;
-      opacity:.75;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      max-width:100%;
-    }
-    .fileName{
-      max-width:220px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .clearFile{
-      border:1px solid rgba(0,0,0,.12);
-      background:#fff;
-      border-radius:999px;
-      padding:6px 10px;
-      font-weight:900;
-      font-size:12px;
-      cursor:pointer;
-    }
-
-    .progressWrap{ width:100%; margin-top:10px; display:none; }
-    .progressBar{ width:100%; height:10px; border-radius:999px; background:rgba(0,0,0,.08); overflow:hidden; }
-    .progressFill{ height:100%; width:0%; background:#1F6F86; border-radius:999px; transition: width .15s linear; }
-    .progressText{ margin-top:6px; font-size:12px; opacity:.75; display:flex; justify-content:space-between; }
-
-    /* ✅ Feed list */
-    #feedList{ margin-top:12px; display:flex; flex-direction:column; gap:12px; }
-
-    /* ✅ Post card styles (this was missing → caused “corrupted layout”) */
-    .pv-post{
-      background:rgba(255,255,255,.96);
-      border:1px solid rgba(0,0,0,.08);
-      border-radius:18px;
-      padding:12px;
-      overflow:hidden;
-    }
-    .pv-post-hd{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .pv-avatar{
-      width:40px;
-      height:40px;
-      border-radius:999px;
-      overflow:hidden;
-      background:rgba(0,0,0,.06);
-      border:1px solid rgba(0,0,0,.08);
-      flex:0 0 auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-    }
-    .pv-avatar img{ width:100%; height:100%; object-fit:cover; }
-    .pv-avatar-fallback{ font-weight:950; }
-
-    .pv-hd-text{ flex:1; min-width:0; }
-    .pv-name-row{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .pv-name{
-      font-weight:950;
-      font-size:14px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .pv-time{
-      font-size:11px;
-      opacity:.65;
-      white-space:nowrap;
-    }
-    .pv-meta{
-      margin-top:2px;
-      font-size:12px;
-      opacity:.7;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .pv-content{
-      margin-top:10px;
-      font-size:14px;
-      line-height:1.35;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-    .pv-media{
-      margin-top:10px;
-      width:100%;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.08);
-      display:block;
-      background:#fff;
-    }
-    video.pv-media{ max-height:420px; }
-
-    .pv-post-ft{
-      margin-top:10px;
-      display:flex;
-      justify-content:flex-end;
-      gap:8px;
-    }
-    .pv-btn{
-      border:1px solid rgba(0,0,0,.10);
-      background:#fff;
-      color:#0f172a;
-      padding:8px 12px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:12px;
-      cursor:pointer;
-    }
-    .pv-btn:hover{ background:rgba(31,111,134,.08); }
-
-    /* Fixed bottom nav */
-    .bottomNav{
-      position:fixed;
-      left:0; right:0;
-      bottom:0;
-      z-index:60;
-      padding:10px 12px;
-      background:rgba(255,255,255,.96);
-      border-top:1px solid rgba(0,0,0,.10);
-      backdrop-filter: blur(10px);
-    }
-    .bottomInner{
-      max-width:720px;
-      margin:0 auto;
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-    }
-    .tab{
-      flex:1;
-      text-decoration:none;
-      color:#0f172a;
-      font-weight:900;
-      font-size:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:10px 8px;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.06);
-      background:rgba(0,0,0,.02);
-    }
-    .tab.active{
-      background:rgba(31,111,134,.12);
-      border-color: rgba(31,111,134,.25);
-    }
-
-    .toast{
-      position:fixed;
-      left:50%;
-      bottom:78px;
-      transform:translateX(-50%);
-      background:rgba(15,23,42,.92);
-      color:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .2s ease;
-      z-index:999;
-    }
-    .toast.show{ opacity:1; }
-  </style>
+  <link rel="stylesheet" href="/feed/feed.css?v=2001" />
 </head>
 
-<body>
-  <header class="top">
-    <div class="topInner">
-      <div class="brandLeft">
-        <img class="logo" src="/assets/logo.webp" alt="Pepsval logo" />
-        <div class="brand">Pepsval</div>
-      </div>
+<body class="app-bg">
 
-      <div class="mid">
-        <div class="searchWrap">
-          <input id="searchInput" class="searchInput" placeholder="Search seafarers, companies…" autocomplete="off" />
-          <div id="searchDrop" class="searchDrop"></div>
-        </div>
-        <div id="feedStatus"></div>
-      </div>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topLeft">
+      <img class="brandIcon" src="/assets/logo.webp" alt="Pepsval" />
+      <div class="brandName">Pepsval</div>
+    </div>
 
-      <div class="meWrap">
-        <div id="meAvatarBtn" class="meAvatarBtn" title="Menu">P</div>
-        <div id="meMenu" class="menu">
-  <button type="button" id="menuProfile">My Profile</button>
-  <button type="button" id="menuSettings">Settings</button>
-  <button type="button" id="menuLogout">Logout</button>
-</div>
-        </div>
+    <div class="topSearch">
+      <input id="searchInput" type="text" placeholder="Search seafarers, companies…" autocomplete="off" />
+      <div id="searchDrop" class="searchDrop" style="display:none;"></div>
+    </div>
+
+    <div class="topRight">
+      <button id="meAvatarBtn" class="avatarBtn" type="button" aria-label="Account menu">
+        <img class="avatar" src="/assets/logo.webp" alt="Me" />
+      </button>
+
+      <div id="meMenu" class="avatarMenu">
+        <button id="menuProfile" type="button">Profile</button>
+        <button id="menuSettings" type="button">Settings</button>
+        <button id="menuLogout" type="button">Logout</button>
       </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="composer">
-      <textarea id="postText" placeholder="Share something with seafarers…"></textarea>
+  <!-- Status -->
+  <div id="feedStatus" class="status"></div>
 
-      <div class="row">
-        <div class="leftRow">
-          <input id="postFile" type="file" accept="image/*,video/*" hidden />
-          <button class="fileBtn" id="fileBtn" type="button">Photo / Video</button>
+  <!-- Composer -->
+  <section class="composer">
+    <div class="composerInner">
+      <textarea id="postText" placeholder="What’s happening at sea today?"></textarea>
 
-          <div id="fileInfo" class="fileInfo" style="display:none;">
-            <span class="fileName" id="fileName"></span>
-            <button type="button" class="clearFile" id="clearFile">✕</button>
-          </div>
-        </div>
-
-        <button class="btn" id="postBtn" type="button">Post</button>
+      <div class="composerActions">
+        <button id="fileBtn" class="pv-pillBtn" type="button">Attach</button>
+        <button id="postBtn" class="pv-btn" type="button">Post</button>
+        <input id="postFile" type="file" accept="image/*,video/*" hidden />
       </div>
 
-      <div class="progressWrap" id="progressWrap">
-        <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
-        <div class="progressText">
-          <span id="progressLabel">Uploading…</span>
-          <span id="progressPct">0%</span>
+      <div id="fileInfo" class="fileInfo" style="display:none;">
+        <div class="fileMeta">
+          <span class="fileDot"></span>
+          <span id="fileName"></span>
+        </div>
+        <button id="clearFile" class="pv-linkBtn" type="button">Remove</button>
+      </div>
+
+      <div id="progressWrap" class="progressWrap" style="display:none;">
+        <div class="progressTop">
+          <div id="progressLabel" class="progressLabel">Uploading…</div>
+          <div id="progressPct" class="progressPct">0%</div>
+        </div>
+        <div class="progressBar">
+          <div id="progressFill" class="progressFill" style="width:0%"></div>
         </div>
       </div>
-    </section>
-
-    <section id="feedList"></section>
-  </main>
-
-  <nav class="bottomNav">
-    <div class="bottomInner">
-      <a class="tab active" href="/feed/">Feed</a>
-      <a class="tab" href="/jobs/">Jobs</a>
-      <a class="tab" href="/messages/">Messages</a>
-      <a class="tab" href="/profile/home.html">Profile</a>
     </div>
+  </section>
+
+  <!-- Feed list -->
+  <main id="feedList" class="feedList"></main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <!-- Bottom nav (matches your screenshot tabs) -->
+  <nav class="bottomNav">
+    <a class="navItem active" href="/feed/index.html">Feed</a>
+    <a class="navItem" href="/jobs/index.html">Jobs</a>
+    <a class="navItem" href="/messages/index.html">Messages</a>
+    <a class="navItem" href="/profile/home.html">Profile</a>
   </nav>
 
-  <div class="toast" id="toast">Done</div>
-
-  <!-- Feed engine (locked) -->
-  <script type="module" src="/feed/feed.js"></script>
+  <script type="module" src="/feed/feed.js?v=2001"></script>
 </body>
 </html>
