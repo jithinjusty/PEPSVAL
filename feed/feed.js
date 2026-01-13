@@ -76,7 +76,7 @@ function setBusy(btn, busy) {
   btn.dataset.busy = busy ? "1" : "0";
 }
 
-/* Inline spinner */
+/* Styles injected for posts/comments only */
 function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
@@ -365,7 +365,7 @@ async function loadFeed() {
   }).join("");
 }
 
-/* Comments (load once; after that update DOM only) */
+/* Comments (load once only; after that update DOM only) */
 const replyState = new Map(); // postId -> parentCommentId
 
 async function ensureCommentsLoaded(postEl) {
@@ -419,6 +419,7 @@ async function ensureCommentsLoaded(postEl) {
     `;
   };
 
+  // We insert flat; replies will be appended under parent later
   list.innerHTML = rows.map(renderOne).join("");
   box.dataset.loaded = "1";
 }
@@ -433,6 +434,7 @@ async function togglePostLike(postEl, btn) {
   const heartEl = postEl.querySelector(".pv-heart");
   const currentCount = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
 
+  // optimistic
   postEl.dataset.liked = liked ? "0" : "1";
   if (heartEl) heartEl.textContent = liked ? "🤍" : "❤️";
   if (countEl) countEl.textContent = `(${liked ? Math.max(0, currentCount - 1) : currentCount + 1})`;
@@ -453,6 +455,7 @@ async function togglePostLike(postEl, btn) {
       if (error) throw error;
     }
   } catch {
+    // revert
     postEl.dataset.liked = liked ? "1" : "0";
     if (heartEl) heartEl.textContent = liked ? "❤️" : "🤍";
     if (countEl) countEl.textContent = `(${currentCount})`;
@@ -463,7 +466,7 @@ async function togglePostLike(postEl, btn) {
   }
 }
 
-/* Send comment/reply WITHOUT reloading list */
+/* Send comment/reply WITHOUT reloading list (smooth) */
 function buildCommentHtml({ id, userName, text, created_at, mine, isReply }) {
   return `
     <div class="pv-comment ${isReply ? "pv-reply" : ""}" data-comment-id="${escapeHtml(id)}" data-liked="0">
@@ -503,10 +506,12 @@ async function sendComment(postEl, btn) {
 
     if (error) throw error;
 
+    // Update count instantly
     const countEl = postEl.querySelector("[data-comment-count]");
     const cur = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
     if (countEl) countEl.textContent = `(${cur + 1})`;
 
+    // Insert into DOM instantly (no reload)
     const myName = myProfileCache?.full_name || "You";
     const html = buildCommentHtml({
       id: data.id,
@@ -517,15 +522,14 @@ async function sendComment(postEl, btn) {
       isReply: !!data.parent_id
     });
 
-    // If it previously showed "No comments yet.", remove that line
-    if (list.textContent.includes("No comments yet.")) list.innerHTML = "";
-
     if (!parentId) {
+      // root comment: append at end
       list.insertAdjacentHTML("beforeend", html);
     } else {
+      // reply: insert after parent comment
       const parentEl = list.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`);
       if (parentEl) parentEl.insertAdjacentHTML("beforeend", html);
-      else list.insertAdjacentHTML("beforeend", html);
+      else list.insertAdjacentHTML("beforeend", html); // fallback
       replyState.delete(postId);
       if (input) input.placeholder = "Write a comment…";
     }
@@ -540,53 +544,7 @@ async function sendComment(postEl, btn) {
   }
 }
 
-/* ✅ Delete comment (supports user_id OR author_id) */
-async function deleteComment(postEl, commentEl, btn) {
-  if (!commentEl) return;
-  const commentId = commentEl.dataset.commentId;
-  if (!commentId) return;
-
-  if (btn?.dataset?.busy === "1") return;
-  if (!confirm("Delete this comment?")) return;
-
-  const oldHtml = btn.innerHTML;
-  btn.innerHTML = `${oldHtml} ${inlineSpinner()}`;
-  setBusy(btn, true);
-
-  try {
-    let res = await supabase
-      .from("post_comments")
-      .delete()
-      .eq("id", commentId)
-      .eq("user_id", currentUserId);
-
-    if (res.error && String(res.error.message || "").includes("column") && String(res.error.message || "").includes("user_id")) {
-      res = await supabase
-        .from("post_comments")
-        .delete()
-        .eq("id", commentId)
-        .eq("author_id", currentUserId);
-    }
-
-    if (res.error) throw res.error;
-
-    commentEl.remove();
-
-    const countEl = postEl.querySelector("[data-comment-count]");
-    const cur = Number((countEl?.textContent || "0").replace(/[^\d]/g, "")) || 0;
-    if (countEl) countEl.textContent = `(${Math.max(0, cur - 1)})`;
-
-    toast("Deleted");
-  } catch (e) {
-    toast("Delete failed");
-    console.log("Delete comment error:", e);
-  } finally {
-    setBusy(btn, false);
-    btn.innerHTML = oldHtml;
-  }
-}
-
-/* ✅ Like comment (tries both tables + both user columns) */
+/* Like comment WITHOUT reloading list */
 async function toggleCommentLike(btn) {
   if (btn?.dataset?.busy === "1") return;
 
@@ -598,7 +556,7 @@ async function toggleCommentLike(btn) {
   const countSpan = btn.querySelector("[data-c-like]");
   const cur = Number((countSpan?.textContent || "0").replace(/[^\d]/g, "")) || 0;
 
-  // Optimistic UI
+  // optimistic
   commentEl.dataset.liked = liked ? "0" : "1";
   btn.innerHTML = `${liked ? "🤍" : "❤️"} <span data-c-like>(${liked ? Math.max(0, cur - 1) : cur + 1})</span>`;
 
@@ -606,55 +564,28 @@ async function toggleCommentLike(btn) {
   btn.innerHTML = `${oldHtml} ${inlineSpinner()}`;
   setBusy(btn, true);
 
-  const likeTables = ["comment_likes", "post_comment_likes"];
-
   try {
-    let lastErr = null;
-
-    for (const tbl of likeTables) {
-      try {
-        if (!liked) {
-          let res = await supabase.from(tbl).insert({ comment_id: commentId, user_id: currentUserId });
-          if (res.error && String(res.error.message || "").includes("column") && String(res.error.message || "").includes("user_id")) {
-            res = await supabase.from(tbl).insert({ comment_id: commentId, author_id: currentUserId });
-          }
-          if (res.error) throw res.error;
-        } else {
-          let res = await supabase.from(tbl)
-            .delete()
-            .eq("comment_id", commentId)
-            .eq("user_id", currentUserId);
-
-          if (res.error && String(res.error.message || "").includes("column") && String(res.error.message || "").includes("user_id")) {
-            res = await supabase.from(tbl)
-              .delete()
-              .eq("comment_id", commentId)
-              .eq("author_id", currentUserId);
-          }
-          if (res.error) throw res.error;
-        }
-
-        lastErr = null;
-        break;
-      } catch (e) {
-        lastErr = e;
-      }
+    if (!liked) {
+      const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("user_id", currentUserId);
+      if (error) throw error;
     }
-
-    if (lastErr) throw lastErr;
-
-  } catch (e) {
-    // Revert UI
+  } catch {
+    // revert
     commentEl.dataset.liked = liked ? "1" : "0";
     btn.innerHTML = `${liked ? "❤️" : "🤍"} <span data-c-like>(${cur})</span>`;
-    toast("Like failed");
-    console.log("Comment like error:", e);
+    toast("Failed");
   } finally {
     setBusy(btn, false);
   }
 }
 
-/* Reply mode */
+/* Reply mode (no refresh) */
 function setReplyMode(postEl, commentId) {
   const postId = postEl.dataset.postId;
   const input = postEl.querySelector(".pv-comment-input");
@@ -718,6 +649,7 @@ async function runSearch(q) {
   const query = (q || "").trim();
   if (!query || query.length < 2) return clearSearchDrop();
 
+  // Show immediate "Searching..." so user sees it works
   elSearchDrop.innerHTML = `<div style="padding:10px 12px;opacity:.7;font-size:13px">Searching…</div>`;
   showSearchDrop(true);
 
@@ -760,7 +692,11 @@ async function runSearch(q) {
 
 function wireSearchClicks() {
   if (!elSearchDrop) return;
-  elSearchDrop.addEventListener("mousedown", (e) => e.preventDefault());
+  elSearchDrop.addEventListener("mousedown", (e) => {
+    // prevent blur clearing before click (mobile/desktop)
+    e.preventDefault();
+  });
+
   elSearchDrop.addEventListener("click", (e) => {
     const item = e.target.closest(".searchItem");
     if (!item) return;
@@ -783,10 +719,8 @@ function humanSize(bytes) {
 function updateSelectedFileUI() {
   const file = elPostFile?.files?.[0] || null;
   if (!file) return clearSelectedFileUI();
-
   if (elFileInfo) elFileInfo.style.display = "flex";
   if (elFileName) elFileName.textContent = `${file.name} • ${humanSize(file.size)}`;
-  toast("File attached");
 }
 function clearSelectedFileUI() {
   if (elPostFile) elPostFile.value = "";
@@ -803,14 +737,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (elFileBtn && elPostFile) {
     elFileBtn.addEventListener("click", () => elPostFile.click());
     elPostFile.addEventListener("change", updateSelectedFileUI);
-    elPostFile.addEventListener("input", updateSelectedFileUI);
   }
   if (elClearFile) elClearFile.addEventListener("click", clearSelectedFileUI);
 
   // Post
   if (elPostBtn) elPostBtn.addEventListener("click", createPost);
 
-  // Avatar menu
+  // Avatar menu (add touchstart too for mobile)
   const openCloseMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -830,7 +763,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Search
   wireSearchClicks();
+
   if (elSearchInput) {
+    // prevent Enter from moving focus to post textbox
     elSearchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -838,10 +773,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         runSearch(elSearchInput.value);
       }
     });
+
     elSearchInput.addEventListener("input", () => {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => runSearch(elSearchInput.value), 220);
     });
+
+    // keep dropdown while interacting
     elSearchInput.addEventListener("blur", () => setTimeout(clearSearchDrop, 250));
     elSearchInput.addEventListener("focus", () => {
       if (elSearchDrop.innerHTML.trim()) showSearchDrop(true);
@@ -875,11 +813,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const commentEl = e.target.closest(".pv-comment");
       const commentId = commentEl?.dataset?.commentId;
       if (commentId) return setReplyMode(postEl, commentId);
-    }
-
-    if (action === "delete-comment" && postEl) {
-      const commentEl = e.target.closest(".pv-comment");
-      return deleteComment(postEl, commentEl, btn);
     }
 
     if (action === "share-post" && postEl) return sharePost(postEl.dataset.postId);
