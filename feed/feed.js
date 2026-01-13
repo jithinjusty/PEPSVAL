@@ -33,12 +33,11 @@ const elSearchDrop = document.getElementById("searchDrop");
 
 let searchTimer = null;
 
-/* ---------- Helpers ---------- */
+/* ---------------- UI helpers ---------------- */
 function setStatus(msg) {
   if (!elStatus) return;
   elStatus.textContent = msg || "";
 }
-
 function toast(msg) {
   const el = document.getElementById("toast");
   if (!el) return alert(msg);
@@ -48,7 +47,24 @@ function toast(msg) {
   setTimeout(() => {
     el.style.opacity = "0";
     el.style.transform = "translateY(8px)";
-  }, 2200);
+  }, 2600);
+}
+
+function showFatal(err) {
+  const msg = (err?.message || err || "").toString();
+  console.error(err);
+  setStatus(`❌ ${msg}`);
+  toast(msg);
+}
+
+function showProgress(on, label = "", pct = 0) {
+  if (!elProgressWrap) return;
+  elProgressWrap.style.display = on ? "block" : "none";
+  if (on) {
+    if (elProgressLabel) elProgressLabel.textContent = label || "";
+    if (elProgressFill) elProgressFill.style.width = `${pct}%`;
+    if (elProgressPct) elProgressPct.textContent = `${pct}%`;
+  }
 }
 
 function safeText(s) {
@@ -63,20 +79,10 @@ function safeAttr(s) {
   return safeText(s).replaceAll("'", "&#039;");
 }
 
-function showProgress(on, label = "", pct = 0) {
-  if (!elProgressWrap) return;
-  elProgressWrap.style.display = on ? "block" : "none";
-  if (on) {
-    if (elProgressLabel) elProgressLabel.textContent = label || "";
-    if (elProgressFill) elProgressFill.style.width = `${pct}%`;
-    if (elProgressPct) elProgressPct.textContent = `${pct}%`;
-  }
-}
-
 function setFileUI(file) {
   selectedFile = file || null;
+  if (!elFileInfo || !elFileName) return;
 
-  if (!elFileInfo || !elFileName || !elClearFile) return;
   if (!selectedFile) {
     elFileInfo.style.display = "none";
     elFileName.textContent = "";
@@ -87,20 +93,27 @@ function setFileUI(file) {
   elFileName.textContent = selectedFile.name || "Attachment";
 }
 
+/* Show ANY JS error directly on screen */
+window.addEventListener("error", (e) => showFatal(e?.error || e?.message || "Script error"));
+window.addEventListener("unhandledrejection", (e) => showFatal(e?.reason || "Unhandled promise rejection"));
+
+/* ---------------- Auth ---------------- */
 async function requireLogin() {
+  // getCurrentUser() in your repo may already do profile fetch, so keep it
   me = await getCurrentUser();
+
   if (!me) {
+    showFatal("Not logged in. Redirecting to login…");
     window.location.href = "/auth/login.html";
     return false;
   }
   return true;
 }
 
-/* Key detection (robust) */
+/* ---------------- Key detection (robust) ---------------- */
 function detectKeys(row) {
   const keys = row ? Object.keys(row) : [];
   const pick = (cands) => cands.find(k => keys.includes(k)) || null;
-
   return {
     idKey: pick(["id", "post_id"]),
     userKey: pick(["user_id", "author_id", "profile_id", "uid", "user"]),
@@ -110,31 +123,41 @@ function detectKeys(row) {
   };
 }
 
-/* ---------- Fetchers ---------- */
+/* ---------------- Diagnostics (this is the real fix now) ---------------- */
+async function supabaseSelfTest() {
+  setStatus("Checking database access…");
+
+  // Session
+  const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+  if (sessionErr) throw sessionErr;
+  if (!sessionData?.session) throw new Error("No Supabase session on this page (auth not loaded).");
+
+  // Posts select test
+  const t1 = await supabase.from("posts").select("*").limit(1);
+  if (t1.error) throw new Error(`posts SELECT blocked: ${t1.error.message}`);
+
+  // Comments select test
+  const t2 = await supabase.from("post_comments").select("*").limit(1);
+  if (t2.error) throw new Error(`post_comments SELECT blocked: ${t2.error.message}`);
+
+  // Likes select test
+  const t3 = await supabase.from("post_likes").select("*").limit(1);
+  if (t3.error) throw new Error(`post_likes SELECT blocked: ${t3.error.message}`);
+
+  // Profiles select test (needed for showing commenter name)
+  const t4 = await supabase.from("profiles").select("id, full_name, avatar_url").limit(1);
+  if (t4.error) throw new Error(`profiles SELECT blocked: ${t4.error.message}`);
+
+  setStatus("");
+}
+
+/* ---------------- Fetchers ---------------- */
 async function fetchPostsRaw() {
-  // Try created_at first
-  let res = await supabase
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  // Try created_at first, fallback to id
+  let res = await supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(50);
+  if (res.error) res = await supabase.from("posts").select("*").order("id", { ascending: false }).limit(50);
 
-  if (res.error) {
-    // Fallback: order by id if created_at is missing
-    res = await supabase
-      .from("posts")
-      .select("*")
-      .order("id", { ascending: false })
-      .limit(50);
-  }
-
-  if (res.error) {
-    console.error("Feed fetch error:", res.error);
-    setStatus("Feed error");
-    toast("Feed error");
-    return [];
-  }
-
+  if (res.error) throw new Error(`Feed load failed: ${res.error.message}`);
   return res.data || [];
 }
 
@@ -146,10 +169,7 @@ async function fetchProfilesMap(userIds) {
     .select("id, full_name, avatar_url, rank, country")
     .in("id", userIds);
 
-  if (error) {
-    console.error("Profiles fetch error:", error);
-    return new Map();
-  }
+  if (error) throw new Error(`Profiles load failed: ${error.message}`);
 
   const map = new Map();
   (data || []).forEach(p => map.set(p.id, p));
@@ -157,20 +177,16 @@ async function fetchProfilesMap(userIds) {
 }
 
 async function fetchLikesForPosts(postIds) {
-  if (!postIds.length) return { counts: new Map(), mine: new Set() };
+  const counts = new Map();
+  const mine = new Set();
+  if (!postIds.length) return { counts, mine };
 
   const { data, error } = await supabase
     .from("post_likes")
-    .select("id, post_id, user_id")
+    .select("post_id, user_id")
     .in("post_id", postIds);
 
-  if (error) {
-    console.error("Likes fetch error:", error);
-    return { counts: new Map(), mine: new Set() };
-  }
-
-  const counts = new Map();
-  const mine = new Set();
+  if (error) throw new Error(`Likes load failed: ${error.message}`);
 
   for (const l of (data || [])) {
     counts.set(l.post_id, (counts.get(l.post_id) || 0) + 1);
@@ -181,7 +197,9 @@ async function fetchLikesForPosts(postIds) {
 }
 
 async function fetchCommentsForPosts(postIds) {
-  if (!postIds.length) return { counts: new Map(), latest: new Map() };
+  const counts = new Map();
+  const latest = new Map();
+  if (!postIds.length) return { counts, latest };
 
   const { data, error } = await supabase
     .from("post_comments")
@@ -190,26 +208,19 @@ async function fetchCommentsForPosts(postIds) {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  if (error) {
-    console.error("Comments fetch error:", error);
-    return { counts: new Map(), latest: new Map() };
-  }
-
-  const counts = new Map();
-  const latest = new Map();
+  if (error) throw new Error(`Comments load failed: ${error.message}`);
 
   for (const c of (data || [])) {
     counts.set(c.post_id, (counts.get(c.post_id) || 0) + 1);
-
     const arr = latest.get(c.post_id) || [];
-    if (arr.length < 2) arr.push(c);
+    if (arr.length < 20) arr.push(c); // show more comments
     latest.set(c.post_id, arr);
   }
 
   return { counts, latest };
 }
 
-/* ---------- Rendering ---------- */
+/* ---------------- Rendering ---------------- */
 function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
   if (!elList) return;
 
@@ -223,19 +234,19 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
     const uid = keyset.userKey ? r[keyset.userKey] : null;
     const prof = uid ? (profMap.get(uid) || {}) : {};
 
-    const name = prof.full_name || prof.name || "Seafarer";
+    const name = prof.full_name || "Seafarer";
     const avatar = prof.avatar_url || "";
     const rank = prof.rank ? ` • ${safeText(prof.rank)}` : "";
     const country = prof.country ? ` • ${safeText(prof.country)}` : "";
 
-    const content = keyset.contentKey ? (r[keyset.contentKey] || "") : (r.content || r.text || "");
-    const media = keyset.mediaKey ? (r[keyset.mediaKey] || null) : (r.media_url || r.image_url || null);
-    const created = keyset.createdKey ? r[keyset.createdKey] : (r.created_at || r.created);
+    const content = keyset.contentKey ? (r[keyset.contentKey] || "") : "";
+    const media = keyset.mediaKey ? (r[keyset.mediaKey] || null) : null;
+    const created = keyset.createdKey ? r[keyset.createdKey] : null;
 
     const likes = likeInfo.counts.get(pid) || 0;
     const iLiked = likeInfo.mine.has(pid);
     const commentsCount = commentInfo.counts.get(pid) || 0;
-    const latest = commentInfo.latest.get(pid) || [];
+    const comments = commentInfo.latest.get(pid) || [];
 
     const isMine = (uid && me && uid === me.id);
 
@@ -246,11 +257,12 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
           : `<img src="${safeAttr(media)}" alt="media" style="width:100%;display:block" />`}
       </div>` : "";
 
-    const commentsHtml = latest.map(c => {
+    const commentsHtml = comments.map(c => {
       const cp = profMap.get(c.user_id) || {};
-      const cName = cp.full_name || cp.name || "Seafarer";
+      const cName = cp.full_name || "Seafarer";
       const cAvatar = cp.avatar_url || "";
       const mine = (me && c.user_id === me.id);
+
       return `
         <div class="pv-commentRow">
           <div class="pv-commentAvatar">
@@ -283,7 +295,9 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
 
           <div class="pv-postRight">
             <div class="pv-time">${created ? new Date(created).toLocaleString() : ""}</div>
-            ${isMine ? `<button class="pv-linkBtn" type="button" data-action="delete">Delete</button>` : ``}
+            <div>
+              ${isMine ? `<button class="pv-linkBtn" type="button" data-action="deletePost">Delete</button>` : ``}
+            </div>
           </div>
         </header>
 
@@ -311,9 +325,10 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
   }).join("");
 }
 
-/* ---------- Mutations ---------- */
+/* ---------------- Mutations ---------------- */
 async function uploadMedia(file) {
   if (!file) return null;
+
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${me.id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
 
@@ -331,11 +346,7 @@ async function uploadMedia(file) {
 
   clearInterval(timer);
 
-  if (error) {
-    showProgress(false);
-    console.error("Upload error:", error);
-    throw error;
-  }
+  if (error) throw new Error(`Upload blocked: ${error.message}`);
 
   showProgress(true, "Finalizing…", 100);
   setTimeout(() => showProgress(false), 400);
@@ -344,135 +355,69 @@ async function uploadMedia(file) {
   return data?.publicUrl || null;
 }
 
-async function insertPostWithFallback(content, mediaUrl, keyset) {
-  // Prefer detected keys from existing rows (most reliable).
+async function insertPost(content, mediaUrl, keyset) {
   const ks = keyset || cachedKeyset || {};
   const userKey = ks.userKey || "user_id";
   const contentKey = ks.contentKey || "content";
   const mediaKey = ks.mediaKey || "media_url";
 
-  const base = {};
-  base[userKey] = me.id;
+  const payload = { [userKey]: me.id, [contentKey]: content || "" };
+  if (mediaUrl) payload[mediaKey] = mediaUrl;
 
-  const attempts = [
-    { ...base, [contentKey]: content || "", ...(mediaUrl ? { [mediaKey]: mediaUrl } : {}) },
-
-    // common fallbacks
-    { user_id: me.id, content: content || "", media_url: mediaUrl || null },
-    { user_id: me.id, content: content || "", image_url: mediaUrl || null },
-    { user_id: me.id, text: content || "", image_url: mediaUrl || null },
-    { author_id: me.id, text: content || "", image_url: mediaUrl || null },
-    { author_id: me.id, content: content || "", media_url: mediaUrl || null },
-    { profile_id: me.id, body: content || "", media: mediaUrl || null },
-    { uid: me.id, caption: content || "", media: mediaUrl || null }
-  ];
-
-  let lastErr = null;
-  for (const payload of attempts) {
-    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-
-    const { error } = await supabase.from("posts").insert([payload]);
-    if (!error) return { ok: true, error: null };
-    lastErr = error;
-
-    const msg = (error.message || "").toLowerCase();
-    if (!msg.includes("column") && !msg.includes("does not exist")) break;
-  }
-
-  console.error("Insert failed:", lastErr);
-  return { ok: false, error: lastErr };
+  const { error } = await supabase.from("posts").insert([payload]);
+  if (error) throw new Error(`Post blocked: ${error.message}`);
 }
 
 async function createPost() {
   if (!me) return;
 
   const content = (elPostText?.value || "").trim();
-  if (!content && !selectedFile) {
-    toast("Write something or add media");
-    return;
-  }
+  if (!content && !selectedFile) return toast("Write something or add media");
 
   elPostBtn.disabled = true;
   setStatus("Posting…");
 
   try {
-    // Ensure we have a reliable keyset from real data (prevents "Post failed")
+    // Ensure keyset comes from real rows
     if (!cachedKeyset) {
       const rows = await fetchPostsRaw();
-      cachedKeyset = detectKeys(rows[0] || null);
+      cachedKeyset = detectKeys(rows[0] || {});
     }
 
     let mediaUrl = null;
     if (selectedFile) mediaUrl = await uploadMedia(selectedFile);
 
-    const res = await insertPostWithFallback(content, mediaUrl, cachedKeyset);
-    if (!res.ok) {
-      const msg = res.error?.message ? `Post failed: ${res.error.message}` : "Post failed";
-      toast(msg);
-      return;
-    }
+    await insertPost(content, mediaUrl, cachedKeyset);
 
     if (elPostText) elPostText.value = "";
     setFileUI(null);
 
-    await new Promise(r => setTimeout(r, 200));
     await loadFeed();
-
-    toast("Posted");
+    toast("Posted ✅");
+    setStatus("");
   } catch (e) {
-    console.error(e);
-    toast(e?.message ? `Upload/Save failed: ${e.message}` : "Upload/Save failed");
+    showFatal(e);
   } finally {
     elPostBtn.disabled = false;
-    setStatus("");
   }
 }
 
-async function deletePost(postId, keyset) {
-  if (!postId) return;
-
-  const { error } = await supabase
-    .from("posts")
-    .delete()
-    .eq(keyset?.idKey || "id", postId);
-
-  if (error) {
-    console.error(error);
-    toast("Delete failed");
-    return;
-  }
-
-  toast("Deleted");
+async function deletePost(postId) {
+  const idKey = cachedKeyset?.idKey || "id";
+  const { error } = await supabase.from("posts").delete().eq(idKey, postId);
+  if (error) throw new Error(`Delete blocked: ${error.message}`);
   await loadFeed();
+  toast("Deleted");
 }
 
 async function toggleLike(postId, liked) {
-  if (!postId) return;
-
   if (liked) {
-    const { error } = await supabase
-      .from("post_likes")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", me.id);
-
-    if (error) {
-      console.error(error);
-      toast("Unlike failed");
-      return;
-    }
+    const { error } = await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", me.id);
+    if (error) throw new Error(`Unlike blocked: ${error.message}`);
   } else {
-    const { error } = await supabase
-      .from("post_likes")
-      .insert([{ post_id: postId, user_id: me.id }]);
-
-    if (error) {
-      console.error(error);
-      toast("Like failed");
-      return;
-    }
+    const { error } = await supabase.from("post_likes").insert([{ post_id: postId, user_id: me.id }]);
+    if (error) throw new Error(`Like blocked: ${error.message}`);
   }
-
   await loadFeed();
 }
 
@@ -480,37 +425,21 @@ async function sendComment(postId, inputEl) {
   const txt = (inputEl?.value || "").trim();
   if (!txt) return;
 
-  const { error } = await supabase
-    .from("post_comments")
-    .insert([{ post_id: postId, user_id: me.id, content: txt }]);
-
-  if (error) { console.error(error); toast("Comment failed"); return; }
+  const { error } = await supabase.from("post_comments").insert([{ post_id: postId, user_id: me.id, content: txt }]);
+  if (error) throw new Error(`Comment blocked: ${error.message}`);
 
   inputEl.value = "";
   await loadFeed();
 }
 
 async function deleteComment(commentId) {
-  if (!commentId) return;
-  if (!me) return;
-
-  const { error } = await supabase
-    .from("post_comments")
-    .delete()
-    .eq("id", commentId)
-    .eq("user_id", me.id);
-
-  if (error) {
-    console.error(error);
-    toast("Delete failed");
-    return;
-  }
-
-  toast("Deleted");
+  const { error } = await supabase.from("post_comments").delete().eq("id", commentId).eq("user_id", me.id);
+  if (error) throw new Error(`Delete comment blocked: ${error.message}`);
   await loadFeed();
+  toast("Deleted");
 }
 
-/* ---------- Search ---------- */
+/* ---------------- Search ---------------- */
 async function runSearch(q) {
   const text = (q || "").trim();
   if (!text) {
@@ -525,11 +454,7 @@ async function runSearch(q) {
     .ilike("full_name", `%${text}%`)
     .limit(10);
 
-  if (error) {
-    console.error(error);
-    elSearchDrop.style.display = "none";
-    return;
-  }
+  if (error) return showFatal(`Search blocked: ${error.message}`);
 
   const rows = data || [];
   if (!rows.length) {
@@ -553,151 +478,142 @@ async function runSearch(q) {
   elSearchDrop.style.display = "block";
 }
 
-/* ---------- Main ---------- */
+/* ---------------- Main ---------------- */
 async function loadFeed() {
-  setStatus("Loading…");
-  const ok = await requireLogin();
-  if (!ok) return;
+  try {
+    setStatus("Loading feed…");
 
-  const rows = await fetchPostsRaw();
-  const first = rows[0] || null;
+    const rows = await fetchPostsRaw();
+    cachedKeyset = detectKeys(rows[0] || {});
 
-  cachedKeyset = detectKeys(first);
+    const postIds = [];
+    const userIds = [];
 
-  const uKey = cachedKeyset.userKey;
-  const postIds = [];
-  const userIds = [];
+    for (const r of rows) {
+      if (cachedKeyset.idKey && r[cachedKeyset.idKey]) postIds.push(r[cachedKeyset.idKey]);
+      if (cachedKeyset.userKey && r[cachedKeyset.userKey]) userIds.push(r[cachedKeyset.userKey]);
+    }
 
-  for (const r of rows) {
-    if (cachedKeyset.idKey && r[cachedKeyset.idKey]) postIds.push(r[cachedKeyset.idKey]);
-    if (uKey && r[uKey] && !userIds.includes(r[uKey])) userIds.push(r[uKey]);
-  }
+    const likeInfo = await fetchLikesForPosts(postIds);
+    const commentInfo = await fetchCommentsForPosts(postIds);
 
-  const likeInfo = await fetchLikesForPosts(postIds);
-  const commentInfo = await fetchCommentsForPosts(postIds);
-
-  // Add commenter ids too so we can show who commented
-  const commenterIds = [];
-  for (const arr of commentInfo.latest.values()) {
-    for (const c of arr) {
-      if (c.user_id && !userIds.includes(c.user_id) && !commenterIds.includes(c.user_id)) {
-        commenterIds.push(c.user_id);
+    // include commenter ids so we can show who commented
+    for (const arr of commentInfo.latest.values()) {
+      for (const c of arr) {
+        if (c.user_id) userIds.push(c.user_id);
       }
     }
+
+    const uniqueUsers = [...new Set(userIds)];
+    const profMap = await fetchProfilesMap(uniqueUsers);
+
+    renderPosts(rows, profMap, likeInfo, commentInfo, cachedKeyset);
+    setStatus("");
+  } catch (e) {
+    showFatal(e);
   }
-
-  const profMap = await fetchProfilesMap(userIds.concat(commenterIds));
-
-  renderPosts(rows, profMap, likeInfo, commentInfo, cachedKeyset);
-
-  setStatus("");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await requireLogin();
+  try {
+    const ok = await requireLogin();
+    if (!ok) return;
 
-  // Avatar menu
-  if (elMeAvatarBtn && elMeMenu) {
-    elMeAvatarBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      elMeMenu.style.display = (elMeMenu.style.display === "block" ? "none" : "block");
+    // THIS will expose the real problem if RLS/policies are blocking you
+    await supabaseSelfTest();
+
+    // Avatar menu
+    if (elMeAvatarBtn && elMeMenu) {
+      elMeAvatarBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        elMeMenu.style.display = (elMeMenu.style.display === "block" ? "none" : "block");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!elMeMenu.contains(e.target) && !elMeAvatarBtn.contains(e.target)) {
+          elMeMenu.style.display = "none";
+        }
+      });
+    }
+
+    if (elMenuProfile) elMenuProfile.addEventListener("click", () => (window.location.href = "/profile/home.html"));
+    if (elMenuSettings) elMenuSettings.addEventListener("click", () => (window.location.href = "/dashboard/settings.html"));
+
+    if (elMenuLogout) elMenuLogout.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/auth/login.html";
     });
 
-    document.addEventListener("click", (e) => {
-      if (!elMeMenu.contains(e.target) && !elMeAvatarBtn.contains(e.target)) {
-        elMeMenu.style.display = "none";
-      }
-    });
-  }
+    // File choose
+    if (elFileBtn && elFile) elFileBtn.addEventListener("click", () => elFile.click());
+    if (elFile) elFile.addEventListener("change", () => setFileUI(elFile.files?.[0] || null));
+    if (elClearFile) elClearFile.addEventListener("click", () => setFileUI(null));
 
-  if (elMenuProfile) elMenuProfile.addEventListener("click", () => (window.location.href = "/profile/home.html"));
-  if (elMenuSettings) elMenuSettings.addEventListener("click", () => (window.location.href = "/dashboard/settings.html"));
+    // Post
+    if (elPostBtn) elPostBtn.addEventListener("click", createPost);
 
-  if (elMenuLogout) elMenuLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login.html";
-  });
+    // Feed actions
+    if (elList) {
+      elList.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
 
-  // File choose
-  if (elFileBtn && elFile) elFileBtn.addEventListener("click", () => elFile.click());
+        const postEl = e.target.closest("[data-post-id]");
+        if (!postEl) return;
 
-  if (elFile) {
-    elFile.addEventListener("change", () => {
-      const file = elFile.files?.[0] || null;
-      setFileUI(file);
-    });
-  }
+        const postId = postEl.getAttribute("data-post-id");
+        const action = btn.getAttribute("data-action");
 
-  if (elClearFile) elClearFile.addEventListener("click", () => setFileUI(null));
+        try {
+          if (action === "deletePost") return await deletePost(postId);
+          if (action === "like") {
+            const liked = btn.textContent.trim().toLowerCase().startsWith("unlike");
+            return await toggleLike(postId, liked);
+          }
+          if (action === "toggleComments") {
+            const wrap = postEl.querySelector("[data-comments-wrap]");
+            if (wrap) wrap.style.display = (wrap.style.display === "none" ? "block" : "none");
+            return;
+          }
+          if (action === "sendComment") {
+            const input = postEl.querySelector("[data-comment-input]");
+            return await sendComment(postId, input);
+          }
+          if (action === "deleteComment") {
+            const cid = btn.getAttribute("data-comment-id");
+            return await deleteComment(cid);
+          }
+        } catch (err) {
+          showFatal(err);
+        }
+      });
+    }
 
-  // Post
-  if (elPostBtn) elPostBtn.addEventListener("click", createPost);
+    // Search
+    if (elSearchInput && elSearchDrop) {
+      elSearchInput.addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => runSearch(elSearchInput.value), 250);
+      });
 
-  // Post actions
-  if (elList) {
-    elList.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-
-      const postEl = e.target.closest("[data-post-id]");
-      if (!postEl) return;
-
-      const postId = postEl.getAttribute("data-post-id");
-      const action = btn.getAttribute("data-action");
-
-      if (action === "delete") {
-        await deletePost(postId, cachedKeyset || { idKey: "id" });
-        return;
-      }
-
-      if (action === "like") {
-        const liked = btn.textContent.trim().toLowerCase().startsWith("unlike");
-        await toggleLike(postId, liked);
-        return;
-      }
-
-      if (action === "toggleComments") {
-        const wrap = postEl.querySelector("[data-comments-wrap]");
-        if (wrap) wrap.style.display = (wrap.style.display === "none" ? "block" : "none");
-        return;
-      }
-
-      if (action === "sendComment") {
-        const input = postEl.querySelector("[data-comment-input]");
-        await sendComment(postId, input);
-        return;
-      }
-
-      if (action === "deleteComment") {
-        const cid = btn.getAttribute("data-comment-id");
-        await deleteComment(cid);
-        return;
-      }
-    });
-  }
-
-  // Search
-  if (elSearchInput && elSearchDrop) {
-    elSearchInput.addEventListener("input", () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => runSearch(elSearchInput.value), 250);
-    });
-
-    elSearchDrop.addEventListener("click", (e) => {
-      const item = e.target.closest(".searchItem");
-      if (!item) return;
-      const uid = item.getAttribute("data-uid");
-      elSearchDrop.style.display = "none";
-      elSearchInput.value = "";
-      window.location.href = `/profile/user.html?uid=${encodeURIComponent(uid)}`;
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!elSearchDrop.contains(e.target) && !elSearchInput.contains(e.target)) {
+      elSearchDrop.addEventListener("click", (e) => {
+        const item = e.target.closest(".searchItem");
+        if (!item) return;
+        const uid = item.getAttribute("data-uid");
         elSearchDrop.style.display = "none";
-      }
-    });
-  }
+        elSearchInput.value = "";
+        window.location.href = `/profile/user.html?uid=${encodeURIComponent(uid)}`;
+      });
 
-  await loadFeed();
+      document.addEventListener("click", (e) => {
+        if (!elSearchDrop.contains(e.target) && !elSearchInput.contains(e.target)) {
+          elSearchDrop.style.display = "none";
+        }
+      });
+    }
+
+    await loadFeed();
+  } catch (e) {
+    showFatal(e);
+  }
 });
