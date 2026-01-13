@@ -5,17 +5,51 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Feed</title>
 
-  <link rel="stylesheet" href="/css/style.css" />
+  <!-- IMPORTANT: No global CSS here to avoid black-screen overrides -->
+  <style>
+    :root { color-scheme: light; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#f6fbff;
+      color:#0f172a;
+    }
+    .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-radius:14px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(0,0,0,.08);
+      position:sticky; top:12px; backdrop-filter: blur(8px);
+    }
+    .brand{ font-weight:900; letter-spacing:.2px; }
+    #feedStatus{ font-size:13px; opacity:.75; }
+    #feedList{ margin-top:12px; }
+    .fallback{
+      margin-top:14px; padding:12px; border-radius:14px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(0,0,0,.08);
+      font-size:14px;
+    }
+    code{ background:rgba(0,0,0,.06); padding:2px 6px; border-radius:8px; }
+  </style>
 </head>
 
 <body>
-  <main class="wrap" style="max-width:720px;margin:0 auto;padding:16px;">
-    <header style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px;">
-      <div style="font-weight:800;font-size:18px;letter-spacing:.2px;">Pepsval</div>
-      <div id="feedStatus" style="font-size:13px;opacity:.7;">Loading feed…</div>
-    </header>
+  <main class="wrap">
+    <div class="top">
+      <div class="brand">Pepsval</div>
+      <div id="feedStatus">Loading feed…</div>
+    </div>
 
-    <section id="feedList"></section>
+    <div id="feedList">
+      <div class="fallback">
+        If this message stays and posts don’t appear, the script may not be loading.
+        <div style="margin-top:8px;opacity:.8">
+          Check that <code>/feed/feed.js</code> exists and is committed to GitHub.
+        </div>
+      </div>
+    </div>
   </main>
 
   <script type="module" src="/feed/feed.js"></script>
