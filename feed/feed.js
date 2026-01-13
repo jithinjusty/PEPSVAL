@@ -99,7 +99,6 @@ window.addEventListener("unhandledrejection", (e) => showFatal(e?.reason || "Unh
 
 /* ---------------- Auth ---------------- */
 async function requireLogin() {
-  // getCurrentUser() in your repo may already do profile fetch, so keep it
   me = await getCurrentUser();
 
   if (!me) {
@@ -123,29 +122,28 @@ function detectKeys(row) {
   };
 }
 
-/* ---------------- Diagnostics (this is the real fix now) ---------------- */
+/* ---------------- Diagnostics ---------------- */
 async function supabaseSelfTest() {
   setStatus("Checking database access…");
 
-  // Session
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr) throw sessionErr;
   if (!sessionData?.session) throw new Error("No Supabase session on this page (auth not loaded).");
 
-  // Posts select test
   const t1 = await supabase.from("posts").select("*").limit(1);
   if (t1.error) throw new Error(`posts SELECT blocked: ${t1.error.message}`);
 
-  // Comments select test
   const t2 = await supabase.from("post_comments").select("*").limit(1);
   if (t2.error) throw new Error(`post_comments SELECT blocked: ${t2.error.message}`);
 
-  // Likes select test
   const t3 = await supabase.from("post_likes").select("*").limit(1);
   if (t3.error) throw new Error(`post_likes SELECT blocked: ${t3.error.message}`);
 
-  // Profiles select test (needed for showing commenter name)
-  const t4 = await supabase.from("profiles").select("id, full_name, avatar_url").limit(1);
+  // profiles select test (fallback safe)
+  let t4 = await supabase.from("profiles").select("id, full_name, avatar_url, rank, country").limit(1);
+  if (t4.error && /column .*country.* does not exist/i.test(t4.error.message)) {
+    t4 = await supabase.from("profiles").select("id, full_name, avatar_url, rank").limit(1);
+  }
   if (t4.error) throw new Error(`profiles SELECT blocked: ${t4.error.message}`);
 
   setStatus("");
@@ -153,7 +151,6 @@ async function supabaseSelfTest() {
 
 /* ---------------- Fetchers ---------------- */
 async function fetchPostsRaw() {
-  // Try created_at first, fallback to id
   let res = await supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(50);
   if (res.error) res = await supabase.from("posts").select("*").order("id", { ascending: false }).limit(50);
 
@@ -164,15 +161,23 @@ async function fetchPostsRaw() {
 async function fetchProfilesMap(userIds) {
   if (!userIds.length) return new Map();
 
-  const { data, error } = await supabase
+  // try with country, fallback without if column missing
+  let res = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, rank, country")
     .in("id", userIds);
 
-  if (error) throw new Error(`Profiles load failed: ${error.message}`);
+  if (res.error && /column .*country.* does not exist/i.test(res.error.message)) {
+    res = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, rank")
+      .in("id", userIds);
+  }
+
+  if (res.error) throw new Error(`Profiles load failed: ${res.error.message}`);
 
   const map = new Map();
-  (data || []).forEach(p => map.set(p.id, p));
+  (res.data || []).forEach(p => map.set(p.id, p));
   return map;
 }
 
@@ -203,7 +208,7 @@ async function fetchCommentsForPosts(postIds) {
 
   const { data, error } = await supabase
     .from("post_comments")
-    .select("id, post_id, user_id, content, created_at")
+    .select("id, post_id, user_id, author_id, body, content, created_at")
     .in("post_id", postIds)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -213,7 +218,7 @@ async function fetchCommentsForPosts(postIds) {
   for (const c of (data || [])) {
     counts.set(c.post_id, (counts.get(c.post_id) || 0) + 1);
     const arr = latest.get(c.post_id) || [];
-    if (arr.length < 20) arr.push(c); // show more comments
+    if (arr.length < 20) arr.push(c);
     latest.set(c.post_id, arr);
   }
 
@@ -248,7 +253,7 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
     const commentsCount = commentInfo.counts.get(pid) || 0;
     const comments = commentInfo.latest.get(pid) || [];
 
-    const isMine = (uid && me && uid === me.id);
+    const isMine = (me && (r.user_id === me.id || r.author_id === me.id));
 
     const mediaHtml = media ? `
       <div style="margin-top:10px;border-radius:14px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#fff;">
@@ -258,10 +263,13 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
       </div>` : "";
 
     const commentsHtml = comments.map(c => {
-      const cp = profMap.get(c.user_id) || {};
+      const commenterId = c.user_id || c.author_id;
+      const cp = commenterId ? (profMap.get(commenterId) || {}) : {};
       const cName = cp.full_name || "Seafarer";
       const cAvatar = cp.avatar_url || "";
-      const mine = (me && c.user_id === me.id);
+      const mine = (me && commenterId === me.id);
+
+      const text = (c.content || c.body || "");
 
       return `
         <div class="pv-commentRow">
@@ -273,7 +281,7 @@ function renderPosts(rows, profMap, likeInfo, commentInfo, keyset) {
               <div class="pv-commentName">${safeText(cName)}</div>
               <div class="pv-commentMeta">${c.created_at ? new Date(c.created_at).toLocaleString() : ""}</div>
             </div>
-            <div class="pv-commentText">${safeText(c.content || "")}</div>
+            <div class="pv-commentText">${safeText(text)}</div>
           </div>
           ${mine ? `<button type="button" class="pv-linkBtn" data-action="deleteComment" data-comment-id="${safeAttr(c.id)}">Delete</button>` : ``}
         </div>
@@ -355,14 +363,23 @@ async function uploadMedia(file) {
   return data?.publicUrl || null;
 }
 
-async function insertPost(content, mediaUrl, keyset) {
-  const ks = keyset || cachedKeyset || {};
-  const userKey = ks.userKey || "user_id";
-  const contentKey = ks.contentKey || "content";
-  const mediaKey = ks.mediaKey || "media_url";
+async function insertPost(content, mediaUrl) {
+  // Always write BOTH columns so all your mixed policies pass
+  const authorName =
+    me?.full_name ||
+    me?.profile?.full_name ||
+    me?.user_metadata?.full_name ||
+    me?.user_metadata?.name ||
+    null;
 
-  const payload = { [userKey]: me.id, [contentKey]: content || "" };
-  if (mediaUrl) payload[mediaKey] = mediaUrl;
+  const payload = {
+    user_id: me.id,
+    author_id: me.id,
+    author_name: authorName,
+    content: content || ""
+  };
+
+  if (mediaUrl) payload.media_url = mediaUrl;
 
   const { error } = await supabase.from("posts").insert([payload]);
   if (error) throw new Error(`Post blocked: ${error.message}`);
@@ -378,7 +395,6 @@ async function createPost() {
   setStatus("Posting…");
 
   try {
-    // Ensure keyset comes from real rows
     if (!cachedKeyset) {
       const rows = await fetchPostsRaw();
       cachedKeyset = detectKeys(rows[0] || {});
@@ -387,7 +403,7 @@ async function createPost() {
     let mediaUrl = null;
     if (selectedFile) mediaUrl = await uploadMedia(selectedFile);
 
-    await insertPost(content, mediaUrl, cachedKeyset);
+    await insertPost(content, mediaUrl);
 
     if (elPostText) elPostText.value = "";
     setFileUI(null);
@@ -403,8 +419,7 @@ async function createPost() {
 }
 
 async function deletePost(postId) {
-  const idKey = cachedKeyset?.idKey || "id";
-  const { error } = await supabase.from("posts").delete().eq(idKey, postId);
+  const { error } = await supabase.from("posts").delete().eq("id", postId);
   if (error) throw new Error(`Delete blocked: ${error.message}`);
   await loadFeed();
   toast("Deleted");
@@ -425,7 +440,16 @@ async function sendComment(postId, inputEl) {
   const txt = (inputEl?.value || "").trim();
   if (!txt) return;
 
-  const { error } = await supabase.from("post_comments").insert([{ post_id: postId, user_id: me.id, content: txt }]);
+  // IMPORTANT: your table requires BOTH body + content, and your policies sometimes use author_id
+  const payload = {
+    post_id: postId,
+    user_id: me.id,
+    author_id: me.id,
+    body: txt,
+    content: txt
+  };
+
+  const { error } = await supabase.from("post_comments").insert([payload]);
   if (error) throw new Error(`Comment blocked: ${error.message}`);
 
   inputEl.value = "";
@@ -433,7 +457,8 @@ async function sendComment(postId, inputEl) {
 }
 
 async function deleteComment(commentId) {
-  const { error } = await supabase.from("post_comments").delete().eq("id", commentId).eq("user_id", me.id);
+  // Delete only by ID. Ownership is enforced by RLS.
+  const { error } = await supabase.from("post_comments").delete().eq("id", commentId);
   if (error) throw new Error(`Delete comment blocked: ${error.message}`);
   await loadFeed();
   toast("Deleted");
@@ -448,15 +473,23 @@ async function runSearch(q) {
     return;
   }
 
-  const { data, error } = await supabase
+  let res = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, rank, country")
     .ilike("full_name", `%${text}%`)
     .limit(10);
 
-  if (error) return showFatal(`Search blocked: ${error.message}`);
+  if (res.error && /column .*country.* does not exist/i.test(res.error.message)) {
+    res = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, rank")
+      .ilike("full_name", `%${text}%`)
+      .limit(10);
+  }
 
-  const rows = data || [];
+  if (res.error) return showFatal(`Search blocked: ${res.error.message}`);
+
+  const rows = res.data || [];
   if (!rows.length) {
     elSearchDrop.style.display = "none";
     elSearchDrop.innerHTML = "";
@@ -491,6 +524,10 @@ async function loadFeed() {
 
     for (const r of rows) {
       if (cachedKeyset.idKey && r[cachedKeyset.idKey]) postIds.push(r[cachedKeyset.idKey]);
+
+      // include both potential owner keys so profile map is always complete
+      if (r.user_id) userIds.push(r.user_id);
+      if (r.author_id) userIds.push(r.author_id);
       if (cachedKeyset.userKey && r[cachedKeyset.userKey]) userIds.push(r[cachedKeyset.userKey]);
     }
 
@@ -501,10 +538,11 @@ async function loadFeed() {
     for (const arr of commentInfo.latest.values()) {
       for (const c of arr) {
         if (c.user_id) userIds.push(c.user_id);
+        if (c.author_id) userIds.push(c.author_id);
       }
     }
 
-    const uniqueUsers = [...new Set(userIds)];
+    const uniqueUsers = [...new Set(userIds.filter(Boolean))];
     const profMap = await fetchProfilesMap(uniqueUsers);
 
     renderPosts(rows, profMap, likeInfo, commentInfo, cachedKeyset);
@@ -519,7 +557,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ok = await requireLogin();
     if (!ok) return;
 
-    // THIS will expose the real problem if RLS/policies are blocking you
     await supabaseSelfTest();
 
     // Avatar menu
