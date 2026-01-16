@@ -1,39 +1,38 @@
-import { supabase, getCurrentUser } from "../js/supabase.js";
+import { supabase } from "/js/supabase.js";
+import { requireAuth, getMyProfile } from "/js/guard.js";
 
 const editBtn = document.getElementById("editProfileBtn");
 const saveBtn = document.getElementById("saveProfileBtn");
 
-const avatarImg = document.getElementById("avatarImg");
-const avatarFallback = document.getElementById("avatarFallback");
 const typeBadge = document.getElementById("typeBadge");
-
 const elProfileName = document.getElementById("profileName");
-const elMiniRank = document.getElementById("miniRank");
+const elMiniTitleLabel = document.getElementById("miniTitleLabel");
+const elMiniTitle = document.getElementById("miniTitle");
 const elMiniNationality = document.getElementById("miniNationality");
+
+const aboutTitle = document.getElementById("aboutTitle");
+const titleLabel = document.getElementById("titleLabel");
+const tabSeaBtn = document.getElementById("tabSeaBtn");
 
 const fields = {
   full_name: document.getElementById("fullName"),
-  rank: document.getElementById("rank"),
+  titleValue: document.getElementById("titleValue"), // stored in profiles.rank (for all roles)
   nationality: document.getElementById("nationality"),
-  // UI labels kept same, but we map them to real DB columns:
-  // lastVessel -> company
-  // availability -> job_title
-  lastVessel: document.getElementById("lastVessel"),
-  availability: document.getElementById("availability"),
   bio: document.getElementById("bio"),
-  email: document.getElementById("email")
+  email: document.getElementById("email"),
 };
 
-let currentUserId = null;
+const avatarFallback = document.getElementById("avatarFallback");
 
-// ---------- helpers ----------
+let currentUserId = null;
+let currentRole = "seafarer";
+
 function safeText(v, fallback = "—") {
   const t = (v ?? "").toString().trim();
   return t.length ? t : fallback;
 }
 
 function normalizeEditableValue(v) {
-  // Don’t save placeholder "—"
   const t = (v ?? "").toString().trim();
   if (!t || t === "—") return null;
   return t;
@@ -47,14 +46,29 @@ function initialsFromName(name) {
   return (first + last).toUpperCase() || "P";
 }
 
+function roleLabel(role) {
+  if (role === "company") return "Company / Institute";
+  if (role === "professional") return "Maritime Professional";
+  return "Seafarer";
+}
+
+function titleLabelForRole(role) {
+  if (role === "company") return "Company type";
+  if (role === "professional") return "Professional role";
+  return "Ship role";
+}
+
+function aboutTitleForRole(role) {
+  if (role === "company") return "Company profile";
+  if (role === "professional") return "Professional profile";
+  return "Seafarer profile";
+}
+
 function setEditable(state) {
-  // Only these are editable fields (email should not be contentEditable)
   const editableEls = [
     fields.full_name,
-    fields.rank,
+    fields.titleValue,
     fields.nationality,
-    fields.lastVessel,
-    fields.availability,
     fields.bio
   ];
 
@@ -68,125 +82,105 @@ function setEditable(state) {
   saveBtn?.classList.toggle("hidden", !state);
 }
 
-function setAvatar(url, nameForInitials) {
-  const urlTrim = (url || "").trim();
-  if (urlTrim) {
-    avatarImg.src = urlTrim;
-    avatarImg.classList.remove("hidden");
-    avatarFallback.classList.add("hidden");
-    avatarFallback.textContent = "";
-  } else {
-    avatarImg.removeAttribute("src");
-    avatarImg.classList.add("hidden");
-    avatarFallback.classList.remove("hidden");
-    avatarFallback.textContent = initialsFromName(nameForInitials);
-  }
-}
-
-function setAccountTypeBadge(account_type, account_type_label) {
-  const label = (account_type_label || account_type || "").trim();
-  if (!label) {
-    typeBadge.classList.add("hidden");
-    typeBadge.textContent = "";
-    return;
-  }
-  typeBadge.classList.remove("hidden");
-  typeBadge.textContent = label;
-}
-
-// ---------- data ----------
-async function fetchProfile(userId) {
+async function fetchProfileRow(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select(
-      "id, full_name, rank, nationality, bio, email, avatar_url, account_type, account_type_label, company, job_title"
-    )
+    .select("id, full_name, role, rank, nationality, bio, setup_complete")
     .eq("id", userId)
-    .maybeSingle();
+    .single();
 
   if (error) throw error;
   return data;
 }
 
-async function ensureProfileRow(user) {
-  // If profile row doesn’t exist, create a minimal one.
-  const { data: existing, error: selErr } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
+function applyRoleUI(role) {
+  const label = roleLabel(role);
+  currentRole = role || "seafarer";
 
-  if (selErr) throw selErr;
+  if (typeBadge) typeBadge.textContent = label;
 
-  if (!existing) {
-    const insertPayload = {
-      id: user.id,
-      email: user.email || null,
-      full_name:
-        (user.user_metadata && user.user_metadata.full_name) ||
-        user.email?.split("@")[0] ||
-        null
-    };
+  const titleLbl = titleLabelForRole(currentRole);
+  if (titleLabel) titleLabel.textContent = titleLbl;
+  if (elMiniTitleLabel) elMiniTitleLabel.textContent = titleLbl;
+  if (aboutTitle) aboutTitle.textContent = aboutTitleForRole(currentRole);
 
-    const { error: insErr } = await supabase.from("profiles").insert(insertPayload);
-    if (insErr) throw insErr;
+  // Sea Service only for seafarer
+  const seaVisible = currentRole === "seafarer";
+  if (tabSeaBtn) tabSeaBtn.style.display = seaVisible ? "" : "none";
+
+  // If currently on sea tab and role isn't seafarer, force About tab
+  if (!seaVisible) {
+    const seaPane = document.getElementById("tab_sea");
+    if (seaPane && !seaPane.classList.contains("hidden")) {
+      switchTab("about");
+    }
   }
 }
 
-async function loadProfile() {
-  const user = await getCurrentUser();
-  if (!user) return;
-
-  currentUserId = user.id;
-
-  // make sure row exists
-  await ensureProfileRow(user);
-
-  const p = await fetchProfile(user.id);
-
-  // Main fields
-  fields.full_name.textContent = safeText(p?.full_name);
-  fields.rank.textContent = safeText(p?.rank);
-  fields.nationality.textContent = safeText(p?.nationality);
-
-  // Map UI fields to real columns
-  fields.lastVessel.textContent = safeText(p?.company);
-  fields.availability.textContent = safeText(p?.job_title);
-
-  fields.bio.textContent = safeText(p?.bio);
-  fields.email.textContent = safeText(p?.email || user.email);
-
-  // Header
-  elProfileName.textContent = safeText(p?.full_name, "Profile");
-  elMiniRank.textContent = safeText(p?.rank);
-  elMiniNationality.textContent = safeText(p?.nationality);
-
-  // Avatar + badge
-  setAvatar(p?.avatar_url, p?.full_name || user.email || "P");
-  setAccountTypeBadge(p?.account_type, p?.account_type_label);
+function wireTabs() {
+  const tabs = Array.from(document.querySelectorAll(".tab[data-tab]"));
+  tabs.forEach(btn => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
 }
 
-// ---------- actions ----------
-editBtn.onclick = () => setEditable(true);
+function switchTab(name) {
+  const tabs = Array.from(document.querySelectorAll(".tab[data-tab]"));
+  const panes = ["about", "posts", "documents", "sea"].map(x => document.getElementById(`tab_${x}`));
 
-saveBtn.onclick = async () => {
+  tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  panes.forEach(p => {
+    if (!p) return;
+    p.classList.toggle("hidden", p.id !== `tab_${name}`);
+  });
+}
+
+async function loadProfile() {
+  const session = await requireAuth();
+  if (!session) return;
+
+  const me = await getMyProfile(session.user.id);
+  if (!me || me.setup_complete !== true) {
+    window.location.href = "/setup/profile-setup.html";
+    return;
+  }
+
+  currentUserId = session.user.id;
+
+  const p = await fetchProfileRow(currentUserId);
+
+  applyRoleUI(p.role);
+
+  // About fields
+  fields.full_name.textContent = safeText(p.full_name);
+  fields.titleValue.textContent = safeText(p.rank); // we store category-specific title in rank
+  fields.nationality.textContent = safeText(p.nationality);
+  fields.bio.textContent = safeText(p.bio);
+  fields.email.textContent = safeText(session.user.email);
+
+  // Header
+  elProfileName.textContent = safeText(p.full_name, "Profile");
+  elMiniTitle.textContent = safeText(p.rank);
+  elMiniNationality.textContent = safeText(p.nationality);
+
+  // Avatar initials
+  if (avatarFallback) avatarFallback.textContent = initialsFromName(p.full_name || session.user.email || "P");
+}
+
+// actions
+editBtn?.addEventListener("click", () => setEditable(true));
+
+saveBtn?.addEventListener("click", async () => {
   if (!currentUserId) return;
 
   const updates = {
     full_name: normalizeEditableValue(fields.full_name.textContent),
-    rank: normalizeEditableValue(fields.rank.textContent),
+    rank: normalizeEditableValue(fields.titleValue.textContent),
     nationality: normalizeEditableValue(fields.nationality.textContent),
-
-    // UI -> DB mapping
-    company: normalizeEditableValue(fields.lastVessel.textContent),
-    job_title: normalizeEditableValue(fields.availability.textContent),
-
     bio: normalizeEditableValue(fields.bio.textContent),
-
     updated_at: new Date().toISOString()
   };
 
-  // Remove nulls so we don’t overwrite existing values with null
   Object.keys(updates).forEach(k => {
     if (updates[k] === null) delete updates[k];
   });
@@ -201,12 +195,13 @@ saveBtn.onclick = async () => {
 
   setEditable(false);
   await loadProfile();
-};
+});
 
 // init
 (async () => {
   try {
     setEditable(false);
+    wireTabs();
     await loadProfile();
   } catch (e) {
     console.error("Profile load error:", e);
