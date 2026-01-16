@@ -9,28 +9,32 @@ const els = {
   errorBox: $("errorBox"),
 
   accountType: $("accountType"),
-  accountTypeOtherWrap: $("accountTypeOtherWrap"), // we will not use this now but keep safe
-  accountTypeOther: $("accountTypeOther"),
 
   fullName: $("fullName"),
   bio: $("bio"),
 
-  // We'll reuse the existing "rank" UI for the category dropdown (ship roles / company type / professional role)
+  // main dropdown reused
   rankWrap: $("rankWrap"),
+  rankLabel: $("rankLabel"),
+  rankHelp: $("rankHelp"),
   rankSearch: $("rankSearch"),
   rankValue: $("rankValue"),
   rankList: $("rankList"),
   rankOtherWrap: $("rankOtherWrap"),
   rankOther: $("rankOther"),
 
-  // These exist in your HTML, we keep them but hide for now (no role dropdown anymore)
-  roleWrap: $("roleWrap"),
-  companyWrap: $("companyWrap"),
-  companyName: $("companyName"),
-
   countrySearch: $("countrySearch"),
   countryValue: $("countryValue"),
   countryList: $("countryList"),
+
+  dialSearch: $("dialSearch"),
+  dialValue: $("dialValue"),
+  dialList: $("dialList"),
+  phoneInput: $("phoneInput"),
+
+  photoInput: $("photoInput"),
+  removePhotoBtn: $("removePhotoBtn"),
+  avatarPreview: $("avatarPreview"),
 };
 
 let currentUser = null;
@@ -40,7 +44,6 @@ let countries = [];
    1) Seafarer - ONLY onboard ship roles
    ========================================================= */
 const SHIP_ROLES = [
-  // Deck Officers
   "Master / Captain",
   "Chief Officer / C/O",
   "Second Officer / 2/O",
@@ -48,7 +51,6 @@ const SHIP_ROLES = [
   "Fourth Officer / 4/O",
   "Deck Cadet / Trainee",
 
-  // Deck Ratings
   "Bosun",
   "AB / Able Seaman",
   "OS / Ordinary Seaman",
@@ -57,16 +59,13 @@ const SHIP_ROLES = [
   "Deck Fitter",
   "Carpenter",
 
-  // Engine Officers
   "Chief Engineer",
   "Second Engineer",
-  "Gas Engineer",
   "Third Engineer",
   "Fourth Engineer",
   "Fifth Engineer / Junior Engineer",
   "Engine Cadet / Trainee",
 
-  // Engine Ratings
   "Motorman",
   "Oiler",
   "Wiper",
@@ -75,12 +74,10 @@ const SHIP_ROLES = [
   "Reefer Engineer",
   "Welder",
 
-  // Electro-Technical
   "ETO / Electro-Technical Officer",
   "Electrician",
   "Electronics Technician",
 
-  // Special shipboard (still onboard)
   "Safety Officer",
   "Security Officer (SSO)",
   "Medical Officer",
@@ -225,7 +222,6 @@ async function loadCountries(){
     .filter(c => c.name);
 }
 
-/* ---------------- Category-driven dropdown list ---------------- */
 function getActiveList(){
   const v = (els.accountType?.value || "").trim();
   if (v === "seafarer") return SHIP_ROLES;
@@ -234,16 +230,11 @@ function getActiveList(){
   return [];
 }
 
+/* ✅ Now we save role EXACTLY as selected (DB supports it) */
 function getRoleForDB(){
-  const v = (els.accountType?.value || "").trim();
-  // DB constraint currently allows seafarer/employer/shore.
-  // We will map to the closest stable values for now:
-  if (v === "company") return "employer";       // company/institute stored as employer
-  if (v === "professional") return "shore";     // other professionals stored as shore
-  return "seafarer";
+  return (els.accountType?.value || "").trim(); // seafarer | company | professional
 }
 
-/* ---------------- Rank/Type selection ---------------- */
 function getSelectedTitle(){
   const chosen = (els.rankValue?.value || "").trim();
   const typed = (els.rankSearch?.value || "").trim();
@@ -274,29 +265,38 @@ function validate(){
 
 /* ---------------- Switch UI based on category ---------------- */
 function syncAccountUI(){
-  // Hide unused sections
-  hide(els.roleWrap);
-  hide(els.companyWrap);
-
-  // Always show the main dropdown (reusing rank UI)
   show(els.rankWrap);
 
-  // Update placeholder text to match category
   const v = (els.accountType?.value || "").trim();
+
+  if (els.rankLabel) {
+    if (v === "seafarer") els.rankLabel.innerHTML = `Ship role <span class="req">*</span>`;
+    else if (v === "company") els.rankLabel.innerHTML = `Company / Institute type <span class="req">*</span>`;
+    else if (v === "professional") els.rankLabel.innerHTML = `Professional role <span class="req">*</span>`;
+    else els.rankLabel.innerHTML = `Role / Type <span class="req">*</span>`;
+  }
+
+  if (els.rankHelp) {
+    if (v === "seafarer") els.rankHelp.textContent = "Choose your onboard ship role only.";
+    else if (v === "company") els.rankHelp.textContent = "Choose what type of company/institute you are.";
+    else if (v === "professional") els.rankHelp.textContent = "Choose your shore-side maritime role.";
+    else els.rankHelp.textContent = "Type to search or scroll and choose.";
+  }
+
   if (els.rankSearch) {
     if (v === "seafarer") els.rankSearch.placeholder = "Search ship role (e.g., Second Officer)";
     else if (v === "company") els.rankSearch.placeholder = "Search company/institute type";
-    else if (v === "professional") els.rankSearch.placeholder = "Search maritime professional role";
+    else if (v === "professional") els.rankSearch.placeholder = "Search professional role";
     else els.rankSearch.placeholder = "Search…";
   }
 
-  // Reset selection when category changes
-  if (els.rankSearch) els.rankSearch.value = "";
-  if (els.rankValue) els.rankValue.value = "";
+  // reset selection on category change
+  els.rankSearch.value = "";
+  els.rankValue.value = "";
   if (els.rankOther) els.rankOther.value = "";
   hide(els.rankOtherWrap);
 
-  // Rebuild combo list for the selected category
+  // rebuild list
   makeCombo({
     comboName: "rank",
     inputEl: els.rankSearch,
@@ -327,9 +327,9 @@ async function saveProfile(){
   const payload = {
     id: currentUser.id,
     full_name: (els.fullName?.value || "").trim() || null,
-    role: getRoleForDB(), // maps to seafarer/employer/shore
+    role: getRoleForDB(),
     nationality: getNationality() || null,
-    rank: getSelectedTitle() || null, // store title/type here
+    rank: getSelectedTitle() || null, // stored as position/type
     bio: (els.bio?.value || "").trim() || null,
     setup_complete: true,
     updated_at: new Date().toISOString()
@@ -359,7 +359,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadCountries();
 
-  // Country combo (still needed)
+  // Country combo
   makeCombo({
     comboName: "country",
     inputEl: els.countrySearch,
@@ -373,7 +373,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Validate on typing too
+  // Dial combo (UI only)
+  makeCombo({
+    comboName: "dial",
+    inputEl: els.dialSearch,
+    listEl: els.dialList,
+    items: countries.filter(c => c.dial_code).map(c => `${c.dial_code} — ${c.name}`),
+    label: (row) => {
+      const [code, ...rest] = row.split(" — ");
+      return `<strong>${code}</strong> <span class="muted">— ${rest.join(" — ")}</span>`;
+    },
+    onPick: (row) => {
+      const code = row.split(" — ")[0].trim();
+      els.dialSearch.value = code;
+      els.dialValue.value = code;
+      validate();
+    }
+  });
+
+  // Avatar preview (UI only for now)
+  els.photoInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0] || null;
+    if (!els.avatarPreview) return;
+    if (!file) {
+      els.avatarPreview.style.backgroundImage = "";
+      els.avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    els.avatarPreview.innerHTML = "";
+    els.avatarPreview.style.backgroundSize = "cover";
+    els.avatarPreview.style.backgroundPosition = "center";
+    els.avatarPreview.style.backgroundImage = `url("${url}")`;
+  });
+
+  els.removePhotoBtn?.addEventListener("click", () => {
+    if (els.photoInput) els.photoInput.value = "";
+    if (els.avatarPreview) {
+      els.avatarPreview.style.backgroundImage = "";
+      els.avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
+    }
+  });
+
+  // validate while typing
   els.rankSearch?.addEventListener("input", validate);
   els.rankOther?.addEventListener("input", validate);
   els.countrySearch?.addEventListener("input", validate);
