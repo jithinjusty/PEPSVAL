@@ -1,19 +1,22 @@
 import { supabase } from "/js/supabase.js";
+import { ROUTES } from "/js/config.js";
 
 const $ = (id) => document.getElementById(id);
-const hasHidden = (el) => el?.classList?.contains("hidden");
 
 const els = {
   form: $("setupForm"),
   saveBtn: $("saveBtn"),
   errorBox: $("errorBox"),
 
+  // In UI this is the account type selector (seafarer/employer/shore)
   accountType: $("accountType"),
   accountTypeOtherWrap: $("accountTypeOtherWrap"),
   accountTypeOther: $("accountTypeOther"),
 
   fullName: $("fullName"),
-  dob: $("dob"),
+  dob: $("dob"), // kept in UI but NOT saved in V1 DB
+  companyWrap: $("companyWrap"),
+  companyName: $("companyName"), // kept in UI but NOT saved in V1 DB
 
   rankWrap: $("rankWrap"),
   rankSearch: $("rankSearch"),
@@ -29,9 +32,6 @@ const els = {
   roleOtherWrap: $("roleOtherWrap"),
   roleOther: $("roleOther"),
 
-  companyWrap: $("companyWrap"),
-  companyName: $("companyName"),
-
   countrySearch: $("countrySearch"),
   countryValue: $("countryValue"),
   countryList: $("countryList"),
@@ -40,7 +40,7 @@ const els = {
   dialValue: $("dialValue"),
   dialList: $("dialList"),
 
-  phoneInput: $("phoneInput"),
+  phoneInput: $("phoneInput"), // kept in UI but NOT saved in V1 DB
   bio: $("bio"),
 
   photoInput: $("photoInput"),
@@ -49,11 +49,10 @@ const els = {
 };
 
 let currentUser = null;
-let countries = []; // expected objects: {name, dial_code, code}
+let countries = []; // {name, dial_code, code}
 
 /* --------- BIG RANK LIST --------- */
 const RANKS = [
-  // Deck - Merchant
   "Master / Captain",
   "Chief Officer / C/O",
   "Second Officer / 2/O",
@@ -64,8 +63,6 @@ const RANKS = [
   "Safety Officer",
   "Security Officer (SSO)",
   "Medical Officer",
-
-  // Ratings - Deck
   "Bosun",
   "AB / Able Seaman",
   "OS / Ordinary Seaman",
@@ -73,8 +70,6 @@ const RANKS = [
   "Trainee OS",
   "Deck Fitter",
   "Carpenter",
-
-  // Engine - Merchant
   "Chief Engineer",
   "Second Engineer",
   "Third Engineer",
@@ -88,14 +83,10 @@ const RANKS = [
   "Pumpman",
   "Reefer Engineer",
   "Welder",
-
-  // Electrical / ETO
   "ETO / Electro-Technical Officer",
   "Electrical Engineer",
   "Electrician",
   "Electronics Technician",
-
-  // Tanker / Gas specific
   "Cargo Engineer (LNG/LPG)",
   "Gas Engineer (LNG/LPG)",
   "Loading Master",
@@ -103,8 +94,6 @@ const RANKS = [
   "Crude Oil Tanker Officer",
   "Chemical Tanker Officer",
   "LNG Cargo Operator",
-
-  // Offshore / DP / OSV
   "Master (OSV)",
   "Chief Mate (OSV)",
   "2nd Mate / DPO",
@@ -121,8 +110,6 @@ const RANKS = [
   "DPO / Dynamic Positioning Operator",
   "Senior DPO",
   "DP Maintenance Technician",
-
-  // Offshore / Rig positions (shore/offshore but still “seafarer related”)
   "Rig Superintendent",
   "Rig Manager",
   "Toolpusher",
@@ -130,20 +117,14 @@ const RANKS = [
   "Assistant Driller",
   "Crane Operator (Offshore)",
   "ROV Pilot / Technician",
-
-  // Passenger / Cruise - Deck
   "Staff Captain",
   "Cruise Safety Officer",
   "Navigation Officer (Cruise)",
   "Bridge Officer (Cruise)",
   "Environmental Officer (Cruise)",
-
-  // Cruise - Engine / Technical
   "Fleet Engineer (Cruise)",
   "Technical Officer (Cruise)",
   "Engine Officer (Cruise)",
-
-  // Cruise / Hotel / Service (for seafarer category too)
   "Hotel Director (Cruise)",
   "Food & Beverage Manager (Cruise)",
   "Executive Chef (Cruise)",
@@ -153,8 +134,6 @@ const RANKS = [
   "Cabin Steward (Cruise)",
   "Bartender (Cruise)",
   "Waiter / Server (Cruise)",
-
-  // Misc
   "Pilot (Maritime)",
   "VTS Officer",
   "Marine Surveyor",
@@ -194,7 +173,6 @@ function hide(el){ el && el.classList.add("hidden"); }
 
 function showList(listEl){
   if (!listEl) return;
-  // Support both CSS styles: .show class AND inline display fallback
   listEl.classList.add("show");
   listEl.style.display = "block";
 }
@@ -221,14 +199,17 @@ function isEmployerOrShore(){
   return v === "employer" || v === "shore";
 }
 
-function normalizeAccountType(){
-  const v = els.accountType?.value || "";
-  if (v === "other") {
-    const other = (els.accountTypeOther?.value || "").trim();
-    return other ? other : "Other";
-  }
-  if (!v) return "";
-  return v.charAt(0).toUpperCase() + v.slice(1);
+/**
+ * IMPORTANT:
+ * In V1 DB, profiles.role must be exactly: seafarer | employer | shore
+ * (We do NOT store "account_type" anymore.)
+ */
+function getRoleForDB(){
+  const v = (els.accountType?.value || "").trim();
+  // If user selected "other", we still must store one of the allowed roles.
+  // So we default to "shore" (closest). You can change later.
+  if (v === "other") return "shore";
+  return v; // seafarer/employer/shore
 }
 
 function getRank(){
@@ -237,26 +218,11 @@ function getRank(){
   return v;
 }
 
-function getRole(){
-  const v = (els.roleValue?.value || "").trim();
-  if (v === "Other") return (els.roleOther?.value || "").trim();
-  return v;
-}
-
 function getNationality(){ return (els.countryValue?.value || "").trim(); }
-
-function getPhone(){
-  const dial = (els.dialValue?.value || "").trim();
-  const num = (els.phoneInput?.value || "").trim();
-  if (!num) return "";
-  if (dial && !num.startsWith("+")) return `${dial} ${num}`;
-  return num;
-}
 
 /* --------- Generic Combo --------- */
 function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
   if (!inputEl || !listEl) return;
-
   const key = comboName;
 
   function render(list){
@@ -268,7 +234,6 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
       listEl.appendChild(empty);
       return;
     }
-
     list.forEach((it) => {
       const row = document.createElement("div");
       row.className = "comboItem";
@@ -286,7 +251,9 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
     const filtered = !q
       ? items.slice(0, 200)
       : items.filter((it) => {
-          const txt = (typeof it === "string" ? it : (it?.name || it?.dial_code || "")).toLowerCase();
+          const txt = (typeof it === "string"
+            ? it
+            : (it?.name || it?.dial_code || "")).toLowerCase();
           return txt.includes(q);
         }).slice(0, 200);
 
@@ -303,7 +270,6 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
     }
   });
 
-  // initial
   render(items.slice(0, 120));
 }
 
@@ -312,7 +278,6 @@ async function loadCountries(){
   const res = await fetch("/data/countries.json", { cache: "no-store" });
   const json = await res.json();
 
-  // Your countries.json already exists in /data
   countries = (json || [])
     .map(c => ({
       name: c.name || c.country || c.Country || "",
@@ -320,8 +285,6 @@ async function loadCountries(){
       code: c.code || c.iso2 || c.iso || ""
     }))
     .filter(c => c.name);
-
-  // If dial_code missing for some, it’s ok (still show country list)
 }
 
 /* --------- Avatar preview only --------- */
@@ -340,26 +303,22 @@ function setAvatarPreview(file){
   els.avatarPreview.style.backgroundImage = `url("${url}")`;
 }
 
-/* --------- Validation (controls Save button) --------- */
+/* --------- Validation --------- */
 function validate(){
   clearError();
 
-  const acct = els.accountType?.value || "";
+  const acct = (els.accountType?.value || "").trim();
   const acctOk = !!acct;
 
   const otherOk = acct !== "other" || ((els.accountTypeOther?.value || "").trim().length > 1);
-
   const nationalityOk = getNationality().length > 1;
 
   // Seafarer -> rank required
   const rankOk = !isSeafarer() || getRank().length > 1;
-  const rankOtherOk = !(isSeafarer() && (els.rankValue?.value === "Other")) || ((els.rankOther?.value || "").trim().length > 1);
+  const rankOtherOk = !(isSeafarer() && (els.rankValue?.value === "Other")) ||
+    ((els.rankOther?.value || "").trim().length > 1);
 
-  // Employer/Shore -> role required
-  const roleOk = !isEmployerOrShore() || getRole().length > 1;
-  const roleOtherOk = !(isEmployerOrShore() && (els.roleValue?.value === "Other")) || ((els.roleOther?.value || "").trim().length > 1);
-
-  const ok = acctOk && otherOk && nationalityOk && rankOk && rankOtherOk && roleOk && roleOtherOk;
+  const ok = acctOk && otherOk && nationalityOk && rankOk && rankOtherOk;
 
   if (els.saveBtn) els.saveBtn.disabled = !ok;
   return ok;
@@ -375,6 +334,7 @@ function syncAccountUI(){
   if (acct === "seafarer") show(els.rankWrap);
   else hide(els.rankWrap);
 
+  // Employer/Shore: show employer fields (UI only; not saved in V1 DB)
   if (acct === "employer" || acct === "shore") {
     show(els.roleWrap);
     show(els.companyWrap);
@@ -386,10 +346,10 @@ function syncAccountUI(){
   validate();
 }
 
-/* --------- Save (never silent fail) --------- */
+/* --------- Save (aligned to V1 DB) --------- */
 async function saveProfile(){
   if (!validate()) {
-    showError("Please complete the required fields (Account type, Nationality, Rank/Role).");
+    showError("Please complete the required fields (Account type, Nationality, Rank if Seafarer).");
     return;
   }
 
@@ -398,19 +358,13 @@ async function saveProfile(){
 
   const payload = {
     id: currentUser.id,
-    account_type: normalizeAccountType(),
-    full_name: (els.fullName?.value || "").trim(),
-    dob: els.dob?.value || null,
 
-    rank: isSeafarer() ? getRank() : null,
-
-    // Employer/Shore fields
-    role: isEmployerOrShore() ? getRole() : null,
-    company_name: isEmployerOrShore() ? (els.companyName?.value || "").trim() : null,
-
-    nationality: getNationality(),
-    phone: getPhone(),
-    bio: (els.bio?.value || "").trim(),
+    // V1 DB fields
+    full_name: (els.fullName?.value || "").trim() || null,
+    role: getRoleForDB(), // seafarer/employer/shore (allowed by DB constraint)
+    nationality: getNationality() || null,
+    rank: isSeafarer() ? (getRank() || null) : null,
+    bio: (els.bio?.value || "").trim() || null,
 
     setup_complete: true,
     updated_at: new Date().toISOString()
@@ -420,15 +374,14 @@ async function saveProfile(){
 
   if (error) {
     console.warn("SUPABASE SAVE ERROR:", error);
-
-    // Show the REAL error message so you can screenshot it for me if needed
     showError(`Save failed: ${error.message || "Unknown error"}`);
     els.saveBtn.disabled = false;
     els.saveBtn.textContent = "Save & Continue";
     return;
   }
 
-  window.location.href = "/dashboard/index.html";
+  // ✅ After first-time setup -> go to Feed
+  window.location.href = ROUTES?.feed || "/feed/index.html";
 }
 
 /* --------- Init --------- */
@@ -458,21 +411,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Role combo
-  makeCombo({
-    comboName: "role",
-    inputEl: els.roleSearch,
-    listEl: els.roleList,
-    items: ROLES,
-    label: (r) => `<strong>${r}</strong>`,
-    onPick: (r) => {
-      els.roleSearch.value = r;
-      els.roleValue.value = r;
-      if (r === "Other") show(els.roleOtherWrap); else hide(els.roleOtherWrap);
-      validate();
-    }
-  });
-
   // Country combo
   makeCombo({
     comboName: "country",
@@ -484,7 +422,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       els.countrySearch.value = c.name;
       els.countryValue.value = c.name;
 
-      // Auto dial if available
+      // UI-only dial auto-fill (not saved in V1 DB)
       if (c.dial_code) {
         els.dialSearch.value = c.dial_code;
         els.dialValue.value = c.dial_code;
@@ -493,7 +431,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Dial combo
+  // Dial combo (UI only)
   makeCombo({
     comboName: "dial",
     inputEl: els.dialSearch,
@@ -507,7 +445,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Avatar preview
+  // Avatar preview (UI only; storage later)
   els.photoInput?.addEventListener("change", (e) => setAvatarPreview(e.target.files?.[0] || null));
   els.removePhotoBtn?.addEventListener("click", () => {
     if (els.photoInput) els.photoInput.value = "";
@@ -518,7 +456,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.accountType?.addEventListener("change", syncAccountUI);
   els.accountTypeOther?.addEventListener("input", validate);
   els.rankOther?.addEventListener("input", validate);
-  els.roleOther?.addEventListener("input", validate);
   els.companyName?.addEventListener("input", validate);
   els.countrySearch?.addEventListener("input", validate);
   els.dialSearch?.addEventListener("input", () => {
@@ -530,7 +467,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.fullName?.addEventListener("input", validate);
   els.dob?.addEventListener("change", validate);
 
-  // Save (submit + click fallback)
+  // Save
   els.form?.addEventListener("submit", (e) => { e.preventDefault(); saveProfile(); });
   els.saveBtn?.addEventListener("click", (e) => { e.preventDefault(); saveProfile(); });
 
