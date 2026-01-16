@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=3001" />
-  <link rel="stylesheet" href="/profile/profile.css?v=20260114-ui1" />
+  <link rel="stylesheet" href="/css/style.css?v=4001" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4001" />
 </head>
 
 <body>
@@ -21,20 +21,20 @@
 
   <main class="wrap">
     <section class="profileCard">
+
       <div class="profileTop">
         <div class="avatarWrap">
-          <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
-          <div id="avatarFallback" class="avatarFallback hidden">P</div>
+          <div id="avatarFallback" class="avatarFallback">P</div>
         </div>
 
         <div class="headerText">
           <div class="nameRow">
             <div class="name" id="profileName">Profile</div>
-            <span id="typeBadge" class="badge hidden">Seafarer</span>
+            <span id="typeBadge" class="badge">—</span>
           </div>
 
           <div class="miniRow">
-            <div class="miniItem">Rank: <span id="miniRank">—</span></div>
+            <div class="miniItem"><span id="miniTitleLabel">Title</span>: <span id="miniTitle">—</span></div>
             <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
           </div>
         </div>
@@ -45,23 +45,17 @@
         <button class="tab active" data-tab="about" type="button">About</button>
         <button class="tab" data-tab="posts" type="button">Posts</button>
         <button class="tab" data-tab="documents" type="button">Documents</button>
-        <button class="tab" data-tab="sea" type="button">Sea Service</button>
-        <button class="tab" data-tab="media" type="button">Media</button>
+        <button id="tabSeaBtn" class="tab" data-tab="sea" type="button">Sea Service</button>
       </div>
 
       <!-- Panes -->
       <section id="tab_about" class="pane">
-        <div class="paneTitle">Overview</div>
+        <div class="paneTitle" id="aboutTitle">Overview</div>
 
-        <!-- Edit + Save -->
         <div class="btnRow">
           <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
           <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
         </div>
-
-        <p class="muted">
-          Your profile is your identity on Pepsval. Verified details increase trust and visibility.
-        </p>
 
         <div class="aboutGrid">
           <div class="box">
@@ -75,23 +69,13 @@
           </div>
 
           <div class="box">
-            <div class="k">Rank</div>
-            <div class="v" id="rank">—</div>
+            <div class="k" id="titleLabel">Title</div>
+            <div class="v" id="titleValue">—</div>
           </div>
 
           <div class="box">
             <div class="k">Nationality</div>
             <div class="v" id="nationality">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k">Last Vessel</div>
-            <div class="v" id="lastVessel">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k">Availability</div>
-            <div class="v" id="availability">—</div>
           </div>
 
           <div class="box span2">
@@ -103,26 +87,22 @@
 
       <section id="tab_posts" class="pane hidden">
         <div class="paneTitle">Posts</div>
-        <div id="postsWrap" class="muted">Loading…</div>
+        <div class="muted">Coming next: your posts list.</div>
       </section>
 
       <section id="tab_documents" class="pane hidden">
         <div class="paneTitle">Documents</div>
-        <div id="documentsWrap" class="muted">Loading…</div>
+        <div class="muted">Coming next: document upload + verification.</div>
       </section>
 
       <section id="tab_sea" class="pane hidden">
         <div class="paneTitle">Sea Service</div>
-        <div id="seaWrap" class="muted">Loading…</div>
+        <div class="muted">Coming next: add sea service entries + peer verification.</div>
       </section>
 
-      <section id="tab_media" class="pane hidden">
-        <div class="paneTitle">Media</div>
-        <div id="mediaWrap" class="muted">Loading…</div>
-      </section>
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=20260113fix"></script>
+  <script type="module" src="/profile/profile.js?v=4001"></script>
 </body>
 </html>
