@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile Setup</title>
 
-  <link rel="stylesheet" href="/setup/profile-setup.css?v=1003" />
+  <link rel="stylesheet" href="/setup/profile-setup.css?v=2001" />
 </head>
 
 <body>
@@ -39,20 +39,16 @@
 
       <form id="setupForm" class="form" novalidate>
 
+        <!-- Account Category -->
         <div class="field">
-          <label class="lbl">Account type <span class="req">*</span></label>
+          <label class="lbl">Account category <span class="req">*</span></label>
           <select id="accountType" required>
             <option value="" selected disabled>Select</option>
             <option value="seafarer">Seafarer</option>
-            <option value="employer">Employer</option>
-            <option value="shore">Shore Staff</option>
-            <option value="other">Other</option>
+            <option value="company">Company / Institute</option>
+            <option value="professional">Other Maritime Professionals</option>
           </select>
-        </div>
-
-        <div class="field hidden" id="accountTypeOtherWrap">
-          <label class="lbl">Specify account type <span class="req">*</span></label>
-          <input id="accountTypeOther" type="text" placeholder="e.g., Training institute / Agent / Manning office" />
+          <div class="help">Choose what best matches you.</div>
         </div>
 
         <div class="field">
@@ -60,53 +56,25 @@
           <input id="fullName" type="text" placeholder="Your full name" />
         </div>
 
-        <div class="field">
-          <label class="lbl">Date of birth</label>
-          <input id="dob" type="date" />
-        </div>
-
-        <!-- Seafarer Rank -->
+        <!-- Main dropdown (dynamic label & list) -->
         <div class="field hidden" id="rankWrap">
-          <label class="lbl">Rank <span class="req">*</span></label>
+          <label class="lbl" id="rankLabel">Role / Type <span class="req">*</span></label>
 
           <div class="combo" data-combo="rank">
-            <input id="rankSearch" type="text" placeholder="Search rank…" autocomplete="off" />
+            <input id="rankSearch" type="text" placeholder="Search…" autocomplete="off" />
             <input id="rankValue" type="hidden" />
             <div class="comboList" id="rankList"></div>
           </div>
 
           <div class="field hidden" id="rankOtherWrap" style="margin-top:10px;">
-            <label class="lbl">Other rank <span class="req">*</span></label>
-            <input id="rankOther" type="text" placeholder="Write your rank" />
+            <label class="lbl">Other <span class="req">*</span></label>
+            <input id="rankOther" type="text" placeholder="Write here" />
           </div>
 
-          <div class="help">Type to search or scroll and choose.</div>
+          <div class="help" id="rankHelp">Type to search or scroll and choose.</div>
         </div>
 
-        <!-- Employer/Shore Role (dropdown) -->
-        <div class="field hidden" id="roleWrap">
-          <label class="lbl">Role <span class="req">*</span></label>
-
-          <div class="combo" data-combo="role">
-            <input id="roleSearch" type="text" placeholder="Search role…" autocomplete="off" />
-            <input id="roleValue" type="hidden" />
-            <div class="comboList" id="roleList"></div>
-          </div>
-
-          <div class="field hidden" id="roleOtherWrap" style="margin-top:10px;">
-            <label class="lbl">Other role <span class="req">*</span></label>
-            <input id="roleOther" type="text" placeholder="Write your role" />
-          </div>
-
-          <div class="help">Choose your job role (HR / Crewing / Fleet / Ops / Recruiter etc.).</div>
-        </div>
-
-        <div class="field hidden" id="companyWrap">
-          <label class="lbl">Company / Organization <span class="muted">(optional)</span></label>
-          <input id="companyName" type="text" placeholder="e.g., ABC Shipmanagement" />
-        </div>
-
-        <!-- Nationality (world list) -->
+        <!-- Nationality -->
         <div class="field">
           <label class="lbl">Nationality <span class="req">*</span></label>
 
@@ -117,7 +85,7 @@
           </div>
         </div>
 
-        <!-- Dial code whole world + phone -->
+        <!-- Mobile -->
         <div class="field">
           <label class="lbl">Mobile number <span class="muted">(optional)</span></label>
 
@@ -138,7 +106,6 @@
         <div class="field">
           <label class="lbl">Bio <span class="muted">(optional)</span></label>
           <textarea id="bio" rows="4" placeholder="Write a short bio… (experience, vessel types, goals)"></textarea>
-          <div class="help">You can edit later from Dashboard → Edit Basic Profile.</div>
         </div>
 
         <div id="errorBox" class="error" style="display:none;"></div>
@@ -149,6 +116,6 @@
     </section>
   </main>
 
-  <script type="module" src="/setup/profile-setup.js?v=1003"></script>
+  <script type="module" src="/setup/profile-setup.js?v=2001"></script>
 </body>
 </html>
