@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pepsval — Jobs</title>
 
-  <link rel="stylesheet" href="/feed/feed.css?v=6001" />
+  <link rel="stylesheet" href="/feed/feed.css?v=7001" />
+  <link rel="stylesheet" href="/jobs/jobs.css?v=7001" />
 
   <script type="module" src="/js/guard.js"></script>
-  <script type="module" src="/jobs/jobs.js?v=6001"></script>
+  <script type="module" src="/jobs/jobs.js?v=7001"></script>
 </head>
 
 <body class="app-bg">
@@ -19,20 +20,20 @@
       <span class="brand">Pepsval</span>
     </div>
     <div class="topbar-right">
-      <span class="user-name">Jobs</span>
+      <span id="jobsTitle" class="user-name">Jobs</span>
     </div>
   </header>
 
   <main class="feed-wrap">
-    <div class="postCard">
-      <div style="font-weight:900;font-size:18px;">Open jobs</div>
-      <div class="muted" style="margin-top:6px;">No jobs yet. Next we’ll add job posting + filters.</div>
+    <div id="jobsCard" class="postCard">
+      <div style="font-weight:900;font-size:18px;">Loading…</div>
+      <div class="muted" style="margin-top:6px;">Please wait</div>
     </div>
   </main>
 
   <nav class="bottom-nav">
     <a class="nav-item" href="/feed/index.html">Feed</a>
-    <a class="nav-item active" href="/jobs/index.html">Jobs</a>
+    <a id="jobsNavLabel" class="nav-item active" href="/jobs/index.html">Jobs</a>
     <a class="nav-item" href="/messages/index.html">Messages</a>
     <a class="nav-item" href="/profile/home.html">Profile</a>
   </nav>
