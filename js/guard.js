@@ -1,11 +1,8 @@
 // /js/guard.js
-import { supabase } from "./supabase.js";
-import { ROUTES } from "./config.js";
+import { supabase } from "/js/supabase.js";
+import { ROUTES } from "/js/config.js";
 
-/**
- * Require auth for any protected page.
- * If not logged in -> redirect to login.
- */
+/** Require auth for protected pages */
 export async function requireAuth({ redirectTo = ROUTES.login } = {}) {
   const { data, error } = await supabase.auth.getSession();
   const session = data?.session;
@@ -17,10 +14,7 @@ export async function requireAuth({ redirectTo = ROUTES.login } = {}) {
   return session;
 }
 
-/**
- * Get minimal profile to decide routing after login/signup.
- * (Aligned with our new V1 schema.)
- */
+/** Load minimal profile needed for routing */
 export async function getMyProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
@@ -33,9 +27,9 @@ export async function getMyProfile(userId) {
 }
 
 /**
- * Route user after login:
- * - If setup not complete -> Setup page
- * - Else -> Profile Home (V1 app home)
+ * After login:
+ * - If setup incomplete -> go to setup (profile editing first time)
+ * - If setup complete -> go to FEED
  */
 export async function routeAfterLogin() {
   const session = await requireAuth();
@@ -48,12 +42,10 @@ export async function routeAfterLogin() {
     return;
   }
 
-  window.location.href = ROUTES.home;
+  window.location.href = ROUTES.feed;
 }
 
-/**
- * Route right after signup success
- */
+/** After signup always go to setup first */
 export function routeAfterSignup() {
   window.location.href = ROUTES.setup;
 }
