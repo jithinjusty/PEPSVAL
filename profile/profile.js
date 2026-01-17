@@ -5,10 +5,7 @@ const $ = (id) => document.getElementById(id);
 /* -------------------- helpers -------------------- */
 function show(el) { el && el.classList.remove("hidden"); }
 function hide(el) { el && el.classList.add("hidden"); }
-function setText(id, txt) {
-  const el = $(id);
-  if (el) el.textContent = (txt ?? "").toString();
-}
+function setText(id, txt) { const el = $(id); if (el) el.textContent = (txt ?? "").toString(); }
 
 function initialsFromName(name) {
   const s = (name || "").trim();
@@ -33,6 +30,92 @@ function typeKey(accountTypeRaw) {
   if (t.includes("company") || t.includes("institute") || t.includes("employer")) return "company";
   if (t.includes("professional") || t.includes("shore")) return "professional";
   return "other";
+}
+
+/* -------------------- seafarer ranks -------------------- */
+const RANKS = [
+  "Master / Captain",
+  "Chief Officer / C/O",
+  "Second Officer / 2/O",
+  "Third Officer / 3/O",
+  "Fourth Officer / 4/O",
+  "Deck Cadet / Trainee",
+  "Bosun",
+  "AB / Able Seaman",
+  "OS / Ordinary Seaman",
+  "Trainee AB",
+  "Trainee OS",
+  "Chief Engineer",
+  "Second Engineer",
+  "Third Engineer",
+  "Fourth Engineer",
+  "Fifth Engineer / Junior Engineer",
+  "Engine Cadet / Trainee",
+  "Motorman",
+  "Oiler",
+  "Wiper",
+  "Fitter",
+  "Pumpman",
+  "ETO / Electro-Technical Officer",
+  "Electrician",
+  "Cook / Messman",
+  "Other"
+];
+
+/* -------------------- combo helper -------------------- */
+function showList(listEl){
+  if (!listEl) return;
+  listEl.classList.add("show");
+  listEl.style.display = "block";
+}
+function hideList(listEl){
+  if (!listEl) return;
+  listEl.classList.remove("show");
+  listEl.style.display = "";
+}
+
+function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
+  if (!inputEl || !listEl) return;
+  const key = comboName;
+
+  function render(list){
+    listEl.innerHTML = "";
+    if (!list.length) {
+      const empty = document.createElement("div");
+      empty.className = "comboEmpty";
+      empty.textContent = "No results";
+      listEl.appendChild(empty);
+      return;
+    }
+    list.forEach((it) => {
+      const row = document.createElement("div");
+      row.className = "comboItem";
+      row.innerHTML = label(it);
+      row.addEventListener("click", () => {
+        onPick(it);
+        hideList(listEl);
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  function filterNow(){
+    const q = (inputEl.value || "").toLowerCase().trim();
+    const filtered = !q ? items.slice(0, 200) :
+      items.filter((it) => (it || "").toLowerCase().includes(q)).slice(0, 200);
+
+    render(filtered);
+    showList(listEl);
+  }
+
+  inputEl.addEventListener("focus", filterNow);
+  inputEl.addEventListener("input", filterNow);
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(`[data-combo="${key}"]`)) hideList(listEl);
+  });
+
+  render(items.slice(0, 120));
 }
 
 /* -------------------- elements -------------------- */
@@ -60,7 +143,7 @@ const els = {
   editAboutBtn: $("editAboutBtn"),
   saveAboutBtn: $("saveAboutBtn"),
 
-  // optional seafarer dropdown area exists in your home.html
+  // seafarer inline editor
   rankEditWrap: $("rankEditWrap"),
   rankSearch: $("rankSearch"),
   rankValue: $("rankValue"),
@@ -73,7 +156,7 @@ const els = {
 let currentUser = null;
 let currentProfile = null;
 
-/* -------------------- avatar menu (B) -------------------- */
+/* -------------------- avatar menu (already working) -------------------- */
 let avatarMenuEl = null;
 
 function closeAvatarMenu() {
@@ -119,7 +202,6 @@ function openAvatarMenu() {
     b.style.fontWeight = "800";
     b.style.fontSize = "14px";
     b.style.color = danger ? "#b42318" : "#0b1b24";
-    b.addEventListener("click", () => {});
     b.addEventListener("mouseover", () => (b.style.background = "rgba(31,111,134,.08)"));
     b.addEventListener("mouseout", () => (b.style.background = "transparent"));
     return b;
@@ -143,7 +225,6 @@ function openAvatarMenu() {
   avatarMenuEl = menu;
   document.body.appendChild(menu);
 
-  // close on outside click
   setTimeout(() => document.addEventListener("click", onDocClickCloseMenu, true), 0);
 }
 
@@ -152,88 +233,44 @@ let cropBack = null, cropCanvas = null, cropCtx = null;
 let cropImg = null, imgW = 0, imgH = 0;
 let zoom = 1.4, offsetX = 0, offsetY = 0;
 let dragging = false, lastX = 0, lastY = 0;
-let aspect = 1; // 1:1 default
-let pendingBlob = null; // webp blob ready to upload
+let aspect = 1;
+let pendingBlob = null;
 
 function ensureCropModal() {
   if (cropBack) return;
 
   const style = document.createElement("style");
   style.textContent = `
-    .pvModalBack{
-      position:fixed; inset:0; z-index:999999;
-      display:none; align-items:center; justify-content:center;
-      padding:16px; background: rgba(3,10,14,.55);
-      backdrop-filter: blur(6px);
-    }
+    .pvModalBack{position:fixed; inset:0; z-index:999999; display:none; align-items:center; justify-content:center;
+      padding:16px; background: rgba(3,10,14,.55); backdrop-filter: blur(6px);}
     .pvModalBack.show{display:flex}
-    .pvModal{
-      width:min(560px, 96vw);
-      background: #fff;
-      border-radius: 22px;
-      box-shadow: 0 30px 100px rgba(0,0,0,.45);
-      overflow:hidden;
-      border: 1px solid rgba(0,0,0,.06);
-    }
-    .pvHead{
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 14px 16px;
-      background: linear-gradient(180deg, rgba(31,111,134,.08), rgba(255,255,255,0));
-    }
-    .pvTitle{font-weight:900; letter-spacing:.2px}
-    .pvClose{
-      border:0; background: rgba(0,0,0,.06);
-      width:38px; height:38px; border-radius:12px;
-      cursor:pointer; font-size:18px;
-    }
-    .pvBody{padding: 12px 16px 16px}
-    .pvCanvasWrap{
-      border-radius:18px;
-      background: #eef6fb;
-      border: 1px solid rgba(31,111,134,.18);
-      overflow:hidden;
-    }
-    .pvToolbar{
-      display:flex; gap:10px; flex-wrap:wrap;
-      justify-content:space-between;
-      margin-top: 12px;
-    }
+    .pvModal{width:min(560px, 96vw); background:#fff; border-radius:22px; overflow:hidden;
+      box-shadow:0 30px 100px rgba(0,0,0,.45); border:1px solid rgba(0,0,0,.06);}
+    .pvHead{display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
+      background: linear-gradient(180deg, rgba(31,111,134,.08), rgba(255,255,255,0));}
+    .pvTitle{font-weight:900}
+    .pvClose{border:0; background: rgba(0,0,0,.06); width:38px; height:38px; border-radius:12px; cursor:pointer; font-size:18px;}
+    .pvBody{padding:12px 16px 16px}
+    .pvCanvasWrap{border-radius:18px; background:#eef6fb; border:1px solid rgba(31,111,134,.18); overflow:hidden;}
+    .pvToolbar{display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; margin-top:12px;}
     .pvGroup{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-    .pvPill{
-      border:1px solid rgba(0,0,0,.10);
-      background: #fff;
-      padding: 8px 10px;
-      border-radius: 999px;
-      cursor:pointer;
-      font-weight:900;
-      font-size: 13px;
-    }
-    .pvPill.active{
-      background: rgba(31,111,134,.10);
-      border-color: rgba(31,111,134,.30);
-      color:#0b1b24;
-    }
-    .pvSliderRow{display:grid; grid-template-columns:1fr; gap:10px; margin-top: 12px;}
-    .pvSlider{
-      display:flex; align-items:center; gap:10px;
-      background: rgba(0,0,0,.03);
-      border: 1px solid rgba(0,0,0,.06);
-      padding: 10px 12px;
-      border-radius: 16px;
-    }
-    .pvSlider .lbl{min-width:88px; font-weight:900; color:#334; font-size:13px}
+    .pvPill{border:1px solid rgba(0,0,0,.10); background:#fff; padding:8px 10px; border-radius:999px;
+      cursor:pointer; font-weight:900; font-size:13px;}
+    .pvPill.active{background: rgba(31,111,134,.10); border-color: rgba(31,111,134,.30);}
+    .pvSliderRow{display:grid; gap:10px; margin-top:12px;}
+    .pvSlider{display:flex; align-items:center; gap:10px; background: rgba(0,0,0,.03); border:1px solid rgba(0,0,0,.06);
+      padding:10px 12px; border-radius:16px;}
+    .pvSlider .lbl{min-width:88px; font-weight:900; font-size:13px}
     .pvSlider input[type="range"]{width:100%}
-    .pvFoot{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top: 14px;}
-    .pvBtn{border:0; cursor:pointer; padding: 10px 14px; border-radius: 14px; font-weight:900;}
+    .pvFoot{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px;}
+    .pvBtn{border:0; cursor:pointer; padding:10px 14px; border-radius:14px; font-weight:900;}
     .pvGhost{background: rgba(0,0,0,.06)}
-    .pvPrimary{background: #1F6F86; color:#fff}
+    .pvPrimary{background:#1F6F86; color:#fff}
   `;
   document.head.appendChild(style);
 
   const back = document.createElement("div");
   back.className = "pvModalBack";
-  back.id = "pvCropBack";
-
   back.innerHTML = `
     <div class="pvModal" role="dialog" aria-modal="true">
       <div class="pvHead">
@@ -262,22 +299,10 @@ function ensureCropModal() {
         </div>
 
         <div class="pvSliderRow">
-          <div class="pvSlider">
-            <div class="lbl">Zoom</div>
-            <input id="pvZoom" type="range" min="1" max="3" step="0.01" value="1.4" />
-          </div>
-          <div class="pvSlider">
-            <div class="lbl">Brightness</div>
-            <input id="pvBright" type="range" min="70" max="140" step="1" value="105" />
-          </div>
-          <div class="pvSlider">
-            <div class="lbl">Contrast</div>
-            <input id="pvContrast" type="range" min="70" max="140" step="1" value="105" />
-          </div>
-          <div class="pvSlider">
-            <div class="lbl">Saturation</div>
-            <input id="pvSat" type="range" min="0" max="160" step="1" value="110" />
-          </div>
+          <div class="pvSlider"><div class="lbl">Zoom</div><input id="pvZoom" type="range" min="1" max="3" step="0.01" value="1.4"/></div>
+          <div class="pvSlider"><div class="lbl">Brightness</div><input id="pvBright" type="range" min="70" max="140" step="1" value="105"/></div>
+          <div class="pvSlider"><div class="lbl">Contrast</div><input id="pvContrast" type="range" min="70" max="140" step="1" value="105"/></div>
+          <div class="pvSlider"><div class="lbl">Saturation</div><input id="pvSat" type="range" min="0" max="160" step="1" value="110"/></div>
         </div>
 
         <div class="pvFoot">
@@ -287,16 +312,15 @@ function ensureCropModal() {
       </div>
     </div>
   `;
-
   document.body.appendChild(back);
 
   cropBack = back;
-  cropCanvas = document.getElementById("pvCropCanvas");
+  cropCanvas = back.querySelector("#pvCropCanvas");
   cropCtx = cropCanvas.getContext("2d");
 
   const close = () => cropBack.classList.remove("show");
-  document.getElementById("pvCropClose").addEventListener("click", close);
-  document.getElementById("pvCancel").addEventListener("click", close);
+  back.querySelector("#pvCropClose").addEventListener("click", close);
+  back.querySelector("#pvCancel").addEventListener("click", close);
 
   back.querySelectorAll("[data-aspect]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -307,46 +331,41 @@ function ensureCropModal() {
     });
   });
 
-  document.getElementById("pvZoom").addEventListener("input", (e) => {
+  back.querySelector("#pvZoom").addEventListener("input", (e) => {
     zoom = Number(e.target.value || 1.4);
     drawCrop();
   });
 
   const rerender = () => drawCrop();
-  document.getElementById("pvBright").addEventListener("input", rerender);
-  document.getElementById("pvContrast").addEventListener("input", rerender);
-  document.getElementById("pvSat").addEventListener("input", rerender);
+  back.querySelector("#pvBright").addEventListener("input", rerender);
+  back.querySelector("#pvContrast").addEventListener("input", rerender);
+  back.querySelector("#pvSat").addEventListener("input", rerender);
 
-  const bright = () => document.getElementById("pvBright");
-  const cont = () => document.getElementById("pvContrast");
-  const sat = () => document.getElementById("pvSat");
+  const bright = () => back.querySelector("#pvBright");
+  const cont = () => back.querySelector("#pvContrast");
+  const sat = () => back.querySelector("#pvSat");
 
-  document.getElementById("pvPresetWarm").addEventListener("click", () => {
+  back.querySelector("#pvPresetWarm").addEventListener("click", () => {
     bright().value = "108"; cont().value = "108"; sat().value = "125"; drawCrop();
   });
-  document.getElementById("pvPresetCool").addEventListener("click", () => {
+  back.querySelector("#pvPresetCool").addEventListener("click", () => {
     bright().value = "102"; cont().value = "106"; sat().value = "112"; drawCrop();
   });
-  document.getElementById("pvPresetBW").addEventListener("click", () => {
+  back.querySelector("#pvPresetBW").addEventListener("click", () => {
     bright().value = "103"; cont().value = "112"; sat().value = "0"; drawCrop();
   });
-  document.getElementById("pvPresetReset").addEventListener("click", () => {
-    document.getElementById("pvZoom").value = "1.4";
+  back.querySelector("#pvPresetReset").addEventListener("click", () => {
+    back.querySelector("#pvZoom").value = "1.4";
     zoom = 1.4;
     bright().value = "105"; cont().value = "105"; sat().value = "110";
     offsetX = 0; offsetY = 0;
     drawCrop();
   });
 
-  document.getElementById("pvSavePhoto").addEventListener("click", async () => {
-    try {
-      pendingBlob = await exportCroppedWebpBlob();
-      cropBack.classList.remove("show");
-      await saveAvatarToSupabase(); // upload + update profile
-    } catch (e) {
-      console.error(e);
-      alert("Could not apply photo. Please try another image.");
-    }
+  back.querySelector("#pvSavePhoto").addEventListener("click", async () => {
+    pendingBlob = await exportCroppedWebpBlob();
+    cropBack.classList.remove("show");
+    await saveAvatarToSupabase();
   });
 
   cropCanvas.addEventListener("pointerdown", (ev) => {
@@ -376,35 +395,28 @@ function pointerPos(ev) {
 }
 
 function getFilterString() {
-  const b = Number(document.getElementById("pvBright")?.value || 105);
-  const c = Number(document.getElementById("pvContrast")?.value || 105);
-  const s = Number(document.getElementById("pvSat")?.value || 110);
+  const b = Number(cropBack.querySelector("#pvBright")?.value || 105);
+  const c = Number(cropBack.querySelector("#pvContrast")?.value || 105);
+  const s = Number(cropBack.querySelector("#pvSat")?.value || 110);
   return `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
 }
 
 function openCropWithFile(file) {
   ensureCropModal();
-
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
     cropImg = img;
     imgW = img.naturalWidth;
     imgH = img.naturalHeight;
-
-    zoom = 1.4;
-    offsetX = 0;
-    offsetY = 0;
-    dragging = false;
-
-    document.getElementById("pvZoom").value = "1.4";
+    zoom = 1.4; offsetX = 0; offsetY = 0; dragging = false;
+    cropBack.querySelector("#pvZoom").value = "1.4";
     cropBack.classList.add("show");
     drawCrop();
   };
   img.src = url;
 }
 
-/* IMPORTANT: overlay drawn around frame (does not wipe image) */
 function drawCrop() {
   if (!cropCtx || !cropImg) return;
 
@@ -423,7 +435,6 @@ function drawCrop() {
   const frameX = (cw - frameW) / 2;
   const frameY = (ch - frameH) / 2;
 
-  // draw image
   cropCtx.save();
   cropCtx.filter = getFilterString();
 
@@ -435,7 +446,6 @@ function drawCrop() {
   cropCtx.drawImage(cropImg, x, y, drawW, drawH);
   cropCtx.restore();
 
-  // overlay outside frame
   cropCtx.save();
   cropCtx.fillStyle = "rgba(3,10,14,.45)";
   cropCtx.fillRect(0, 0, cw, frameY);
@@ -444,7 +454,6 @@ function drawCrop() {
   cropCtx.fillRect(frameX + frameW, frameY, cw - (frameX + frameW), frameH);
   cropCtx.restore();
 
-  // frame border
   cropCtx.save();
   cropCtx.strokeStyle = "rgba(31,111,134,.95)";
   cropCtx.lineWidth = 3;
@@ -453,8 +462,6 @@ function drawCrop() {
 }
 
 async function exportCroppedWebpBlob() {
-  if (!cropImg) throw new Error("No image");
-
   const outW = 720;
   const outH = Math.round(outW / aspect);
 
@@ -482,7 +489,6 @@ async function exportCroppedWebpBlob() {
   const x = (cw - drawW) / 2 + offsetX;
   const y = (ch - drawH) / 2 + offsetY;
 
-  // source rect inside the original image
   const sx = (frameX - x) / drawW * imgW;
   const sy = (frameY - y) / drawH * imgH;
   const sw = frameW / drawW * imgW;
@@ -504,96 +510,58 @@ async function saveAvatarToSupabase() {
 
   const path = `${currentUser.id}/avatar.webp`;
 
-  const { error: upErr } = await supabase
-    .storage
-    .from("avatars")
+  const { error: upErr } = await supabase.storage.from("avatars")
     .upload(path, pendingBlob, { upsert: true, contentType: "image/webp" });
 
-  if (upErr) {
-    console.error(upErr);
-    alert(`Upload failed: ${upErr.message}`);
-    return;
-  }
+  if (upErr) { alert(`Upload failed: ${upErr.message}`); return; }
 
-  const { error: dbErr } = await supabase
-    .from("profiles")
+  const { error: dbErr } = await supabase.from("profiles")
     .update({ avatar_url: path, updated_at: new Date().toISOString() })
     .eq("id", currentUser.id);
 
-  if (dbErr) {
-    console.error(dbErr);
-    alert(`Save failed: ${dbErr.message}`);
-    return;
-  }
+  if (dbErr) { alert(`Save failed: ${dbErr.message}`); return; }
 
-  // reflect immediately
   currentProfile = { ...(currentProfile || {}), avatar_url: path };
   renderAvatar(currentProfile);
 }
 
 async function removeAvatar() {
   if (!currentUser?.id) return;
-
-  try {
-    // remove file if exists
-    const path = `${currentUser.id}/avatar.webp`;
-    await supabase.storage.from("avatars").remove([path]);
-
-    // update profile
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null, updated_at: new Date().toISOString() })
-      .eq("id", currentUser.id);
-
-    if (error) throw error;
-
-    currentProfile = { ...(currentProfile || {}), avatar_url: null };
-    renderAvatar(currentProfile);
-  } catch (e) {
-    console.error(e);
-    alert(`Remove failed: ${e.message || "Unknown error"}`);
-  }
+  const path = `${currentUser.id}/avatar.webp`;
+  await supabase.storage.from("avatars").remove([path]);
+  const { error } = await supabase.from("profiles")
+    .update({ avatar_url: null, updated_at: new Date().toISOString() })
+    .eq("id", currentUser.id);
+  if (error) { alert(`Remove failed: ${error.message}`); return; }
+  currentProfile = { ...(currentProfile || {}), avatar_url: null };
+  renderAvatar(currentProfile);
 }
 
-/* -------------------- render avatar -------------------- */
+/* -------------------- avatar render -------------------- */
 function renderAvatar(profile) {
   const name = profile?.full_name || "";
   const initials = initialsFromName(name);
-
   if (els.avatarFallback) els.avatarFallback.textContent = initials;
 
   const path = profile?.avatar_url;
   if (!path) {
-    hide(els.avatarImg);
-    show(els.avatarFallback);
+    hide(els.avatarImg); show(els.avatarFallback);
     return;
   }
 
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
   const url = data?.publicUrl;
 
-  if (!url) {
-    hide(els.avatarImg);
-    show(els.avatarFallback);
-    return;
-  }
+  if (!url) { hide(els.avatarImg); show(els.avatarFallback); return; }
 
-  if (els.avatarImg) {
-    els.avatarImg.src = url + `?t=${Date.now()}`; // bust cache
-    els.avatarImg.onload = () => {
-      show(els.avatarImg);
-      hide(els.avatarFallback);
-    };
-    els.avatarImg.onerror = () => {
-      hide(els.avatarImg);
-      show(els.avatarFallback);
-    };
-  }
+  els.avatarImg.src = url + `?t=${Date.now()}`;
+  els.avatarImg.onload = () => { show(els.avatarImg); hide(els.avatarFallback); };
+  els.avatarImg.onerror = () => { hide(els.avatarImg); show(els.avatarFallback); };
 }
 
 /* -------------------- tabs -------------------- */
-function bindTabs(type) {
-  const tabButtons = Array.from(document.querySelectorAll(".tab"));
+function bindTabs(tKey) {
+  const tabs = Array.from(document.querySelectorAll(".tab"));
   const panes = {
     about: $("tab_about"),
     posts: $("tab_posts"),
@@ -602,12 +570,11 @@ function bindTabs(type) {
     sea: $("tab_sea"),
   };
 
-  // show/hide correct tabs
   const docBtn = $("tabDocumentsBtn");
   const expBtn = $("tabExperienceBtn");
   const seaBtn = $("tabSeaBtn");
 
-  if (type === "seafarer") {
+  if (tKey === "seafarer") {
     docBtn && show(docBtn);
     seaBtn && show(seaBtn);
     expBtn && hide(expBtn);
@@ -617,129 +584,50 @@ function bindTabs(type) {
     expBtn && show(expBtn);
   }
 
-  tabButtons.forEach((b) => {
+  tabs.forEach((b) => {
     b.addEventListener("click", () => {
-      tabButtons.forEach(x => x.classList.remove("active"));
+      tabs.forEach(x => x.classList.remove("active"));
       b.classList.add("active");
-
       const key = b.getAttribute("data-tab");
       Object.values(panes).forEach(p => p && hide(p));
       if (key && panes[key]) show(panes[key]);
     });
   });
 
-  // default show About
-  tabButtons.forEach(x => x.classList.remove("active"));
-  const first = tabButtons.find(b => b.getAttribute("data-tab") === "about") || tabButtons[0];
+  tabs.forEach(x => x.classList.remove("active"));
+  const first = tabs.find(b => b.getAttribute("data-tab") === "about") || tabs[0];
   first?.classList.add("active");
   Object.values(panes).forEach(p => p && hide(p));
   show(panes.about);
 }
 
-/* -------------------- load profile -------------------- */
-async function loadMyProfile() {
-  const { data: u } = await supabase.auth.getUser();
-  currentUser = u?.user;
-
-  if (!currentUser) {
-    window.location.href = "/auth/login.html";
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", currentUser.id)
-    .single();
-
-  if (error) {
-    console.error(error);
-    alert("Profile load failed: " + (error.message || "Unknown error"));
-    return;
-  }
-
-  currentProfile = data;
-  renderProfile(data);
+/* -------------------- about edit + save rank -------------------- */
+function getRank() {
+  const v = (els.rankValue?.value || "").trim();
+  if (v === "Other") return (els.rankOther?.value || "").trim();
+  return v;
 }
 
-/* -------------------- render profile -------------------- */
-function renderProfile(p) {
-  const tLabel = normalizeTypeLabel(p?.account_type);
-  const tKey = typeKey(p?.account_type);
-
-  const name = p?.full_name || "Profile";
-  setText("profileName", name);
-  setText("typeBadge", tLabel);
-
-  setText("fullName", name);
-  setText("email", p?.email || currentUser?.email || "");
-  setText("nationality", p?.nationality || "—");
-  setText("miniNationality", p?.nationality || "—");
-  setText("bio", p?.bio || "—");
-
-  // title label + value
-  let titleLabel = "Title";
-  let titleValue = "—";
-
-  if (tKey === "seafarer") {
-    titleLabel = "Ship role";
-    titleValue = p?.rank || "—";
-  } else if (tKey === "company") {
-    titleLabel = "Company type";
-    titleValue = p?.role || p?.company_name || "—";
-  } else {
-    titleLabel = "Professional role";
-    titleValue = p?.role || p?.company_name || "—";
-  }
-
-  setText("titleLabel", titleLabel);
-  setText("miniTitleLabel", titleLabel);
-  setText("titleValue", titleValue);
-  setText("miniTitle", titleValue);
-
-  // headings
-  if (els.aboutTitle) {
-    els.aboutTitle.textContent =
-      tKey === "company" ? "Company profile" :
-      tKey === "professional" ? "Professional profile" :
-      "Seafarer profile";
-  }
-
-  // tabs
-  bindTabs(tKey);
-
-  // avatar
-  renderAvatar(p);
-
-  // about edit buttons (basic toggle only; deeper dropdown fix is Step 2)
-  bindAboutEdit(tKey);
-}
-
-/* -------------------- about edit (basic, safe) -------------------- */
 function bindAboutEdit(tKey) {
   if (!els.editAboutBtn || !els.saveAboutBtn) return;
-
   let editing = false;
 
   const setEditing = (on) => {
     editing = on;
-
     if (on) {
       hide(els.editAboutBtn);
       show(els.saveAboutBtn);
 
-      // editable fields: fullName + bio
-      if (els.fullName) els.fullName.setAttribute("contenteditable", "true");
-      if (els.bio) els.bio.setAttribute("contenteditable", "true");
+      els.fullName?.setAttribute("contenteditable", "true");
+      els.bio?.setAttribute("contenteditable", "true");
 
-      // show seafarer rank dropdown area only while editing (Step 2 will improve placement)
       if (tKey === "seafarer" && els.rankEditWrap) show(els.rankEditWrap);
     } else {
       show(els.editAboutBtn);
       hide(els.saveAboutBtn);
 
-      if (els.fullName) els.fullName.removeAttribute("contenteditable");
-      if (els.bio) els.bio.removeAttribute("contenteditable");
+      els.fullName?.removeAttribute("contenteditable");
+      els.bio?.removeAttribute("contenteditable");
 
       if (els.rankEditWrap) hide(els.rankEditWrap);
     }
@@ -758,11 +646,16 @@ function bindAboutEdit(tKey) {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(payload)
-        .eq("id", currentUser.id);
+      if (tKey === "seafarer") {
+        const r = getRank();
+        if (!r || r.length < 2) {
+          alert("Please select your ship role.");
+          return;
+        }
+        payload.rank = r;
+      }
 
+      const { error } = await supabase.from("profiles").update(payload).eq("id", currentUser.id);
       if (error) throw error;
 
       currentProfile = { ...(currentProfile || {}), ...payload };
@@ -777,23 +670,104 @@ function bindAboutEdit(tKey) {
   setEditing(false);
 }
 
+/* -------------------- load + render profile -------------------- */
+async function loadMyProfile() {
+  const { data: u } = await supabase.auth.getUser();
+  currentUser = u?.user;
+
+  if (!currentUser) {
+    window.location.href = "/auth/login.html";
+    return;
+  }
+
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single();
+  if (error) { alert("Profile load failed: " + error.message); return; }
+
+  currentProfile = data;
+  renderProfile(data);
+}
+
+function renderProfile(p) {
+  const tKey = typeKey(p?.account_type);
+  const tLabel = normalizeTypeLabel(p?.account_type);
+
+  setText("profileName", p?.full_name || "Profile");
+  setText("typeBadge", tLabel);
+
+  setText("fullName", p?.full_name || "—");
+  setText("email", p?.email || currentUser?.email || "");
+  setText("nationality", p?.nationality || "—");
+  setText("miniNationality", p?.nationality || "—");
+  setText("bio", p?.bio || "—");
+
+  let titleLabel = "Title";
+  let titleValue = "—";
+
+  if (tKey === "seafarer") {
+    titleLabel = "Ship role";
+    titleValue = p?.rank || "—";
+    // prefill dropdown
+    if (els.rankSearch && els.rankValue) {
+      els.rankSearch.value = p?.rank || "";
+      els.rankValue.value = p?.rank || "";
+      if ((p?.rank || "") === "Other") show(els.rankOtherWrap); else hide(els.rankOtherWrap);
+    }
+  } else if (tKey === "company") {
+    titleLabel = "Company type";
+    titleValue = p?.role || p?.company_name || "—";
+  } else {
+    titleLabel = "Professional role";
+    titleValue = p?.role || p?.company_name || "—";
+  }
+
+  setText("titleLabel", titleLabel);
+  setText("miniTitleLabel", titleLabel);
+  setText("titleValue", titleValue);
+  setText("miniTitle", titleValue);
+
+  if (els.aboutTitle) {
+    els.aboutTitle.textContent =
+      tKey === "company" ? "Company profile" :
+      tKey === "professional" ? "Professional profile" :
+      "Seafarer profile";
+  }
+
+  bindTabs(tKey);
+  renderAvatar(p);
+
+  // init rank combo once (safe)
+  if (els.rankSearch && els.rankList) {
+    makeCombo({
+      comboName: "rank",
+      inputEl: els.rankSearch,
+      listEl: els.rankList,
+      items: RANKS,
+      label: (r) => `<strong>${r}</strong>`,
+      onPick: (r) => {
+        els.rankSearch.value = r;
+        els.rankValue.value = r;
+        if (r === "Other") show(els.rankOtherWrap); else hide(els.rankOtherWrap);
+      }
+    });
+  }
+
+  bindAboutEdit(tKey);
+}
+
 /* -------------------- init -------------------- */
 document.addEventListener("DOMContentLoaded", async () => {
   await loadMyProfile();
 
-  // avatar button = menu (B)
   els.avatarBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     openAvatarMenu();
   });
 
-  // file input -> crop
   els.avatarFile?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     pendingBlob = null;
     openCropWithFile(file);
-    // allow picking same file again
     e.target.value = "";
   });
 });
