@@ -27,13 +27,17 @@ const k_availability = document.getElementById("k_availability");
 const overviewTitle = document.getElementById("overviewTitle");
 const overviewHint = document.getElementById("overviewHint");
 
+const tabBtn_jobs = document.getElementById("tabBtn_jobs");
 const tabBtn_experience = document.getElementById("tabBtn_experience");
+
+const tab_jobs = document.getElementById("tab_jobs");
 const tab_experience = document.getElementById("tab_experience");
 
 const postsWrap = document.getElementById("postsWrap");
 const documentsWrap = document.getElementById("documentsWrap");
+const jobsWrap = document.getElementById("jobsWrap");
 const experienceWrap = document.getElementById("experienceWrap");
-const mediaWrap = document.getElementById("mediaWrap");
+const mediaWrap = document.getElementById("mediaWrap"); // Kept just in case, but unused in new layout
 
 const fields = {
   full_name: document.getElementById("fullName"),
@@ -41,8 +45,10 @@ const fields = {
   nationality: document.getElementById("nationality"),
   lastVessel: document.getElementById("lastVessel"),
   availability: document.getElementById("availability"),
+  availability: document.getElementById("availability"),
   bio: document.getElementById("bio"),
   email: document.getElementById("email"),
+  box_lastVessel: document.getElementById("box_lastVessel"),
 };
 
 const toastEl = document.getElementById("toast");
@@ -159,12 +165,17 @@ function hide(el) { el && el.classList.add("hidden"); }
 
 function renderCompanyExperience(wrap, p) {
   if (!wrap) return;
-  // Static fields for Company Experience
-  // p contains the profile data
-  const companyName = pickFirst(p, ["company_name", "company", "last_company", "last_vessel"], "—");
-  const dept = pickFirst(p, ["rank"], "—");
-  const role = pickFirst(p, ["role", "job_title", "availability"], "—");
+  // Extended Company Details
+  const companyName = pickFirst(p, ["company_name", "company"], "—");
+  const dept = pickFirst(p, ["rank", "department"], "—");
+  const type = pickFirst(p, ["role", "business_type"], "—");
   const country = pickFirst(p, ["nationality", "country"], "—");
+
+  const mission = pickFirst(p, ["mission", "vision"], "—");
+  const employees = pickFirst(p, ["employees", "team_size"], "—");
+  const location = pickFirst(p, ["address", "location"], country); // Fallback to country
+  const services = pickFirst(p, ["services", "products"], "—");
+  const contact = pickFirst(p, ["contact", "phone", "email_contact"], "—");
 
   wrap.innerHTML = `
     <div class="aboutGrid">
@@ -173,16 +184,35 @@ function renderCompanyExperience(wrap, p) {
         <div class="v">${safeText(companyName)}</div>
       </div>
       <div class="box">
-        <div class="k">Department</div>
+        <div class="k">Department / Contact</div>
         <div class="v">${safeText(dept)}</div>
       </div>
       <div class="box">
-        <div class="k">Business Type / Role</div>
-        <div class="v">${safeText(role)}</div>
+        <div class="k">Business Type</div>
+        <div class="v">${safeText(type)}</div>
       </div>
       <div class="box">
-        <div class="k">Country</div>
-        <div class="v">${safeText(country)}</div>
+        <div class="k">Location</div>
+        <div class="v">${safeText(location)}</div>
+      </div>
+      
+      <div class="box span2">
+        <div class="k">Mission & Vision</div>
+        <div class="v">${safeText(mission)}</div>
+      </div>
+      
+      <div class="box">
+        <div class="k">Employees</div>
+        <div class="v">${safeText(employees)}</div>
+      </div>
+       <div class="box">
+        <div class="k">Contact Info</div>
+        <div class="v">${safeText(contact)}</div>
+      </div>
+      
+      <div class="box span2">
+        <div class="k">Services</div>
+        <div class="v">${safeText(services)}</div>
       </div>
     </div>
   `;
@@ -191,64 +221,70 @@ function renderCompanyExperience(wrap, p) {
 function applyLayout(kind) {
   currentAccountKind = kind;
 
-  // Default: show generic Experience tab
-  show(tabBtn_experience);
-  if (tabBtn_experience) tabBtn_experience.textContent = "Experience";
-  show(tab_experience);
+  // Common: Hide Last Vessel in About Tab (Redundant)
+  if (fields.box_lastVessel) fields.box_lastVessel.classList.add("hidden");
 
-  // Seafarer layout
+  // Reset all tabs first
+  [tabBtn_experience, tabBtn_jobs, document.getElementById("tabBtn_documents")].forEach(hide);
+
+  // Seafarer: About, Documents, Posts, Sea Service
   if (kind === "seafarer") {
-    if (tabBtn_experience) tabBtn_experience.textContent = "Sea Service"; // specific label for seafarers
-
     if (overviewTitle) overviewTitle.textContent = "Overview";
     if (overviewHint) overviewHint.textContent = "Your profile is your identity on Pepsval. Verified details increase trust and visibility.";
 
+    show(document.getElementById("tabBtn_documents")); // Show Documents
+    show(tabBtn_experience);
+    tabBtn_experience.textContent = "Sea Service";
+
+    // Labels
     if (miniLabel1) miniLabel1.textContent = "Rank";
     if (miniLabel2) miniLabel2.textContent = "Nationality";
-
     if (k_fullName) k_fullName.textContent = "Full Name";
     if (k_rank) k_rank.textContent = "Rank";
     if (k_nationality) k_nationality.textContent = "Nationality";
-    if (k_lastVessel) k_lastVessel.textContent = "Last Vessel / Company";
     if (k_availability) k_availability.textContent = "Availability / Job Title";
-
     return;
   }
 
+  // Company: About, Posts, Jobs, Details
   if (kind === "company") {
     if (overviewTitle) overviewTitle.textContent = "Company Profile";
     if (overviewHint) overviewHint.textContent = "Keep your company profile accurate. Verified details improve trust with seafarers.";
 
+    show(tabBtn_jobs);
+    show(tabBtn_experience);
+    tabBtn_experience.textContent = "Company Details";
+
+    // Labels
     if (miniLabel1) miniLabel1.textContent = "Category";
     if (miniLabel2) miniLabel2.textContent = "Country";
-
     if (k_fullName) k_fullName.textContent = "Company / Institute Name";
-    if (k_rank) k_rank.textContent = "Department / Contact";
+    if (k_rank) k_rank.textContent = "Department / Contact"; // In About
     if (k_nationality) k_nationality.textContent = "Country";
-    if (k_lastVessel) k_lastVessel.textContent = "Company / Brand";
-    if (k_availability) k_availability.textContent = "Business Type / Role";
+    if (k_availability) k_availability.textContent = "Business Type / Role"; // In About
     return;
   }
 
+  // Professional: About, Posts, Experience
   if (kind === "professional") {
     if (overviewTitle) overviewTitle.textContent = "Professional Profile";
     if (overviewHint) overviewHint.textContent = "A strong professional profile helps companies and seafarers trust your experience.";
 
+    show(tabBtn_experience);
+    tabBtn_experience.textContent = "Experience";
+
+    // Labels
     if (miniLabel1) miniLabel1.textContent = "Role";
     if (miniLabel2) miniLabel2.textContent = "Country";
-
     if (k_fullName) k_fullName.textContent = "Full Name";
     if (k_rank) k_rank.textContent = "Specialty / Position";
     if (k_nationality) k_nationality.textContent = "Country";
-    if (k_lastVessel) k_lastVessel.textContent = "Company / Organization";
     if (k_availability) k_availability.textContent = "Role / Job Title";
     return;
   }
 
-  // Other
+  // Other layout fallback
   if (overviewTitle) overviewTitle.textContent = "Profile";
-  if (miniLabel1) miniLabel1.textContent = "Role";
-  if (miniLabel2) miniLabel2.textContent = "Country";
 }
 
 /* ---------------- Tabs ---------------- */
@@ -261,8 +297,9 @@ function initTabs() {
     about: document.getElementById("tab_about"),
     posts: document.getElementById("tab_posts"),
     documents: document.getElementById("tab_documents"),
+    jobs: document.getElementById("tab_jobs"),
     experience: document.getElementById("tab_experience"),
-    media: document.getElementById("tab_media"),
+    // media: document.getElementById("tab_media"), // Removed
   };
 
   function activate(key) {
@@ -274,6 +311,7 @@ function initTabs() {
 
     if (key === "posts") loadMyPosts().catch(console.error);
     if (key === "documents") loadGenericTab(documentsWrap, ["documents", "user_documents", "profile_documents"]).catch(console.error);
+    if (key === "jobs") loadGenericTab(jobsWrap, ["jobs", "company_jobs"]).catch(console.error); // Placeholder logic for Jobs
 
     if (key === "experience") {
       if (currentAccountKind === "company") {
@@ -283,8 +321,6 @@ function initTabs() {
         loadGenericTab(experienceWrap, ["sea_service", "sea_services", "sea_time", "sea_entries", "experience", "work_history"]).catch(console.error);
       }
     }
-
-    if (key === "media") loadGenericTab(mediaWrap, ["media", "user_media", "profile_media"]).catch(console.error);
   }
 
   tabs.forEach(t => t.addEventListener("click", () => activate(t.dataset.tab)));
@@ -368,11 +404,25 @@ async function loadProfile() {
 
     elMiniRank.textContent = safeText(rank);
     elMiniNationality.textContent = safeText(nationality);
-  } else if (kind === "company") {
-    fields.rank.textContent = safeText(rank);            // Department / Contact
+    // In Setup, "rank" stores Department/Contact. "role" stores Business Type. "company_name" stores Company Name.
+    // "lastVessel" (k_lastVessel) stores Company/Brand.
+
+    // For "About", we only want Identity/Bio. The rest is in "Experience" (Overview).
+    // So we can technically hide these or leave them. Common logic says avoid duplication.
+    // Let's clear the text for duplicates so they look empty or repurpose.
+    // Actually, let's just show them but maybe with different labels?
+    // No, user said "Experience just on the bottom of the about" (meaning duplicates).
+    // So let's HIDE redundant fields in About for Company.
+
+    fields.rank.parentElement.classList.add("hidden");        // Department
+    fields.lastVessel.parentElement.classList.add("hidden");  // Brand (similar to Company Name)
+    fields.availability.parentElement.classList.add("hidden"); // Role
+    // Nationality is headquarters, good to keep in About.
+
+    fields.rank.textContent = safeText(rank);
     fields.nationality.textContent = safeText(nationality);
-    fields.lastVessel.textContent = safeText(company);  // Company / Brand
-    fields.availability.textContent = safeText(role);   // Business Type / Role
+    fields.lastVessel.textContent = safeText(company);
+    fields.availability.textContent = safeText(role);
 
     elMiniRank.textContent = safeText(role, "—");       // Category
     elMiniNationality.textContent = safeText(nationality);
@@ -640,79 +690,87 @@ async function loadGenericTab(targetEl, tableCandidates) {
 }
 
 /* ---------------- Avatar editor (keep your existing modal system) ---------------- */
-/* ---------------- Modern Avatar Modal (from Setup) ---------------- */
+
+/* ---------------- Avatar Logic ---------------- */
 let cropModal = null;
 let cropCanvas = null;
 let cropCtx = null;
 let cropImg = null;
 let imgW = 0, imgH = 0;
-let zoom = 1.4;
+
+let zoom = 1;
+let baseScale = 1; // Scale to fit "cover" at zoom 1
+let aspect = 1;
 let offsetX = 0, offsetY = 0;
 let dragging = false;
 let lastX = 0, lastY = 0;
-let aspect = 1;
-let pendingBlob = null; // not strictly needed if we save immediately, but good to keep structure
+
+async function uploadAvatarBlob(userId, blob) {
+  const path = `${userId}/${Date.now()}_avatar.webp`;
+  const { data, error } = await supabase.storage
+    .from("avatars")
+    .upload(path, blob, { contentType: "image/webp", upsert: true });
+
+  if (error) throw error;
+  return path;
+}
+
+function computeBaseScale() {
+  if (!cropCanvas || !cropImg) return;
+  // We want "zoom=1" to correspond to "Cover" (filling the frame)
+  // Frame depends on aspect.
+  const cw = cropCanvas.width;
+  const ch = cropCanvas.height;
+  const pad = 26;
+  const frameMaxW = cw - pad * 2;
+  const frameMaxH = ch - pad * 2;
+
+  let frameW = frameMaxW;
+  let frameH = frameW / aspect;
+  if (frameH > frameMaxH) { frameH = frameMaxH; frameW = frameH * aspect; }
+
+  // Scale to cover the frame
+  const scaleW = frameW / imgW;
+  const scaleH = frameH / imgH;
+  baseScale = Math.max(scaleW, scaleH);
+}
 
 function ensureCropModal() {
-  if (cropModal) return;
+  if (document.getElementById("pvCropBack")) return;
 
   const style = document.createElement("style");
-  style.textContent = `
+  style.innerHTML = `
     .pvModalBack{
-      position:fixed; inset:0; z-index:99999;
-      display:none; align-items:center; justify-content:center;
-      padding:16px; background: rgba(3,10,14,.55);
-      backdrop-filter: blur(6px);
+      position:fixed; inset:0; z-index:10000;
+      background:rgba(0,0,0,.85);
+      display:none; 
+      align-items:center; justify-content:center;
+      opacity:0; transition:opacity .2s;
     }
-    .pvModalBack.show{display:flex}
+    .pvModalBack.show{display:flex; opacity:1}
     .pvModal{
-      width:min(560px, 96vw);
+      width: min(520px, 94vw);
       background: #fff;
-      border-radius: 22px;
-      box-shadow: 0 30px 100px rgba(0,0,0,.45);
+      border-radius: 18px;
       overflow:hidden;
-      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+      animation: pvPop .3s ease-out;
     }
-    .pvHead{
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 14px 16px;
-      background: linear-gradient(180deg, rgba(31,111,134,.08), rgba(255,255,255,0));
-    }
-    .pvTitle{font-weight:800; letter-spacing:.2px}
-    .pvClose{
-      border:0; background: rgba(0,0,0,.06);
-      width:38px; height:38px; border-radius:12px;
-      cursor:pointer; font-size:18px;
-    }
-    .pvBody{padding: 12px 16px 16px}
-    .pvCanvasWrap{
-      border-radius:18px;
-      background: #eef6fb;
-      border: 1px solid rgba(31,111,134,.18);
-      overflow:hidden;
-      touch-action: none;
-    }
-    .pvToolbar{
-      display:flex; gap:10px; flex-wrap:wrap;
-      justify-content:space-between;
-      margin-top: 12px;
-    }
-    .pvGroup{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    @keyframes pvPop{from{transform:scale(.95)}to{transform:scale(1)}}
+    .pvHead{display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid #eee}
+    .pvTitle{font-weight:900; font-size:16px; color:#111}
+    .pvClose{background:none; border:0; font-size:20px; color:#666; cursor:pointer;}
+    .pvBody{padding:16px;}
+    .pvCanvasWrap{background:#111; border-radius:12px; overflow:hidden; display:flex; justify-content:center;}
+    .pvToolbar{margin-top:16px; display:flex; flex-direction:column; gap:12px;}
+    .pvGroup{display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
     .pvPill{
-      border:1px solid rgba(0,0,0,.10);
-      background: #fff;
-      padding: 8px 10px;
-      border-radius: 999px;
-      cursor:pointer;
-      font-weight:700;
-      font-size: 13px;
+      border:1px solid #ddd; background:#fff; padding:6px 12px; border-radius:20px;
+      font-size:13px; font-weight:600; cursor:pointer; color:#444; transition:.2s;
     }
-    .pvPill.active{
-      background: rgba(31,111,134,.10);
-      border-color: rgba(31,111,134,.30);
-      color:#0b1b24;
-    }
-    .pvSliderRow{display:grid; grid-template-columns:1fr; gap:10px; margin-top: 12px;}
+    .pvPill:hover{background:#f4f4f4}
+    .pvPill.active{background:#1F6F86; color:#fff; border-color:#1F6F86}
+    .pvSliderRow{margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .pvSlider{
       display:flex; align-items:center; gap:10px;
       background: rgba(0,0,0,.03);
@@ -756,6 +814,8 @@ function ensureCropModal() {
             <button class="pvPill" type="button" id="pvPresetWarm">Warm</button>
             <button class="pvPill" type="button" id="pvPresetCool">Cool</button>
             <button class="pvPill" type="button" id="pvPresetBW">B&W</button>
+            <button class="pvPill" type="button" id="pvPresetVintage">Vintage</button>
+            <button class="pvPill" type="button" id="pvPresetMatte">Matte</button>
             <button class="pvPill" type="button" id="pvPresetReset">Reset</button>
           </div>
         </div>
@@ -763,7 +823,7 @@ function ensureCropModal() {
         <div class="pvSliderRow">
           <div class="pvSlider">
             <div class="lbl">Zoom</div>
-            <input id="pvZoom" type="range" min="1" max="3" step="0.01" value="1.4" />
+            <input id="pvZoom" type="range" min="0.5" max="3" step="0.01" value="1" />
           </div>
           <div class="pvSlider">
             <div class="lbl">Brightness</div>
@@ -800,13 +860,14 @@ function ensureCropModal() {
       back.querySelectorAll("[data-aspect]").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       aspect = Number(btn.getAttribute("data-aspect") || "1");
+      computeBaseScale();
       drawCrop();
     });
   });
 
   const rerender = () => drawCrop();
   document.getElementById("pvZoom").addEventListener("input", (e) => {
-    zoom = Number(e.target.value || 1.4);
+    zoom = Number(e.target.value || 1);
     drawCrop();
   });
   document.getElementById("pvBright").addEventListener("input", rerender);
@@ -826,9 +887,15 @@ function ensureCropModal() {
   document.getElementById("pvPresetBW").addEventListener("click", () => {
     bright().value = "103"; cont().value = "112"; sat().value = "0"; drawCrop();
   });
+  document.getElementById("pvPresetVintage").addEventListener("click", () => {
+    bright().value = "90"; cont().value = "120"; sat().value = "80"; drawCrop();
+  });
+  document.getElementById("pvPresetMatte").addEventListener("click", () => {
+    bright().value = "110"; cont().value = "90"; sat().value = "90"; drawCrop();
+  });
   document.getElementById("pvPresetReset").addEventListener("click", () => {
-    document.getElementById("pvZoom").value = "1.4";
-    zoom = 1.4;
+    document.getElementById("pvZoom").value = "1";
+    zoom = 1;
     bright().value = "105"; cont().value = "105"; sat().value = "110";
     offsetX = 0; offsetY = 0;
     drawCrop();
@@ -837,6 +904,7 @@ function ensureCropModal() {
   document.getElementById("pvSavePhoto").addEventListener("click", async () => {
     if (!currentUserId) return;
     const btn = document.getElementById("pvSavePhoto");
+    const label = btn.textContent;
     btn.textContent = "Saving...";
     btn.disabled = true;
 
@@ -858,7 +926,7 @@ function ensureCropModal() {
       console.error(e);
       toast("Could not save photo");
     } finally {
-      btn.textContent = "Save Photo";
+      btn.textContent = label;
       btn.disabled = false;
     }
   });
@@ -898,11 +966,12 @@ function openCropWithFile(file) {
     cropImg = img;
     imgW = img.naturalWidth;
     imgH = img.naturalHeight;
-    zoom = 1.4;
+    zoom = 1;
     offsetX = 0; offsetY = 0;
     dragging = false;
-    document.getElementById("pvZoom").value = "1.4";
+    document.getElementById("pvZoom").value = "1";
     cropModal.classList.add("show");
+    computeBaseScale(); // Calculate fit
     drawCrop();
   };
   img.src = url;
@@ -940,8 +1009,11 @@ function drawCrop() {
   // Draw image
   cropCtx.save();
   cropCtx.filter = getFilterString();
-  const drawW = imgW * zoom;
-  const drawH = imgH * zoom;
+
+  // Apply baseScale * zoom
+  const drawW = imgW * baseScale * zoom;
+  const drawH = imgH * baseScale * zoom;
+
   const x = (cw - drawW) / 2 + offsetX;
   const y = (ch - drawH) / 2 + offsetY;
   cropCtx.drawImage(cropImg, x, y, drawW, drawH);
@@ -966,6 +1038,8 @@ function drawCrop() {
 
 async function exportCroppedWebpBlob() {
   if (!cropImg) throw new Error("No image");
+
+  // Must render at high res but using the same crop logic
   const outW = 720;
   const outH = Math.round(outW / aspect);
   const out = document.createElement("canvas");
@@ -975,21 +1049,24 @@ async function exportCroppedWebpBlob() {
 
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
+
+  // Re-calculate frame layout from screen canvas
   const pad = 26;
   const frameMaxW = cw - pad * 2;
   const frameMaxH = ch - pad * 2;
-
   let frameW = frameMaxW;
   let frameH = frameW / aspect;
   if (frameH > frameMaxH) { frameH = frameMaxH; frameW = frameH * aspect; }
-
   const frameX = (cw - frameW) / 2;
   const frameY = (ch - frameH) / 2;
-  const drawW = imgW * zoom;
-  const drawH = imgH * zoom;
+
+  // Current on-screen coords
+  const drawW = imgW * baseScale * zoom;
+  const drawH = imgH * baseScale * zoom;
   const x = (cw - drawW) / 2 + offsetX;
   const y = (ch - drawH) / 2 + offsetY;
 
+  // Map to UV space
   const sx = (frameX - x) / drawW * imgW;
   const sy = (frameY - y) / drawH * imgH;
   const sw = frameW / drawW * imgW;
