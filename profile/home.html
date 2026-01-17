@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -45,11 +46,11 @@
 
       <!-- Tabs -->
       <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="about" type="button">About</button>
-        <button class="tab" data-tab="posts" type="button" id="tabBtn_posts">Posts</button>
-        <button class="tab" data-tab="experience" type="button" id="tabBtn_experience">Experience</button>
+        <button class="tab active" data-tab="about" type="button" id="tabBtn_about">About</button>
         <button class="tab" data-tab="documents" type="button" id="tabBtn_documents">Documents</button>
-        <button class="tab" data-tab="media" type="button" id="tabBtn_media">Media</button>
+        <button class="tab" data-tab="posts" type="button" id="tabBtn_posts">Posts</button>
+        <button class="tab" data-tab="jobs" type="button" id="tabBtn_jobs">Jobs</button>
+        <button class="tab" data-tab="experience" type="button" id="tabBtn_experience">Experience</button>
       </div>
 
       <!-- Panes -->
@@ -66,6 +67,11 @@
         </p>
 
         <div class="aboutGrid">
+          <div class="box span2">
+            <div class="k" id="k_bio">Bio</div>
+            <div class="v bioText" id="bio">—</div>
+          </div>
+
           <div class="box">
             <div class="k" id="k_fullName">Full Name</div>
             <div class="v" id="fullName">—</div>
@@ -86,7 +92,7 @@
             <div class="v" id="nationality">—</div>
           </div>
 
-          <div class="box">
+          <div class="box" id="box_lastVessel">
             <div class="k" id="k_lastVessel">Last Vessel / Company</div>
             <div class="v" id="lastVessel">—</div>
           </div>
@@ -95,17 +101,22 @@
             <div class="k" id="k_availability">Availability / Job Title</div>
             <div class="v" id="availability">—</div>
           </div>
-
-          <div class="box span2">
-            <div class="k" id="k_bio">Bio</div>
-            <div class="v bioText" id="bio">—</div>
-          </div>
         </div>
+      </section>
+
+      <section id="tab_documents" class="pane hidden">
+        <div class="paneTitle" id="documentsTitle">Documents</div>
+        <div id="documentsWrap" class="muted">Loading…</div>
       </section>
 
       <section id="tab_posts" class="pane hidden">
         <div class="paneTitle">Posts</div>
         <div id="postsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_jobs" class="pane hidden">
+        <div class="paneTitle">Jobs</div>
+        <div id="jobsWrap" class="muted">Loading…</div>
       </section>
 
       <section id="tab_experience" class="pane hidden">
@@ -115,16 +126,6 @@
         </div>
         <div id="experienceWrap" class="muted">Loading…</div>
       </section>
-
-      <section id="tab_documents" class="pane hidden">
-        <div class="paneTitle" id="documentsTitle">Documents</div>
-        <div id="documentsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_media" class="pane hidden">
-        <div class="paneTitle">Media</div>
-        <div id="mediaWrap" class="muted">Loading…</div>
-      </section>
     </section>
   </main>
 
@@ -132,4 +133,5 @@
 
   <script type="module" src="/profile/profile.js?v=20260117-final2"></script>
 </body>
+
 </html>
