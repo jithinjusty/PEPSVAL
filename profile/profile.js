@@ -27,12 +27,12 @@ const k_availability = document.getElementById("k_availability");
 const overviewTitle = document.getElementById("overviewTitle");
 const overviewHint = document.getElementById("overviewHint");
 
-const tabBtn_sea = document.getElementById("tabBtn_sea");
-const tab_sea = document.getElementById("tab_sea");
+const tabBtn_experience = document.getElementById("tabBtn_experience");
+const tab_experience = document.getElementById("tab_experience");
 
 const postsWrap = document.getElementById("postsWrap");
 const documentsWrap = document.getElementById("documentsWrap");
-const seaWrap = document.getElementById("seaWrap");
+const experienceWrap = document.getElementById("experienceWrap");
 const mediaWrap = document.getElementById("mediaWrap");
 
 const fields = {
@@ -154,18 +154,52 @@ function detectAccountKind(p) {
   return "other";
 }
 
-function show(el){ el && el.classList.remove("hidden"); }
-function hide(el){ el && el.classList.add("hidden"); }
+function show(el) { el && el.classList.remove("hidden"); }
+function hide(el) { el && el.classList.add("hidden"); }
+
+function renderCompanyExperience(wrap, p) {
+  if (!wrap) return;
+  // Static fields for Company Experience
+  // p contains the profile data
+  const companyName = pickFirst(p, ["company_name", "company", "last_company", "last_vessel"], "—");
+  const dept = pickFirst(p, ["rank"], "—");
+  const role = pickFirst(p, ["role", "job_title", "availability"], "—");
+  const country = pickFirst(p, ["nationality", "country"], "—");
+
+  wrap.innerHTML = `
+    <div class="aboutGrid">
+      <div class="box">
+        <div class="k">Company Name</div>
+        <div class="v">${safeText(companyName)}</div>
+      </div>
+      <div class="box">
+        <div class="k">Department</div>
+        <div class="v">${safeText(dept)}</div>
+      </div>
+      <div class="box">
+        <div class="k">Business Type / Role</div>
+        <div class="v">${safeText(role)}</div>
+      </div>
+      <div class="box">
+        <div class="k">Country</div>
+        <div class="v">${safeText(country)}</div>
+      </div>
+    </div>
+  `;
+}
 
 function applyLayout(kind) {
   currentAccountKind = kind;
 
-  // Default: show everything
-  show(tabBtn_sea);
-  show(tab_sea);
+  // Default: show generic Experience tab
+  show(tabBtn_experience);
+  if (tabBtn_experience) tabBtn_experience.textContent = "Experience";
+  show(tab_experience);
 
   // Seafarer layout
   if (kind === "seafarer") {
+    if (tabBtn_experience) tabBtn_experience.textContent = "Sea Service"; // specific label for seafarers
+
     if (overviewTitle) overviewTitle.textContent = "Overview";
     if (overviewHint) overviewHint.textContent = "Your profile is your identity on Pepsval. Verified details increase trust and visibility.";
 
@@ -180,10 +214,6 @@ function applyLayout(kind) {
 
     return;
   }
-
-  // Company / Professional: hide Sea Service tab + pane
-  hide(tabBtn_sea);
-  hide(tab_sea);
 
   if (kind === "company") {
     if (overviewTitle) overviewTitle.textContent = "Company Profile";
@@ -219,25 +249,23 @@ function applyLayout(kind) {
   if (overviewTitle) overviewTitle.textContent = "Profile";
   if (miniLabel1) miniLabel1.textContent = "Role";
   if (miniLabel2) miniLabel2.textContent = "Country";
-  hide(tabBtn_sea);
-  hide(tab_sea);
 }
 
 /* ---------------- Tabs ---------------- */
+/* ---------------- Tabs ---------------- */
+let globalProfileData = null; // Store profile data to reuse in generic tabs
+
 function initTabs() {
   const tabs = Array.from(document.querySelectorAll(".tab"));
   const panes = {
     about: document.getElementById("tab_about"),
     posts: document.getElementById("tab_posts"),
     documents: document.getElementById("tab_documents"),
-    sea: document.getElementById("tab_sea"),
+    experience: document.getElementById("tab_experience"),
     media: document.getElementById("tab_media"),
   };
 
   function activate(key) {
-    // Prevent activating hidden sea tab
-    if (key === "sea" && currentAccountKind !== "seafarer") key = "about";
-
     tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === key));
     Object.entries(panes).forEach(([k, el]) => {
       if (!el) return;
@@ -246,7 +274,16 @@ function initTabs() {
 
     if (key === "posts") loadMyPosts().catch(console.error);
     if (key === "documents") loadGenericTab(documentsWrap, ["documents", "user_documents", "profile_documents"]).catch(console.error);
-    if (key === "sea") loadGenericTab(seaWrap, ["sea_service", "sea_services", "sea_time", "sea_entries"]).catch(console.error);
+
+    if (key === "experience") {
+      if (currentAccountKind === "company") {
+        renderCompanyExperience(experienceWrap, globalProfileData || {});
+      } else {
+        // Seafarer or Professional
+        loadGenericTab(experienceWrap, ["sea_service", "sea_services", "sea_time", "sea_entries", "experience", "work_history"]).catch(console.error);
+      }
+    }
+
     if (key === "media") loadGenericTab(mediaWrap, ["media", "user_media", "profile_media"]).catch(console.error);
   }
 
@@ -355,6 +392,8 @@ async function loadProfile() {
   elProfileName.textContent = safeText(fullName, "Profile");
   setAvatar(avatar, fullName || currentUser.email || "P");
   setAccountTypeBadge(p?.account_type, p?.account_type_label);
+
+  globalProfileData = p; // Backup for static tabs
 }
 
 /* ---------------- Save basics ---------------- */
@@ -471,8 +510,8 @@ async function loadMyPosts() {
 
     const mediaHtml = mediaUrl
       ? (isVideo(mediaUrl)
-          ? `<div class="media"><video src="${esc(mediaUrl)}" controls playsinline></video></div>`
-          : `<div class="media"><img src="${esc(mediaUrl)}" alt="Post media" loading="lazy" /></div>`)
+        ? `<div class="media"><video src="${esc(mediaUrl)}" controls playsinline></video></div>`
+        : `<div class="media"><img src="${esc(mediaUrl)}" alt="Post media" loading="lazy" /></div>`)
       : "";
 
     return `
@@ -515,28 +554,28 @@ function pickUserKeyFromRow(row) {
 function bestTitle(row) {
   const k = Object.keys(row || {});
   const pick = (arr) => arr.find(x => k.includes(x));
-  const t = pick(["title","name","doc_name","document_name","vessel","vessel_name","company","file_name","filename","media_name"]);
+  const t = pick(["title", "name", "doc_name", "document_name", "vessel", "vessel_name", "company", "file_name", "filename", "media_name"]);
   return t ? safeText(row[t], "Item") : "Item";
 }
 
 function bestBody(row) {
   const k = Object.keys(row || {});
   const pick = (arr) => arr.find(x => k.includes(x));
-  const b = pick(["body","description","details","note","remarks","text","content"]);
+  const b = pick(["body", "description", "details", "note", "remarks", "text", "content"]);
   return b ? safeText(row[b], "") : "";
 }
 
 function bestUrl(row) {
   const k = Object.keys(row || {});
   const pick = (arr) => arr.find(x => k.includes(x));
-  const u = pick(["url","file_url","media_url","link","document_url"]);
+  const u = pick(["url", "file_url", "media_url", "link", "document_url"]);
   return u ? (row[u] || "").toString().trim() : "";
 }
 
 function bestDate(row) {
   const k = Object.keys(row || {});
   const pick = (arr) => arr.find(x => k.includes(x));
-  const d = pick(["created_at","date","from_date","start_date","timestamp","issued_on"]);
+  const d = pick(["created_at", "date", "from_date", "start_date", "timestamp", "issued_on"]);
   return d ? fmtDate(row[d]) : "";
 }
 
@@ -601,170 +640,208 @@ async function loadGenericTab(targetEl, tableCandidates) {
 }
 
 /* ---------------- Avatar editor (keep your existing modal system) ---------------- */
-const modal = document.getElementById("imgModal");
-const cropCanvas = document.getElementById("cropCanvas");
-const zoomRange = document.getElementById("zoomRange");
-const briRange = document.getElementById("briRange");
-const conRange = document.getElementById("conRange");
-const satRange = document.getElementById("satRange");
-const resetEditBtn = document.getElementById("resetEdit");
-const saveAvatarBtn = document.getElementById("saveAvatar");
-
-let imgObj = null;
+/* ---------------- Modern Avatar Modal (from Setup) ---------------- */
+let cropModal = null;
+let cropCanvas = null;
+let cropCtx = null;
+let cropImg = null;
+let imgW = 0, imgH = 0;
+let zoom = 1.4;
+let offsetX = 0, offsetY = 0;
 let dragging = false;
 let lastX = 0, lastY = 0;
-let offsetX = 0, offsetY = 0;
-let baseScale = 1;
+let aspect = 1;
+let pendingBlob = null; // not strictly needed if we save immediately, but good to keep structure
 
-function openModal() {
-  modal?.classList.remove("hidden");
-  modal?.setAttribute("aria-hidden", "false");
-}
-function closeModal() {
-  modal?.classList.add("hidden");
-  modal?.setAttribute("aria-hidden", "true");
-}
-function computeBaseScale() {
-  if (!imgObj || !cropCanvas) return;
-  const cw = cropCanvas.width;
-  const ch = cropCanvas.height;
-  baseScale = Math.max(cw / imgObj.width, ch / imgObj.height);
-}
-function resetEditor() {
-  if (!zoomRange || !briRange || !conRange || !satRange) return;
-  zoomRange.value = "1";
-  briRange.value = "1";
-  conRange.value = "1";
-  satRange.value = "1";
-  offsetX = 0;
-  offsetY = 0;
-  computeBaseScale();
-  draw();
-}
+function ensureCropModal() {
+  if (cropModal) return;
 
-function draw() {
-  if (!cropCanvas) return;
-  const ctx = cropCanvas.getContext("2d");
-  if (!ctx) return;
+  const style = document.createElement("style");
+  style.textContent = `
+    .pvModalBack{
+      position:fixed; inset:0; z-index:99999;
+      display:none; align-items:center; justify-content:center;
+      padding:16px; background: rgba(3,10,14,.55);
+      backdrop-filter: blur(6px);
+    }
+    .pvModalBack.show{display:flex}
+    .pvModal{
+      width:min(560px, 96vw);
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 30px 100px rgba(0,0,0,.45);
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .pvHead{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, rgba(31,111,134,.08), rgba(255,255,255,0));
+    }
+    .pvTitle{font-weight:800; letter-spacing:.2px}
+    .pvClose{
+      border:0; background: rgba(0,0,0,.06);
+      width:38px; height:38px; border-radius:12px;
+      cursor:pointer; font-size:18px;
+    }
+    .pvBody{padding: 12px 16px 16px}
+    .pvCanvasWrap{
+      border-radius:18px;
+      background: #eef6fb;
+      border: 1px solid rgba(31,111,134,.18);
+      overflow:hidden;
+      touch-action: none;
+    }
+    .pvToolbar{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:space-between;
+      margin-top: 12px;
+    }
+    .pvGroup{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .pvPill{
+      border:1px solid rgba(0,0,0,.10);
+      background: #fff;
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:700;
+      font-size: 13px;
+    }
+    .pvPill.active{
+      background: rgba(31,111,134,.10);
+      border-color: rgba(31,111,134,.30);
+      color:#0b1b24;
+    }
+    .pvSliderRow{display:grid; grid-template-columns:1fr; gap:10px; margin-top: 12px;}
+    .pvSlider{
+      display:flex; align-items:center; gap:10px;
+      background: rgba(0,0,0,.03);
+      border: 1px solid rgba(0,0,0,.06);
+      padding: 10px 12px;
+      border-radius: 16px;
+    }
+    .pvSlider .lbl{min-width:88px; font-weight:700; color:#334; font-size:13px}
+    .pvSlider input[type="range"]{width:100%}
+    .pvFoot{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top: 14px;}
+    .pvBtn{border:0; cursor:pointer; padding: 10px 14px; border-radius: 14px; font-weight:800;}
+    .pvGhost{background: rgba(0,0,0,.06)}
+    .pvPrimary{background: #1F6F86; color:#fff}
+  `;
+  document.head.appendChild(style);
 
-  const cw = cropCanvas.width;
-  const ch = cropCanvas.height;
+  const back = document.createElement("div");
+  back.className = "pvModalBack";
+  back.id = "pvCropBack";
 
-  ctx.clearRect(0, 0, cw, ch);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, cw, ch);
+  back.innerHTML = `
+    <div class="pvModal" role="dialog" aria-modal="true">
+      <div class="pvHead">
+        <div class="pvTitle">Adjust your photo</div>
+        <button class="pvClose" type="button" id="pvCropClose">✕</button>
+      </div>
 
-  if (!imgObj) return;
+      <div class="pvBody">
+        <div class="pvCanvasWrap">
+          <canvas id="pvCropCanvas" width="520" height="520" style="display:block;width:100%;height:auto"></canvas>
+        </div>
 
-  const zoom = parseFloat(zoomRange?.value || "1");
-  const bri = parseFloat(briRange?.value || "1");
-  const con = parseFloat(conRange?.value || "1");
-  const sat = parseFloat(satRange?.value || "1");
+        <div class="pvToolbar">
+          <div class="pvGroup">
+            <button class="pvPill active" type="button" data-aspect="1">1:1</button>
+            <button class="pvPill" type="button" data-aspect="0.8">4:5</button>
+            <button class="pvPill" type="button" data-aspect="1.7778">16:9</button>
+          </div>
 
-  ctx.save();
-  ctx.filter = `brightness(${bri}) contrast(${con}) saturate(${sat})`;
+          <div class="pvGroup">
+            <button class="pvPill" type="button" id="pvPresetWarm">Warm</button>
+            <button class="pvPill" type="button" id="pvPresetCool">Cool</button>
+            <button class="pvPill" type="button" id="pvPresetBW">B&W</button>
+            <button class="pvPill" type="button" id="pvPresetReset">Reset</button>
+          </div>
+        </div>
 
-  const scale = baseScale * zoom;
-  const w = imgObj.width * scale;
-  const h = imgObj.height * scale;
+        <div class="pvSliderRow">
+          <div class="pvSlider">
+            <div class="lbl">Zoom</div>
+            <input id="pvZoom" type="range" min="1" max="3" step="0.01" value="1.4" />
+          </div>
+          <div class="pvSlider">
+            <div class="lbl">Brightness</div>
+            <input id="pvBright" type="range" min="70" max="140" step="1" value="105" />
+          </div>
+          <div class="pvSlider">
+            <div class="lbl">Contrast</div>
+            <input id="pvContrast" type="range" min="70" max="140" step="1" value="105" />
+          </div>
+          <div class="pvSlider">
+            <div class="lbl">Saturation</div>
+            <input id="pvSat" type="range" min="0" max="160" step="1" value="110" />
+          </div>
+        </div>
 
-  const x = (cw - w) / 2 + offsetX;
-  const y = (ch - h) / 2 + offsetY;
+        <div class="pvFoot">
+          <button class="pvBtn pvGhost" type="button" id="pvCancel">Cancel</button>
+          <button class="pvBtn pvPrimary" type="button" id="pvSavePhoto">Save Photo</button>
+        </div>
+      </div>
+    </div>
+  `;
 
-  ctx.drawImage(imgObj, x, y, w, h);
-  ctx.restore();
-}
+  document.body.appendChild(back);
+  cropModal = back;
+  cropCanvas = document.getElementById("pvCropCanvas");
+  cropCtx = cropCanvas.getContext("2d");
 
-function dataUrlToBlob(dataUrl) {
-  const [meta, b64] = dataUrl.split(",");
-  const mime = (meta.match(/data:(.*?);base64/) || [])[1] || "image/webp";
-  const bin = atob(b64);
-  const len = bin.length;
-  const arr = new Uint8Array(len);
-  for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
+  document.getElementById("pvCropClose").addEventListener("click", closeCrop);
+  document.getElementById("pvCancel").addEventListener("click", closeCrop);
 
-function canvasToDataUrlWebp(size = 360, quality = 0.9) {
-  const out = document.createElement("canvas");
-  out.width = size;
-  out.height = size;
-  const octx = out.getContext("2d");
-  octx.drawImage(cropCanvas, 0, 0, size, size);
-
-  try {
-    const webp = out.toDataURL("image/webp", quality);
-    if (webp.startsWith("data:image/webp")) return webp;
-  } catch (_) {}
-  return out.toDataURL("image/jpeg", 0.86);
-}
-
-async function uploadAvatarBlob(userId, blob) {
-  const path = `${userId}/avatar.webp`;
-  const { error } = await supabase
-    .storage
-    .from("avatars")
-    .upload(path, blob, { upsert: true, contentType: blob.type || "image/webp" });
-  if (error) throw error;
-  return path;
-}
-
-function wireModalClose() {
-  if (!modal) return;
-  modal.addEventListener("click", (e) => {
-    const t = e.target;
-    if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeModal();
+  back.querySelectorAll("[data-aspect]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      back.querySelectorAll("[data-aspect]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      aspect = Number(btn.getAttribute("data-aspect") || "1");
+      drawCrop();
+    });
   });
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+
+  const rerender = () => drawCrop();
+  document.getElementById("pvZoom").addEventListener("input", (e) => {
+    zoom = Number(e.target.value || 1.4);
+    drawCrop();
   });
-}
+  document.getElementById("pvBright").addEventListener("input", rerender);
+  document.getElementById("pvContrast").addEventListener("input", rerender);
+  document.getElementById("pvSat").addEventListener("input", rerender);
 
-function wireCanvasDrag() {
-  if (!cropCanvas) return;
+  const bright = () => document.getElementById("pvBright");
+  const cont = () => document.getElementById("pvContrast");
+  const sat = () => document.getElementById("pvSat");
 
-  const onDown = (e) => {
-    dragging = true;
-    const p = e.touches ? e.touches[0] : e;
-    lastX = p.clientX;
-    lastY = p.clientY;
-  };
-  const onMove = (e) => {
-    if (!dragging) return;
-    const p = e.touches ? e.touches[0] : e;
-    const dx = p.clientX - lastX;
-    const dy = p.clientY - lastY;
-    lastX = p.clientX;
-    lastY = p.clientY;
-    offsetX += dx;
-    offsetY += dy;
-    draw();
-  };
-  const onUp = () => { dragging = false; };
+  document.getElementById("pvPresetWarm").addEventListener("click", () => {
+    bright().value = "108"; cont().value = "108"; sat().value = "125"; drawCrop();
+  });
+  document.getElementById("pvPresetCool").addEventListener("click", () => {
+    bright().value = "102"; cont().value = "106"; sat().value = "112"; drawCrop();
+  });
+  document.getElementById("pvPresetBW").addEventListener("click", () => {
+    bright().value = "103"; cont().value = "112"; sat().value = "0"; drawCrop();
+  });
+  document.getElementById("pvPresetReset").addEventListener("click", () => {
+    document.getElementById("pvZoom").value = "1.4";
+    zoom = 1.4;
+    bright().value = "105"; cont().value = "105"; sat().value = "110";
+    offsetX = 0; offsetY = 0;
+    drawCrop();
+  });
 
-  cropCanvas.addEventListener("mousedown", onDown);
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
-
-  cropCanvas.addEventListener("touchstart", onDown, { passive: true });
-  window.addEventListener("touchmove", onMove, { passive: true });
-  window.addEventListener("touchend", onUp, { passive: true });
-}
-
-function wireEditorControls() {
-  [zoomRange, briRange, conRange, satRange].forEach(el => el?.addEventListener("input", draw));
-  resetEditBtn?.addEventListener("click", resetEditor);
-
-  saveAvatarBtn?.addEventListener("click", async () => {
-    if (!currentUserId || !imgObj) return;
+  document.getElementById("pvSavePhoto").addEventListener("click", async () => {
+    if (!currentUserId) return;
+    const btn = document.getElementById("pvSavePhoto");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
 
     try {
-      saveAvatarBtn.disabled = true;
-      saveAvatarBtn.textContent = "Saving…";
-
-      const dataUrl = canvasToDataUrlWebp(360, 0.9);
-      const blob = dataUrlToBlob(dataUrl);
-
+      const blob = await exportCroppedWebpBlob();
       const path = await uploadAvatarBlob(currentUserId, blob);
 
       const { error } = await supabase
@@ -776,60 +853,172 @@ function wireEditorControls() {
 
       setAvatar(path, fields.full_name.textContent || currentUser.email || "P");
       toast("Photo updated");
-      closeModal();
+      closeCrop();
     } catch (e) {
       console.error(e);
-      alert("Could not save photo: " + (e.message || "Unknown error"));
+      toast("Could not save photo");
     } finally {
-      saveAvatarBtn.disabled = false;
-      saveAvatarBtn.textContent = "Save photo";
+      btn.textContent = "Save Photo";
+      btn.disabled = false;
     }
   });
-}
 
-function fileToImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    const img = new Image();
-    reader.onload = () => {
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = reader.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  // Pointer events for dragging
+  cropCanvas.addEventListener("pointerdown", (ev) => {
+    if (!cropImg) return;
+    dragging = true;
+    const p = pointerPos(ev);
+    lastX = p.x; lastY = p.y;
+    cropCanvas.setPointerCapture(ev.pointerId);
   });
+  cropCanvas.addEventListener("pointermove", (ev) => {
+    if (!dragging || !cropImg) return;
+    const p = pointerPos(ev);
+    offsetX += (p.x - lastX);
+    offsetY += (p.y - lastY);
+    lastX = p.x; lastY = p.y;
+    drawCrop();
+  });
+  cropCanvas.addEventListener("pointerup", () => { dragging = false; });
+  cropCanvas.addEventListener("pointercancel", () => { dragging = false; });
 }
 
-avatarBtn?.addEventListener("click", () => avatarFile?.click());
-avatarFile?.addEventListener("change", async () => {
-  const file = avatarFile.files && avatarFile.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    alert("Please choose an image file.");
-    return;
-  }
+function pointerPos(ev) {
+  const rect = cropCanvas.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) * (cropCanvas.width / rect.width);
+  const y = (ev.clientY - rect.top) * (cropCanvas.height / rect.height);
+  return { x, y };
+}
 
-  try {
-    imgObj = await fileToImage(file);
-    computeBaseScale();
-    resetEditor();
-    openModal();
-  } catch (e) {
-    console.error(e);
-    alert("Could not load image.");
-  } finally {
-    avatarFile.value = "";
+function openCropWithFile(file) {
+  ensureCropModal();
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    cropImg = img;
+    imgW = img.naturalWidth;
+    imgH = img.naturalHeight;
+    zoom = 1.4;
+    offsetX = 0; offsetY = 0;
+    dragging = false;
+    document.getElementById("pvZoom").value = "1.4";
+    cropModal.classList.add("show");
+    drawCrop();
+  };
+  img.src = url;
+}
+
+function closeCrop() {
+  if (cropModal) cropModal.classList.remove("show");
+  if (avatarFile) avatarFile.value = "";
+}
+
+function getFilterString() {
+  const b = Number(document.getElementById("pvBright")?.value || 105);
+  const c = Number(document.getElementById("pvContrast")?.value || 105);
+  const s = Number(document.getElementById("pvSat")?.value || 110);
+  return `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+}
+
+function drawCrop() {
+  if (!cropCtx || !cropImg) return;
+  const cw = cropCanvas.width;
+  const ch = cropCanvas.height;
+  cropCtx.clearRect(0, 0, cw, ch);
+
+  const pad = 26;
+  const frameMaxW = cw - pad * 2;
+  const frameMaxH = ch - pad * 2;
+
+  let frameW = frameMaxW;
+  let frameH = frameW / aspect;
+  if (frameH > frameMaxH) { frameH = frameMaxH; frameW = frameH * aspect; }
+
+  const frameX = (cw - frameW) / 2;
+  const frameY = (ch - frameH) / 2;
+
+  // Draw image
+  cropCtx.save();
+  cropCtx.filter = getFilterString();
+  const drawW = imgW * zoom;
+  const drawH = imgH * zoom;
+  const x = (cw - drawW) / 2 + offsetX;
+  const y = (ch - drawH) / 2 + offsetY;
+  cropCtx.drawImage(cropImg, x, y, drawW, drawH);
+  cropCtx.restore();
+
+  // Dark overlay
+  cropCtx.save();
+  cropCtx.fillStyle = "rgba(3,10,14,.45)";
+  cropCtx.fillRect(0, 0, cw, frameY);
+  cropCtx.fillRect(0, frameY + frameH, cw, ch - (frameY + frameH));
+  cropCtx.fillRect(0, frameY, frameX, frameH);
+  cropCtx.fillRect(frameX + frameW, frameY, cw - (frameX + frameW), frameH);
+  cropCtx.restore();
+
+  // Border
+  cropCtx.save();
+  cropCtx.strokeStyle = "rgba(31,111,134,.95)";
+  cropCtx.lineWidth = 3;
+  cropCtx.strokeRect(frameX, frameY, frameW, frameH);
+  cropCtx.restore();
+}
+
+async function exportCroppedWebpBlob() {
+  if (!cropImg) throw new Error("No image");
+  const outW = 720;
+  const outH = Math.round(outW / aspect);
+  const out = document.createElement("canvas");
+  out.width = outW;
+  out.height = outH;
+  const ctx = out.getContext("2d");
+
+  const cw = cropCanvas.width;
+  const ch = cropCanvas.height;
+  const pad = 26;
+  const frameMaxW = cw - pad * 2;
+  const frameMaxH = ch - pad * 2;
+
+  let frameW = frameMaxW;
+  let frameH = frameW / aspect;
+  if (frameH > frameMaxH) { frameH = frameMaxH; frameW = frameH * aspect; }
+
+  const frameX = (cw - frameW) / 2;
+  const frameY = (ch - frameH) / 2;
+  const drawW = imgW * zoom;
+  const drawH = imgH * zoom;
+  const x = (cw - drawW) / 2 + offsetX;
+  const y = (ch - drawH) / 2 + offsetY;
+
+  const sx = (frameX - x) / drawW * imgW;
+  const sy = (frameY - y) / drawH * imgH;
+  const sw = frameW / drawW * imgW;
+  const sh = frameH / drawH * imgH;
+
+  ctx.save();
+  ctx.filter = getFilterString();
+  ctx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, outW, outH);
+  ctx.restore();
+
+  return new Promise((resolve) => out.toBlob(resolve, "image/webp", 0.92));
+}
+
+function wireAvatarEvents() {
+  if (avatarBtn && avatarFile) {
+    avatarBtn.onclick = () => avatarFile.click();
+    avatarFile.onchange = (e) => {
+      if (e.target.files && e.target.files[0]) {
+        openCropWithFile(e.target.files[0]);
+      }
+    };
   }
-});
+}
 
 /* ---------------- Init ---------------- */
 (async () => {
   try {
     initTabs();
-    wireModalClose();
-    wireCanvasDrag();
-    wireEditorControls();
+    wireAvatarEvents();
 
     setEditable(false);
     await loadProfile();
