@@ -2,53 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=FINAL2" />
+  <link rel="stylesheet" href="/profile/profile.css?v=final1" />
 </head>
 
 <body class="app-bg">
 
 <header class="topbar">
   <div class="brand">
-    <span class="logo">PEPSVAL</span>
+    <a href="/dashboard/index.html" class="logo">PEPSVAL</a>
     <span class="tagline">connect, hire and grow</span>
   </div>
-  <a href="/dashboard/index.html" class="backBtn">Back</a>
+  <a href="javascript:history.back()" class="backBtn">Back</a>
 </header>
 
 <main class="profileWrap">
 
-  <!-- PROFILE HEADER -->
+  <!-- ===== PROFILE HEADER ===== -->
   <section class="profileHeader">
-
-    <!-- AVATAR -->
-    <div class="avatarBlock">
-      <img
-        id="avatar"
-        class="avatar"
-        src="/assets/avatar-placeholder.png"
-        alt="Profile avatar"
-      />
+    <div class="avatarWrap">
+      <button id="avatarBtn" class="avatarBtn">
+        <img id="avatarImg" src="/assets/avatar-placeholder.png" alt="Avatar" />
+        <span class="avatarEdit">Edit</span>
+      </button>
     </div>
 
-    <!-- META -->
-    <div class="profileMeta">
-      <h1 id="full_name">—</h1>
-
-      <div class="metaLine">
-        <span id="role_text">—</span>
-        <span class="dot">•</span>
-        <span id="nationality_text">—</span>
-      </div>
-
-      <span id="account_type_badge" class="typeBadge">—</span>
+    <div class="identity">
+      <h1 id="profileName">—</h1>
+      <p class="meta" id="profileMeta">—</p>
+      <span id="profileBadge" class="badge"></span>
     </div>
-
   </section>
 
-  <!-- TABS -->
+  <!-- ===== TABS ===== -->
   <nav class="tabs">
     <button class="tab active" data-tab="about">About</button>
     <button class="tab" data-tab="posts">Posts</button>
@@ -56,73 +44,67 @@
     <button class="tab" data-tab="documents">Documents</button>
   </nav>
 
-  <!-- ABOUT -->
-  <section class="tabPane active" id="tab-about">
-    <div class="card">
-      <div class="cardHead">
-        <h2>Profile</h2>
-        <button id="editBtn" class="editBtn">Edit</button>
-      </div>
+  <!-- ===== TAB CONTENT ===== -->
+  <section class="tabContent">
 
-      <div class="formGrid">
+    <!-- ABOUT -->
+    <div class="tabPane active" id="tab-about">
+      <div class="card">
+        <div class="cardHead">
+          <h2>Profile</h2>
+          <button id="editAboutBtn" class="btnGhost">Edit</button>
+        </div>
+
         <div class="field">
           <label>Full name</label>
-          <input id="input_full_name" disabled />
+          <div id="aboutFullName" class="value"></div>
         </div>
 
         <div class="field">
           <label>Email</label>
-          <input id="input_email" disabled />
+          <div id="aboutEmail" class="value"></div>
         </div>
 
         <div class="field">
           <label>Nationality</label>
-          <input id="input_nationality" disabled />
+          <div id="aboutNationality" class="value"></div>
         </div>
 
-        <div class="field full">
+        <div class="field">
           <label>Bio</label>
-          <textarea id="input_bio" rows="4" disabled></textarea>
+          <div id="aboutBio" class="value"></div>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- POSTS -->
-  <section class="tabPane" id="tab-posts">
-    <div class="card">
-      <h2>Posts</h2>
-      <div id="postsContainer" class="emptyState">
-        No posts yet.
+    <!-- POSTS -->
+    <div class="tabPane" id="tab-posts">
+      <div class="card">
+        <h2>Posts</h2>
+        <div id="postsList" class="empty">No posts yet.</div>
       </div>
     </div>
-  </section>
 
-  <!-- EXPERIENCE -->
-  <section class="tabPane" id="tab-experience">
-    <div class="card">
-      <h2 id="experience_title">Experience</h2>
-
-      <!-- SEAFARER -->
-      <div id="sea_service_container" class="timeline hidden"></div>
-
-      <!-- COMPANY / PROFESSIONAL -->
-      <div id="professional_experience_container" class="experienceGrid hidden"></div>
-    </div>
-  </section>
-
-  <!-- DOCUMENTS -->
-  <section class="tabPane" id="tab-documents">
-    <div class="card">
-      <h2>Documents</h2>
-      <div id="documentsContainer" class="emptyState">
-        No documents uploaded.
+    <!-- EXPERIENCE -->
+    <div class="tabPane" id="tab-experience">
+      <div class="card">
+        <h2 id="experienceTitle">Experience</h2>
+        <div id="experienceList" class="empty">No experience added.</div>
       </div>
     </div>
+
+    <!-- DOCUMENTS -->
+    <div class="tabPane" id="tab-documents">
+      <div class="card">
+        <h2>Documents</h2>
+        <div id="documentsList" class="empty">No documents uploaded.</div>
+      </div>
+    </div>
+
   </section>
 
 </main>
 
-<script type="module" src="/profile/profile.js?v=FINAL2"></script>
+<script type="module" src="/profile/profile.js?v=final1"></script>
 </body>
 </html>
