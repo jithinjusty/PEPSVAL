@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4301" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4301" />
+  <link rel="stylesheet" href="/css/style.css?v=4401" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4401" />
 </head>
 
 <body>
@@ -40,12 +40,6 @@
         </div>
       </div>
 
-      <!-- ✅ Edit/Save buttons moved here (global for all tabs) -->
-      <div class="btnRow" style="margin-top:10px;">
-        <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
-        <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
-      </div>
-
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
@@ -63,7 +57,14 @@
 
       <!-- About -->
       <section id="tab_about" class="pane">
-        <div class="paneTitle" id="aboutTitle">Overview</div>
+        <div class="paneHead">
+          <div class="paneTitle" id="aboutTitle">Overview</div>
+
+          <div class="btnRow">
+            <button id="editAboutBtn" class="btnGhost" type="button">Edit About</button>
+            <button id="saveAboutBtn" class="btnPrimary hidden" type="button">Save About</button>
+          </div>
+        </div>
 
         <div class="aboutGrid">
           <div class="box">
@@ -104,12 +105,19 @@
         <div class="muted">Coming next: document upload + verification.</div>
       </section>
 
-      <!-- Company / Professional (structured) -->
+      <!-- Experience -->
       <section id="tab_experience" class="pane hidden">
+        <div class="paneHead">
+          <div class="paneTitle" id="expTitle">Experience</div>
+
+          <div class="btnRow">
+            <button id="editExpBtn" class="btnGhost" type="button">Edit Experience</button>
+            <button id="saveExpBtn" class="btnPrimary hidden" type="button">Save Experience</button>
+          </div>
+        </div>
 
         <!-- Professional Experience -->
         <div id="proExpWrap" class="hidden">
-          <div class="paneTitle">Experience</div>
           <div class="muted" style="margin-bottom:10px;">
             Add service years, companies, achievements, services — like LinkedIn.
           </div>
@@ -140,7 +148,6 @@
 
         <!-- Company Profile -->
         <div id="companyWrap" class="hidden">
-          <div class="paneTitle">Company profile</div>
           <div class="muted" style="margin-bottom:10px;">
             Define what the company is, mission, vision, core values, services, achievements, and workforce.
           </div>
@@ -180,7 +187,6 @@
             <textarea id="coAchievements" rows="5" style="width:100%;resize:vertical"></textarea>
           </div>
         </div>
-
       </section>
 
       <!-- Seafarer -->
@@ -192,6 +198,6 @@
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=4301"></script>
+  <script type="module" src="/profile/profile.js?v=4401"></script>
 </body>
 </html>
