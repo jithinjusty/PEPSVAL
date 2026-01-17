@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4001" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4001" />
+  <link rel="stylesheet" href="/css/style.css?v=4101" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4101" />
 </head>
 
 <body>
@@ -44,7 +44,14 @@
       <div class="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
         <button class="tab" data-tab="posts" type="button">Posts</button>
-        <button class="tab" data-tab="documents" type="button">Documents</button>
+
+        <!-- Seafarer only -->
+        <button id="tabDocumentsBtn" class="tab" data-tab="documents" type="button">Documents</button>
+
+        <!-- Company / Professional only -->
+        <button id="tabExperienceBtn" class="tab" data-tab="experience" type="button">Experience</button>
+
+        <!-- Seafarer only -->
         <button id="tabSeaBtn" class="tab" data-tab="sea" type="button">Sea Service</button>
       </div>
 
@@ -90,11 +97,38 @@
         <div class="muted">Coming next: your posts list.</div>
       </section>
 
+      <!-- Seafarer -->
       <section id="tab_documents" class="pane hidden">
         <div class="paneTitle">Documents</div>
         <div class="muted">Coming next: document upload + verification.</div>
       </section>
 
+      <!-- Company / Professional -->
+      <section id="tab_experience" class="pane hidden">
+        <div class="paneTitle" id="expTitle">Experience</div>
+
+        <div class="muted" style="margin-bottom:10px;">
+          You can write your experience like LinkedIn. Add years, companies, achievements, services, etc.
+          (You can even type simple tables using text.)
+        </div>
+
+        <div class="box span2">
+          <div class="k">Experience / Portfolio</div>
+          <textarea id="experienceText" rows="10" style="width:100%; resize:vertical;"
+            placeholder="Example:
+• 5 years in crewing operations
+• Worked with: ABC Ship Mgmt, XYZ Crewing
+• Services: Crew sourcing, compliance, training
+
+Table example (type):
+Company | Role | Years
+ABC     | Ops  | 2019-2022
+XYZ     | HR   | 2022-2025
+"></textarea>
+        </div>
+      </section>
+
+      <!-- Seafarer -->
       <section id="tab_sea" class="pane hidden">
         <div class="paneTitle">Sea Service</div>
         <div class="muted">Coming next: add sea service entries + peer verification.</div>
@@ -103,6 +137,6 @@
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=4001"></script>
+  <script type="module" src="/profile/profile.js?v=4101"></script>
 </body>
 </html>
