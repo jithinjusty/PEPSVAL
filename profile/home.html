@@ -5,148 +5,157 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4301" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4301" />
+  <link rel="stylesheet" href="/profile/profile.css?v=2002" />
 </head>
 
 <body class="app-bg">
-
   <header class="topbar">
-    <a class="brand" href="/feed/index.html" aria-label="Go to feed">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </a>
-    <a class="btnGhost" href="/feed/index.html">Back</a>
+    <div class="left">
+      <a class="brand" href="/dashboard/index.html">
+        <div class="brandTop">PEPSVAL</div>
+        <div class="brandSub">connect, hire and grow</div>
+      </a>
+    </div>
+    <div class="right">
+      <a class="btnGhost" href="/dashboard/index.html">Back</a>
+    </div>
   </header>
 
-  <main class="wrap">
+  <main class="profileWrap">
     <section class="profileCard">
 
-      <!-- Header -->
       <div class="profileTop">
-        <div class="avatarWrap">
-          <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Change profile photo">
-            <div class="avatarShell">
-              <img id="avatarImg" class="hidden" alt="Profile photo" />
-              <div id="avatarFallback" class="avatarFallback">P</div>
-            </div>
-          </button>
-          <input id="avatarFile" class="hidden" type="file" accept="image/*" />
-          <div class="avatarHint">Tap to change photo</div>
-        </div>
+        <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Profile photo menu">
+          <img id="avatarImg" class="avatarImg hidden" alt="Profile photo" />
+          <div id="avatarFallback" class="avatarFallback">P</div>
+        </button>
 
-        <div class="headerText">
-          <div class="nameRow">
-            <div class="name" id="profileName">Profile</div>
-            <span id="typeBadge" class="badge hidden">—</span>
+        <!-- hidden file input used by profile.js -->
+        <input id="avatarFile" type="file" accept="image/*" style="display:none" />
+
+        <div class="profileMeta">
+          <div class="row1">
+            <h1 id="profileName" class="name">Profile</h1>
+            <span id="typeBadge" class="badge">Profile</span>
           </div>
 
-          <div class="miniRow">
-            <div class="miniItem"><span id="miniTitleLabel">Title</span>: <span id="miniTitle">—</span></div>
-            <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
+          <div class="row2">
+            <div class="miniLine">
+              <span id="miniTitleLabel" class="miniLabel">Title:</span>
+              <span id="miniTitle" class="miniValue">—</span>
+              <span class="dot">•</span>
+              <span class="miniLabel">Nationality:</span>
+              <span id="miniNationality" class="miniValue">—</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Tabs -->
       <div class="tabs">
-        <button class="tab active" data-tab="about" type="button">About</button>
-        <button class="tab" data-tab="posts" type="button">Posts</button>
-
-        <!-- Seafarer only -->
-        <button id="tabDocumentsBtn" class="tab" data-tab="documents" type="button">Documents</button>
-        <button id="tabSeaBtn" class="tab" data-tab="sea" type="button">Sea Service</button>
-
-        <!-- Company/Professional only -->
-        <button id="tabExperienceBtn" class="tab" data-tab="experience" type="button">Experience</button>
+        <button class="tab active" data-tab="about">About</button>
+        <button class="tab" data-tab="posts">Posts</button>
+        <button id="tabDocumentsBtn" class="tab" data-tab="documents">Documents</button>
+        <button id="tabExperienceBtn" class="tab" data-tab="experience">Experience</button>
+        <button id="tabSeaBtn" class="tab" data-tab="sea">Sea Service</button>
       </div>
 
       <!-- ABOUT -->
-      <section id="tab_about" class="pane">
+      <section id="tab_about" class="tabPane">
         <div class="paneHead">
-          <div class="paneTitle" id="aboutTitle">Profile</div>
+          <h2 id="aboutTitle" class="paneTitle">Profile</h2>
 
-          <div class="btnRow">
+          <div class="paneActions">
             <button id="editAboutBtn" class="btnGhost" type="button">Edit</button>
             <button id="saveAboutBtn" class="btnPrimary hidden" type="button">Save</button>
           </div>
         </div>
 
-        <div class="aboutGrid">
+        <div class="formGrid">
 
-          <div class="box">
-            <div class="k">Full Name</div>
-            <div class="v" id="fullName">—</div>
+          <div class="field">
+            <div class="lbl">Full Name</div>
+            <div id="fullName" class="valueBox">—</div>
           </div>
 
-          <div class="box">
-            <div class="k">Email</div>
-            <div class="v" id="email">—</div>
+          <div class="field">
+            <div class="lbl">Email</div>
+            <div id="email" class="valueBox">—</div>
           </div>
 
-          <div class="box span2">
-            <div class="k" id="titleLabel">Title</div>
+          <!-- Ship role / Company type / Professional role -->
+          <div class="field">
+            <div class="lbl" id="titleLabel">Title</div>
+            <div id="titleValue" class="valueBox">—</div>
+          </div>
 
-            <!-- Normal (non-seafarer) text view -->
-            <div class="v" id="titleValue">—</div>
+          <div class="field">
+            <div class="lbl">Nationality</div>
+            <div id="nationality" class="valueBox">—</div>
+          </div>
 
-            <!-- Seafarer rank dropdown (shows only while editing Seafarer) -->
-            <div id="rankEditWrap" class="field hidden" style="margin-top:10px;">
-              <div class="combo" data-combo="rank">
-                <input id="rankSearch" type="text" placeholder="Search ship role…" autocomplete="off" />
-                <input id="rankValue" type="hidden" />
-                <div class="comboList" id="rankList"></div>
-              </div>
+          <div class="field fieldFull">
+            <div class="lbl">Bio</div>
+            <div id="bio" class="valueBox valueBoxTall">—</div>
+          </div>
 
-              <div class="field hidden" id="rankOtherWrap" style="margin-top:10px;">
-                <label class="lbl">Other role</label>
-                <input id="rankOther" type="text" placeholder="Write your ship role" />
-              </div>
+          <!-- ✅ Seafarer inline rank editor (only shown while editing) -->
+          <div id="rankEditWrap" class="field fieldFull hidden">
+            <div class="lbl">Ship role <span class="req">*</span></div>
 
-              <div class="help">Choose your ship role. If not found, choose Other and type.</div>
+            <div class="combo" data-combo="rank" style="position:relative">
+              <input id="rankSearch" type="text" placeholder="Search ship role…" autocomplete="off" />
+              <input id="rankValue" type="hidden" />
+              <div class="comboList" id="rankList"></div>
             </div>
-          </div>
 
-          <div class="box">
-            <div class="k">Nationality</div>
-            <div class="v" id="nationality">—</div>
-          </div>
+            <div id="rankOtherWrap" class="field hidden" style="margin-top:10px;">
+              <div class="lbl">Other role <span class="req">*</span></div>
+              <input id="rankOther" type="text" placeholder="Write your ship role" />
+            </div>
 
-          <div class="box span2">
-            <div class="k">Bio</div>
-            <div class="v bioText" id="bio">—</div>
+            <div class="help">Type to search and select your onboard role.</div>
           </div>
 
         </div>
       </section>
 
       <!-- POSTS -->
-      <section id="tab_posts" class="pane hidden">
-        <div class="paneTitle">Posts</div>
-        <div class="muted">Your posts will appear here.</div>
+      <section id="tab_posts" class="tabPane hidden">
+        <div class="paneHead">
+          <h2 class="paneTitle">Posts</h2>
+        </div>
+        <div class="emptyBox">Posts will appear here.</div>
       </section>
 
-      <!-- DOCUMENTS (Seafarer) -->
-      <section id="tab_documents" class="pane hidden">
-        <div class="paneTitle">Documents</div>
-        <div class="muted">Coming next: documents + verification.</div>
+      <!-- DOCUMENTS (seafarer only) -->
+      <section id="tab_documents" class="tabPane hidden">
+        <div class="paneHead">
+          <h2 class="paneTitle">Documents</h2>
+        </div>
+        <div class="emptyBox">Documents module will come here.</div>
       </section>
 
-      <!-- SEA SERVICE (Seafarer) -->
-      <section id="tab_sea" class="pane hidden">
-        <div class="paneTitle">Sea Service</div>
-        <div class="muted">Coming next: sea service entries + peer verification.</div>
+      <!-- EXPERIENCE (company/professional) -->
+      <section id="tab_experience" class="tabPane hidden">
+        <div class="paneHead">
+          <h2 class="paneTitle">Experience</h2>
+        </div>
+        <div class="emptyBox">
+          This tab will show your experience like LinkedIn (services, achievements, mission/vision, etc.).
+        </div>
       </section>
 
-      <!-- EXPERIENCE (Company/Professional) -->
-      <section id="tab_experience" class="pane hidden">
-        <div class="paneTitle" id="expTitle">Experience</div>
-        <div class="muted">Coming next: LinkedIn-style experience for professionals & companies.</div>
+      <!-- SEA SERVICE -->
+      <section id="tab_sea" class="tabPane hidden">
+        <div class="paneHead">
+          <h2 class="paneTitle">Sea Service</h2>
+        </div>
+        <div class="emptyBox">Sea service module will come here.</div>
       </section>
 
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=4301"></script>
+  <script type="module" src="/profile/profile.js?v=2002"></script>
 </body>
 </html>
