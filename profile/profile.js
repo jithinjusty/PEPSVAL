@@ -227,6 +227,11 @@ function applyLayout(kind) {
   // Reset all tabs first
   [tabBtn_experience, tabBtn_jobs, document.getElementById("tabBtn_documents")].forEach(hide);
 
+  // Reset box visibility (in case previous logic hid them)
+  [fields.rank, fields.nationality, fields.availability].forEach(el => {
+    if (el && el.parentElement) el.parentElement.classList.remove("hidden");
+  });
+
   // Seafarer: About, Documents, Posts, Sea Service
   if (kind === "seafarer") {
     if (overviewTitle) overviewTitle.textContent = "Overview";
@@ -395,45 +400,18 @@ async function loadProfile() {
   fields.full_name.textContent = safeText(fullName);
   fields.email.textContent = safeText(email);
 
-  // Values mapped by type (same boxes, different meaning)
-  if (kind === "seafarer") {
-    fields.rank.textContent = safeText(rank);
-    fields.nationality.textContent = safeText(nationality);
-    fields.lastVessel.textContent = safeText(company);
-    fields.availability.textContent = safeText(role);
+  // Unified mapping (applyLayout handles Labels)
+  fields.rank.textContent = safeText(rank);
+  fields.nationality.textContent = safeText(nationality);
+  fields.availability.textContent = safeText(role);
 
+  if (kind === "seafarer") {
     elMiniRank.textContent = safeText(rank);
     elMiniNationality.textContent = safeText(nationality);
-    // In Setup, "rank" stores Department/Contact. "role" stores Business Type. "company_name" stores Company Name.
-    // "lastVessel" (k_lastVessel) stores Company/Brand.
-
-    // For "About", we only want Identity/Bio. The rest is in "Experience" (Overview).
-    // So we can technically hide these or leave them. Common logic says avoid duplication.
-    // Let's clear the text for duplicates so they look empty or repurpose.
-    // Actually, let's just show them but maybe with different labels?
-    // No, user said "Experience just on the bottom of the about" (meaning duplicates).
-    // So let's HIDE redundant fields in About for Company.
-
-    fields.rank.parentElement.classList.add("hidden");        // Department
-    fields.lastVessel.parentElement.classList.add("hidden");  // Brand (similar to Company Name)
-    fields.availability.parentElement.classList.add("hidden"); // Role
-    // Nationality is headquarters, good to keep in About.
-
-    fields.rank.textContent = safeText(rank);
-    fields.nationality.textContent = safeText(nationality);
-    fields.lastVessel.textContent = safeText(company);
-    fields.availability.textContent = safeText(role);
-
-    elMiniRank.textContent = safeText(role, "—");       // Category
-    elMiniNationality.textContent = safeText(nationality);
   } else {
-    // professional / other
-    fields.rank.textContent = safeText(rank);            // Specialty / Position
-    fields.nationality.textContent = safeText(nationality);
-    fields.lastVessel.textContent = safeText(company);   // Organization
-    fields.availability.textContent = safeText(role);    // Role / Job Title
-
-    elMiniRank.textContent = safeText(role, "—");
+    // Company or Professional
+    // MiniRow mapping: Label1 = Category/Role, Label2 = Country
+    elMiniRank.textContent = safeText(role, "—"); // Role replaces Rank in mini row
     elMiniNationality.textContent = safeText(nationality);
   }
 
