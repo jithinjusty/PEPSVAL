@@ -5,157 +5,110 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=2002" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/profile/profile.css" />
 </head>
 
 <body class="app-bg">
-  <header class="topbar">
-    <div class="left">
-      <a class="brand" href="/dashboard/index.html">
-        <div class="brandTop">PEPSVAL</div>
-        <div class="brandSub">connect, hire and grow</div>
-      </a>
+
+<header class="topbar">
+  <a class="brand" href="/feed/index.html">
+    <div class="brandWord">PEPSVAL</div>
+    <div class="brandTag">connect, hire and grow</div>
+  </a>
+  <a class="btnGhost" href="/feed/index.html">Back</a>
+</header>
+
+<main class="profileWrap">
+  <section class="profileCard">
+
+    <!-- HEADER -->
+    <div class="profileHeader">
+      <button id="avatarBtn" class="avatarBtn">
+        <img id="avatarImg" class="avatarImg hidden" />
+        <div id="avatarFallback" class="avatarFallback">P</div>
+      </button>
+
+      <input id="avatarFile" type="file" accept="image/*" hidden />
+
+      <div class="headerInfo">
+        <h1 id="profileName">Profile</h1>
+        <div class="headerMeta">
+          <span id="typeBadge" class="badge">Seafarer</span>
+          <span class="dot">•</span>
+          <span id="miniRole">—</span>
+          <span class="dot">•</span>
+          <span id="miniNationality">—</span>
+        </div>
+      </div>
     </div>
-    <div class="right">
-      <a class="btnGhost" href="/dashboard/index.html">Back</a>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" data-tab="about">About</button>
+      <button class="tab" data-tab="posts">Posts</button>
+      <button id="tabDocuments" class="tab" data-tab="documents">Documents</button>
+      <button id="tabSea" class="tab" data-tab="sea">Sea Service</button>
+      <button id="tabExperience" class="tab" data-tab="experience">Experience</button>
     </div>
-  </header>
 
-  <main class="profileWrap">
-    <section class="profileCard">
-
-      <div class="profileTop">
-        <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Profile photo menu">
-          <img id="avatarImg" class="avatarImg hidden" alt="Profile photo" />
-          <div id="avatarFallback" class="avatarFallback">P</div>
-        </button>
-
-        <!-- hidden file input used by profile.js -->
-        <input id="avatarFile" type="file" accept="image/*" style="display:none" />
-
-        <div class="profileMeta">
-          <div class="row1">
-            <h1 id="profileName" class="name">Profile</h1>
-            <span id="typeBadge" class="badge">Profile</span>
-          </div>
-
-          <div class="row2">
-            <div class="miniLine">
-              <span id="miniTitleLabel" class="miniLabel">Title:</span>
-              <span id="miniTitle" class="miniValue">—</span>
-              <span class="dot">•</span>
-              <span class="miniLabel">Nationality:</span>
-              <span id="miniNationality" class="miniValue">—</span>
-            </div>
-          </div>
+    <!-- ABOUT -->
+    <section id="tab_about" class="tabPane">
+      <div class="paneHeader">
+        <h2>Profile</h2>
+        <div>
+          <button id="editBtn" class="btnGhost">Edit</button>
+          <button id="saveBtn" class="btnPrimary hidden">Save</button>
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="about">About</button>
-        <button class="tab" data-tab="posts">Posts</button>
-        <button id="tabDocumentsBtn" class="tab" data-tab="documents">Documents</button>
-        <button id="tabExperienceBtn" class="tab" data-tab="experience">Experience</button>
-        <button id="tabSeaBtn" class="tab" data-tab="sea">Sea Service</button>
+      <div class="formGrid">
+
+        <div class="field">
+          <label>Full name</label>
+          <div id="fullName" class="value" contenteditable="false"></div>
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <div id="email" class="value"></div>
+        </div>
+
+        <!-- Seafarer rank -->
+        <div id="rankField" class="field hidden">
+          <label>Ship role</label>
+          <input id="rankInput" type="text" placeholder="Select ship role" />
+          <div id="rankList" class="dropdown"></div>
+        </div>
+
+        <div class="field">
+          <label>Nationality</label>
+          <div id="nationality" class="value"></div>
+        </div>
+
+        <div class="field full">
+          <label>Bio</label>
+          <div id="bio" class="value bio" contenteditable="false"></div>
+        </div>
+
       </div>
-
-      <!-- ABOUT -->
-      <section id="tab_about" class="tabPane">
-        <div class="paneHead">
-          <h2 id="aboutTitle" class="paneTitle">Profile</h2>
-
-          <div class="paneActions">
-            <button id="editAboutBtn" class="btnGhost" type="button">Edit</button>
-            <button id="saveAboutBtn" class="btnPrimary hidden" type="button">Save</button>
-          </div>
-        </div>
-
-        <div class="formGrid">
-
-          <div class="field">
-            <div class="lbl">Full Name</div>
-            <div id="fullName" class="valueBox">—</div>
-          </div>
-
-          <div class="field">
-            <div class="lbl">Email</div>
-            <div id="email" class="valueBox">—</div>
-          </div>
-
-          <!-- Ship role / Company type / Professional role -->
-          <div class="field">
-            <div class="lbl" id="titleLabel">Title</div>
-            <div id="titleValue" class="valueBox">—</div>
-          </div>
-
-          <div class="field">
-            <div class="lbl">Nationality</div>
-            <div id="nationality" class="valueBox">—</div>
-          </div>
-
-          <div class="field fieldFull">
-            <div class="lbl">Bio</div>
-            <div id="bio" class="valueBox valueBoxTall">—</div>
-          </div>
-
-          <!-- ✅ Seafarer inline rank editor (only shown while editing) -->
-          <div id="rankEditWrap" class="field fieldFull hidden">
-            <div class="lbl">Ship role <span class="req">*</span></div>
-
-            <div class="combo" data-combo="rank" style="position:relative">
-              <input id="rankSearch" type="text" placeholder="Search ship role…" autocomplete="off" />
-              <input id="rankValue" type="hidden" />
-              <div class="comboList" id="rankList"></div>
-            </div>
-
-            <div id="rankOtherWrap" class="field hidden" style="margin-top:10px;">
-              <div class="lbl">Other role <span class="req">*</span></div>
-              <input id="rankOther" type="text" placeholder="Write your ship role" />
-            </div>
-
-            <div class="help">Type to search and select your onboard role.</div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- POSTS -->
-      <section id="tab_posts" class="tabPane hidden">
-        <div class="paneHead">
-          <h2 class="paneTitle">Posts</h2>
-        </div>
-        <div class="emptyBox">Posts will appear here.</div>
-      </section>
-
-      <!-- DOCUMENTS (seafarer only) -->
-      <section id="tab_documents" class="tabPane hidden">
-        <div class="paneHead">
-          <h2 class="paneTitle">Documents</h2>
-        </div>
-        <div class="emptyBox">Documents module will come here.</div>
-      </section>
-
-      <!-- EXPERIENCE (company/professional) -->
-      <section id="tab_experience" class="tabPane hidden">
-        <div class="paneHead">
-          <h2 class="paneTitle">Experience</h2>
-        </div>
-        <div class="emptyBox">
-          This tab will show your experience like LinkedIn (services, achievements, mission/vision, etc.).
-        </div>
-      </section>
-
-      <!-- SEA SERVICE -->
-      <section id="tab_sea" class="tabPane hidden">
-        <div class="paneHead">
-          <h2 class="paneTitle">Sea Service</h2>
-        </div>
-        <div class="emptyBox">Sea service module will come here.</div>
-      </section>
-
     </section>
-  </main>
 
-  <script type="module" src="/profile/profile.js?v=2002"></script>
+    <!-- POSTS -->
+    <section id="tab_posts" class="tabPane hidden"></section>
+
+    <!-- DOCUMENTS -->
+    <section id="tab_documents" class="tabPane hidden"></section>
+
+    <!-- SEA -->
+    <section id="tab_sea" class="tabPane hidden"></section>
+
+    <!-- EXPERIENCE -->
+    <section id="tab_experience" class="tabPane hidden"></section>
+
+  </section>
+</main>
+
+<script type="module" src="/profile/profile.js"></script>
 </body>
 </html>
