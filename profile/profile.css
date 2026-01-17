@@ -11,10 +11,19 @@
 
 .hidden{ display:none !important; }
 
-.wrap{
+/* ✅ Override global style.css (it sets body background black + Arial) */
+body.app-bg{
+  margin:0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+body.app-bg .wrap{
   max-width: 920px;
   margin: 0 auto;
   padding: 14px 12px 28px;
+  padding-bottom: 28px; /* keep profile clean */
 }
 
 /* Card */
@@ -252,6 +261,9 @@
   padding: 10px 10px;
   background: rgba(11,27,36,.03);
   border: 1px solid rgba(0,0,0,.06);
+}
+.box .v:focus{
+  box-shadow: 0 0 0 3px rgba(31,111,134,.18);
 }
 
 .box .v.bioText{
