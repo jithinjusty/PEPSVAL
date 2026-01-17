@@ -1,178 +1,194 @@
 :root{
   --bg:#f6fbff;
   --card:#ffffff;
-  --line:#dde7ee;
+  --line:#dbe7ef;
   --text:#0b1b24;
-  --muted:#6b7c87;
+  --muted:#5a6b76;
   --brand:#1F6F86;
 }
 
 *{box-sizing:border-box}
 
-body.app-bg{
+body{
   margin:0;
-  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
 }
 
-/* Top bar */
+/* ===== TOP BAR ===== */
 .topbar{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:12px 14px;
+  padding:12px 16px;
   background:#fff;
   border-bottom:1px solid var(--line);
 }
 
-.logo{font-weight:800;color:var(--brand)}
-.tagline{font-size:12px;color:var(--muted)}
-.backBtn{color:var(--brand);font-weight:600;text-decoration:none}
-
-/* Layout */
-.profileWrap{
-  max-width:920px;
-  margin:0 auto;
-  padding:14px;
+.brand .logo{
+  font-weight:800;
+  font-size:18px;
+  color:var(--brand);
+  text-decoration:none;
 }
 
-/* Header */
+.brand .tagline{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.backBtn{
+  color:var(--brand);
+  font-weight:600;
+  text-decoration:none;
+}
+
+/* ===== LAYOUT ===== */
+.profileWrap{
+  max-width:900px;
+  margin:0 auto;
+  padding:16px;
+}
+
+/* ===== HEADER ===== */
 .profileHeader{
   display:flex;
-  gap:14px;
+  gap:16px;
   align-items:center;
-  background:var(--card);
+  background:#fff;
   padding:16px;
-  border-radius:18px;
-  box-shadow:0 6px 18px rgba(0,0,0,.04);
+  border-radius:16px;
+  border:1px solid var(--line);
 }
 
-.avatar{
-  width:88px;
-  height:88px;
+.avatarWrap{
+  position:relative;
+}
+
+.avatarBtn{
+  border:none;
+  background:none;
+  padding:0;
+  position:relative;
+}
+
+.avatarBtn img{
+  width:96px;
+  height:96px;
   border-radius:50%;
   object-fit:cover;
   border:2px solid var(--line);
-  cursor:pointer;
 }
 
-.profileMeta h1{
+.avatarEdit{
+  position:absolute;
+  bottom:-4px;
+  right:-4px;
+  background:var(--brand);
+  color:#fff;
+  font-size:11px;
+  padding:4px 6px;
+  border-radius:8px;
+}
+
+.identity h1{
   margin:0;
   font-size:22px;
 }
 
-.metaLine{
-  font-size:14px;
+.identity .meta{
+  margin:4px 0;
   color:var(--muted);
 }
 
-.typeBadge{
+.badge{
   display:inline-block;
-  margin-top:6px;
   padding:4px 10px;
-  border-radius:999px;
-  background:#e9f4f7;
-  color:var(--brand);
   font-size:12px;
+  border-radius:999px;
+  background:#e7f3f7;
+  color:var(--brand);
   font-weight:600;
 }
 
-/* Tabs */
+/* ===== TABS ===== */
 .tabs{
   display:flex;
-  gap:8px;
-  margin:14px 0;
+  gap:10px;
+  margin:16px 0;
 }
 
 .tab{
-  border:1px solid var(--line);
-  background:#fff;
   padding:8px 14px;
   border-radius:999px;
+  border:1px solid var(--line);
+  background:#fff;
   cursor:pointer;
-  font-weight:600;
 }
 
 .tab.active{
-  background:#e9f4f7;
+  background:#e7f3f7;
   color:var(--brand);
-  border-color:#cfe6ee;
+  border-color:var(--brand);
 }
 
-/* Cards */
+/* ===== CARDS ===== */
 .card{
-  background:var(--card);
-  border-radius:18px;
+  background:#fff;
+  border-radius:16px;
   padding:16px;
-  box-shadow:0 6px 18px rgba(0,0,0,.04);
+  border:1px solid var(--line);
 }
 
 .cardHead{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  margin-bottom:12px;
 }
 
-.editBtn{
+.btnGhost{
   border:1px solid var(--line);
   background:#fff;
   padding:6px 12px;
   border-radius:999px;
-  cursor:pointer;
 }
 
-/* Forms */
-.formGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:12px;
+/* ===== FIELDS ===== */
+.field{
+  margin-bottom:12px;
 }
 
 .field label{
   display:block;
-  font-size:13px;
+  font-size:12px;
   color:var(--muted);
   margin-bottom:4px;
 }
 
-.field input,
-.field textarea{
-  width:100%;
-  padding:10px 12px;
-  border-radius:12px;
+.value{
+  padding:10px;
+  background:#f8fcff;
+  border-radius:10px;
   border:1px solid var(--line);
-  background:#f9fcff;
 }
 
-.field.full{grid-column:1/-1}
-
-/* Experience */
-.timeline{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-.experienceGrid{
-  display:grid;
-  gap:12px;
-}
-
-.emptyState{
-  color:var(--muted);
-  padding:12px;
-}
-
-/* Tabs visibility */
+/* ===== TABS CONTENT ===== */
 .tabPane{display:none}
 .tabPane.active{display:block}
 
-.hidden{display:none}
+.empty{
+  color:var(--muted);
+  font-size:14px;
+  padding:12px;
+}
 
-/* Mobile */
+/* ===== MOBILE ===== */
 @media(max-width:600px){
-  .formGrid{grid-template-columns:1fr}
-  .profileHeader{align-items:flex-start}
+  .profileHeader{
+    flex-direction:column;
+    align-items:flex-start;
+  }
 }
