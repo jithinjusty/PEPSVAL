@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4201" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4201" />
+  <link rel="stylesheet" href="/css/style.css?v=4301" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4301" />
 </head>
 
 <body>
@@ -40,6 +40,12 @@
         </div>
       </div>
 
+      <!-- ✅ Edit/Save buttons moved here (global for all tabs) -->
+      <div class="btnRow" style="margin-top:10px;">
+        <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
+        <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
+      </div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
@@ -58,11 +64,6 @@
       <!-- About -->
       <section id="tab_about" class="pane">
         <div class="paneTitle" id="aboutTitle">Overview</div>
-
-        <div class="btnRow">
-          <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
-          <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
-        </div>
 
         <div class="aboutGrid">
           <div class="box">
@@ -120,17 +121,12 @@
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Services (one per line)</div>
-            <textarea id="proServices" rows="4" style="width:100%;resize:vertical" placeholder="Example:
-Crew training
-ISM audits
-Port operations support"></textarea>
+            <textarea id="proServices" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Achievements (one per line)</div>
-            <textarea id="proAchievements" rows="4" style="width:100%;resize:vertical" placeholder="Example:
-Reduced delays by 20%
-Handled 100+ port calls"></textarea>
+            <textarea id="proAchievements" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="paneTitle" style="margin-top:12px;">Work history</div>
@@ -151,22 +147,22 @@ Handled 100+ port calls"></textarea>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">What the company is</div>
-            <textarea id="coWhat" rows="3" style="width:100%;resize:vertical" placeholder="What your company/institute does…"></textarea>
+            <textarea id="coWhat" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Mission</div>
-            <textarea id="coMission" rows="3" style="width:100%;resize:vertical" placeholder="Mission…"></textarea>
+            <textarea id="coMission" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Core vision</div>
-            <textarea id="coVision" rows="3" style="width:100%;resize:vertical" placeholder="Vision…"></textarea>
+            <textarea id="coVision" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Core values</div>
-            <textarea id="coValues" rows="3" style="width:100%;resize:vertical" placeholder="Core values…"></textarea>
+            <textarea id="coValues" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box" style="margin-bottom:12px;">
@@ -176,18 +172,12 @@ Handled 100+ port calls"></textarea>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Services (one per line)</div>
-            <textarea id="coServices" rows="5" style="width:100%;resize:vertical" placeholder="Example:
-Crew recruitment
-Vessel management
-Training & compliance"></textarea>
+            <textarea id="coServices" rows="5" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2" style="margin-bottom:12px;">
             <div class="k">Achievements (one per line)</div>
-            <textarea id="coAchievements" rows="5" style="width:100%;resize:vertical" placeholder="Example:
-10,000+ seafarers placed
-ISO certified
-5 global offices"></textarea>
+            <textarea id="coAchievements" rows="5" style="width:100%;resize:vertical"></textarea>
           </div>
         </div>
 
@@ -202,6 +192,6 @@ ISO certified
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=4201"></script>
+  <script type="module" src="/profile/profile.js?v=4301"></script>
 </body>
 </html>
