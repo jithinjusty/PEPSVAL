@@ -88,10 +88,25 @@ function setEditable(state) {
   saveBtn?.classList.toggle("hidden", !state);
 }
 
-function setAvatar(url, nameForInitials) {
-  const urlTrim = (url || "").trim();
-  if (urlTrim) {
-    avatarImg.src = urlTrim;
+function looksLikeUrl(v) {
+  const s = (v || "").trim().toLowerCase();
+  return s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:");
+}
+
+function publicAvatarUrlFromPath(path) {
+  if (!path) return "";
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data?.publicUrl || "";
+}
+
+function setAvatar(avatarUrlOrPath, nameForInitials) {
+  const raw = (avatarUrlOrPath || "").toString().trim();
+  const finalUrl = raw
+    ? (looksLikeUrl(raw) ? raw : publicAvatarUrlFromPath(raw))
+    : "";
+
+  if (finalUrl) {
+    avatarImg.src = finalUrl;
     avatarImg.classList.remove("hidden");
     avatarFallback.classList.add("hidden");
     avatarFallback.textContent = "";
@@ -104,7 +119,7 @@ function setAvatar(url, nameForInitials) {
 }
 
 function setAccountTypeBadge(account_type, account_type_label) {
-  const label = (account_type_label || account_type || "").trim();
+  const label = (account_type_label || account_type || "").toString().trim();
   if (!label) {
     typeBadge.classList.add("hidden");
     typeBadge.textContent = "";
@@ -112,6 +127,13 @@ function setAccountTypeBadge(account_type, account_type_label) {
   }
   typeBadge.classList.remove("hidden");
   typeBadge.textContent = label;
+}
+
+function pickFirst(obj, keys, fallback = null) {
+  for (const k of keys) {
+    if (obj && obj[k] != null && String(obj[k]).trim() !== "") return obj[k];
+  }
+  return fallback;
 }
 
 /* ---------------- Tabs ---------------- */
@@ -132,17 +154,13 @@ function initTabs() {
       el.classList.toggle("hidden", k !== key);
     });
 
-    // Lazy load
     if (key === "posts") loadMyPosts().catch(console.error);
     if (key === "documents") loadGenericTab(documentsWrap, ["documents", "user_documents", "profile_documents"]).catch(console.error);
     if (key === "sea") loadGenericTab(seaWrap, ["sea_service", "sea_services", "sea_time", "sea_entries"]).catch(console.error);
     if (key === "media") loadGenericTab(mediaWrap, ["media", "user_media", "profile_media"]).catch(console.error);
   }
 
-  tabs.forEach(t => {
-    t.addEventListener("click", () => activate(t.dataset.tab));
-  });
-
+  tabs.forEach(t => t.addEventListener("click", () => activate(t.dataset.tab)));
   activate("about");
 }
 
@@ -171,9 +189,10 @@ async function ensureProfileRow(user) {
 }
 
 async function fetchProfile(userId) {
+  // IMPORTANT: select("*") avoids crashes if some columns don't exist
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, rank, nationality, bio, email, avatar_url, account_type, account_type_label, company, job_title")
+    .select("*")
     .eq("id", userId)
     .maybeSingle();
 
@@ -193,21 +212,31 @@ async function loadProfile() {
 
   const p = await fetchProfile(currentUserId);
 
-  fields.full_name.textContent = safeText(p?.full_name);
-  fields.rank.textContent = safeText(p?.rank);
-  fields.nationality.textContent = safeText(p?.nationality);
+  const fullName = pickFirst(p, ["full_name", "name"], "");
+  const rank = pickFirst(p, ["rank"], "");
+  const nationality = pickFirst(p, ["nationality", "country"], "");
+  const bio = pickFirst(p, ["bio", "about"], "");
+  const email = pickFirst(p, ["email"], currentUser.email || "");
+  const avatar = pickFirst(p, ["avatar_url", "avatar"], "");
 
-  fields.lastVessel.textContent = safeText(p?.company);
-  fields.availability.textContent = safeText(p?.job_title);
+  // Setup page uses: company_name + role
+  // Older pages may use: company + job_title
+  const company = pickFirst(p, ["company_name", "company", "last_company", "last_vessel"], "");
+  const availability = pickFirst(p, ["role", "job_title", "availability"], "");
 
-  fields.bio.textContent = safeText(p?.bio);
-  fields.email.textContent = safeText(p?.email || currentUser.email);
+  fields.full_name.textContent = safeText(fullName);
+  fields.rank.textContent = safeText(rank);
+  fields.nationality.textContent = safeText(nationality);
+  fields.lastVessel.textContent = safeText(company);
+  fields.availability.textContent = safeText(availability);
+  fields.bio.textContent = safeText(bio);
+  fields.email.textContent = safeText(email);
 
-  elProfileName.textContent = safeText(p?.full_name, "Profile");
-  elMiniRank.textContent = safeText(p?.rank);
-  elMiniNationality.textContent = safeText(p?.nationality);
+  elProfileName.textContent = safeText(fullName, "Profile");
+  elMiniRank.textContent = safeText(rank);
+  elMiniNationality.textContent = safeText(nationality);
 
-  setAvatar(p?.avatar_url, p?.full_name || currentUser.email || "P");
+  setAvatar(avatar, fullName || currentUser.email || "P");
   setAccountTypeBadge(p?.account_type, p?.account_type_label);
 }
 
@@ -222,8 +251,9 @@ saveBtn.onclick = async () => {
     rank: normalizeEditableValue(fields.rank.textContent),
     nationality: normalizeEditableValue(fields.nationality.textContent),
 
-    company: normalizeEditableValue(fields.lastVessel.textContent),
-    job_title: normalizeEditableValue(fields.availability.textContent),
+    // Save into both "new" and "old" names for compatibility
+    company_name: normalizeEditableValue(fields.lastVessel.textContent),
+    role: normalizeEditableValue(fields.availability.textContent),
 
     bio: normalizeEditableValue(fields.bio.textContent),
     updated_at: new Date().toISOString(),
@@ -246,7 +276,7 @@ saveBtn.onclick = async () => {
   await loadProfile();
 };
 
-/* ---------------- Posts tab (uses your existing posts table) ---------------- */
+/* ---------------- Posts tab ---------------- */
 function detectKeys(row) {
   const keys = row ? Object.keys(row) : [];
   const pick = (cands) => cands.find(k => keys.includes(k)) || null;
@@ -336,7 +366,7 @@ async function loadMyPosts() {
   }).join("");
 }
 
-/* ---------------- Generic tabs (Documents / Sea / Media) ---------------- */
+/* ---------------- Generic tabs ---------------- */
 async function trySelectTable(table) {
   const t = await supabase.from(table).select("*").limit(1);
   if (t.error) return { ok: false, error: t.error };
@@ -396,7 +426,6 @@ async function loadGenericTab(targetEl, tableCandidates) {
     return;
   }
 
-  // Pull more, then filter locally (because user_id column name can vary)
   let res = await supabase.from(table).select("*").order("created_at", { ascending: false }).limit(200);
   if (res.error) res = await supabase.from(table).select("*").limit(200);
 
@@ -471,6 +500,12 @@ function closeModal() {
   modal?.classList.add("hidden");
   modal?.setAttribute("aria-hidden", "true");
 }
+function computeBaseScale() {
+  if (!imgObj || !cropCanvas) return;
+  const cw = cropCanvas.width;
+  const ch = cropCanvas.height;
+  baseScale = Math.max(cw / imgObj.width, ch / imgObj.height);
+}
 function resetEditor() {
   if (!zoomRange || !briRange || !conRange || !satRange) return;
   zoomRange.value = "1";
@@ -482,13 +517,6 @@ function resetEditor() {
   computeBaseScale();
   draw();
 }
-function computeBaseScale() {
-  if (!imgObj || !cropCanvas) return;
-  const cw = cropCanvas.width;
-  const ch = cropCanvas.height;
-  const scaleToCover = Math.max(cw / imgObj.width, ch / imgObj.height);
-  baseScale = scaleToCover;
-}
 
 function draw() {
   if (!cropCanvas) return;
@@ -499,8 +527,6 @@ function draw() {
   const ch = cropCanvas.height;
 
   ctx.clearRect(0, 0, cw, ch);
-
-  // Background
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, cw, ch);
 
@@ -524,30 +550,50 @@ function draw() {
   const w = imgObj.width * scale;
   const h = imgObj.height * scale;
 
-  // Center + offsets
   const x = (cw - w) / 2 + offsetX;
   const y = (ch - h) / 2 + offsetY;
 
   ctx.drawImage(imgObj, x, y, w, h);
   ctx.restore();
 
-  // Subtle frame
   ctx.strokeStyle = "rgba(0,0,0,.10)";
   ctx.lineWidth = 2;
   ctx.strokeRect(1, 1, cw - 2, ch - 2);
 }
 
-function canvasToDataUrl(maxSize = 360, quality = 0.86) {
-  // export resized square
+function dataUrlToBlob(dataUrl) {
+  const [meta, b64] = dataUrl.split(",");
+  const mime = (meta.match(/data:(.*?);base64/) || [])[1] || "image/webp";
+  const bin = atob(b64);
+  const len = bin.length;
+  const arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function canvasToDataUrlWebp(size = 360, quality = 0.9) {
   const out = document.createElement("canvas");
-  out.width = maxSize;
-  out.height = maxSize;
+  out.width = size;
+  out.height = size;
   const octx = out.getContext("2d");
+  octx.drawImage(cropCanvas, 0, 0, size, size);
 
-  // draw current cropCanvas into out (already square)
-  octx.drawImage(cropCanvas, 0, 0, maxSize, maxSize);
+  // Prefer webp; fallback to jpeg if browser doesn't support webp export
+  try {
+    const webp = out.toDataURL("image/webp", quality);
+    if (webp.startsWith("data:image/webp")) return webp;
+  } catch (_) {}
+  return out.toDataURL("image/jpeg", 0.86);
+}
 
-  return out.toDataURL("image/jpeg", quality);
+async function uploadAvatarBlob(userId, blob) {
+  const path = `${userId}/avatar.webp`;
+  const { error } = await supabase
+    .storage
+    .from("avatars")
+    .upload(path, blob, { upsert: true, contentType: blob.type || "image/webp" });
+  if (error) throw error;
+  return path;
 }
 
 function wireModalClose() {
@@ -593,31 +639,39 @@ function wireCanvasDrag() {
 }
 
 function wireEditorControls() {
-  [zoomRange, briRange, conRange, satRange].forEach(el => {
-    el?.addEventListener("input", draw);
-  });
+  [zoomRange, briRange, conRange, satRange].forEach(el => el?.addEventListener("input", draw));
   resetEditBtn?.addEventListener("click", resetEditor);
 
   saveAvatarBtn?.addEventListener("click", async () => {
     if (!currentUserId) return;
     if (!imgObj) return;
 
-    const dataUrl = canvasToDataUrl(360, 0.86);
+    try {
+      saveAvatarBtn.disabled = true;
+      saveAvatarBtn.textContent = "Saving…";
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: dataUrl, updated_at: new Date().toISOString() })
-      .eq("id", currentUserId);
+      const dataUrl = canvasToDataUrlWebp(360, 0.9);
+      const blob = dataUrlToBlob(dataUrl);
 
-    if (error) {
-      console.error(error);
-      alert("Could not save photo: " + (error.message || "Unknown error"));
-      return;
+      const path = await uploadAvatarBlob(currentUserId, blob);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: path, updated_at: new Date().toISOString() })
+        .eq("id", currentUserId);
+
+      if (error) throw error;
+
+      setAvatar(path, fields.full_name.textContent || currentUser.email || "P");
+      toast("Photo updated");
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      alert("Could not save photo: " + (e.message || "Unknown error"));
+    } finally {
+      saveAvatarBtn.disabled = false;
+      saveAvatarBtn.textContent = "Save photo";
     }
-
-    setAvatar(dataUrl, fields.full_name.textContent || currentUser.email || "P");
-    toast("Photo updated");
-    closeModal();
   });
 }
 
@@ -653,7 +707,6 @@ avatarFile?.addEventListener("change", async () => {
     console.error(e);
     alert("Could not load image.");
   } finally {
-    // allow picking same file again
     avatarFile.value = "";
   }
 });
