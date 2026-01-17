@@ -5,114 +5,124 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/profile/profile.css?v=FINAL" />
+  <link rel="stylesheet" href="/profile/profile.css?v=FINAL2" />
 </head>
 
 <body class="app-bg">
 
-  <!-- Top bar -->
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">PEPSVAL</span>
-      <span class="tagline">connect, hire and grow</span>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">PEPSVAL</span>
+    <span class="tagline">connect, hire and grow</span>
+  </div>
+  <a href="/dashboard/index.html" class="backBtn">Back</a>
+</header>
+
+<main class="profileWrap">
+
+  <!-- PROFILE HEADER -->
+  <section class="profileHeader">
+
+    <!-- AVATAR -->
+    <div class="avatarBlock">
+      <img
+        id="avatar"
+        class="avatar"
+        src="/assets/avatar-placeholder.png"
+        alt="Profile avatar"
+      />
     </div>
-    <a href="/dashboard/index.html" class="backBtn">Back</a>
-  </header>
 
-  <main class="profileWrap">
+    <!-- META -->
+    <div class="profileMeta">
+      <h1 id="full_name">—</h1>
 
-    <!-- Header card -->
-    <section class="profileHeader">
-      <div class="avatarBlock">
-        <img id="profileAvatar" class="avatar" alt="Avatar" />
+      <div class="metaLine">
+        <span id="role_text">—</span>
+        <span class="dot">•</span>
+        <span id="nationality_text">—</span>
       </div>
 
-      <div class="profileMeta">
-        <h1 id="profileName">—</h1>
-        <div class="metaLine">
-          <span id="profileRole">—</span>
-          <span class="dot">•</span>
-          <span id="profileNationality">—</span>
-        </div>
-        <span id="profileTypeBadge" class="typeBadge">—</span>
+      <span id="account_type_badge" class="typeBadge">—</span>
+    </div>
+
+  </section>
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="about">About</button>
+    <button class="tab" data-tab="posts">Posts</button>
+    <button class="tab" data-tab="experience">Experience</button>
+    <button class="tab" data-tab="documents">Documents</button>
+  </nav>
+
+  <!-- ABOUT -->
+  <section class="tabPane active" id="tab-about">
+    <div class="card">
+      <div class="cardHead">
+        <h2>Profile</h2>
+        <button id="editBtn" class="editBtn">Edit</button>
       </div>
-    </section>
 
-    <!-- Tabs -->
-    <nav class="tabs">
-      <button class="tab active" data-tab="about">About</button>
-      <button class="tab" data-tab="posts">Posts</button>
-      <button class="tab" data-tab="experience">Experience</button>
-      <button class="tab" data-tab="documents">Documents</button>
-    </nav>
-
-    <!-- About -->
-    <section class="tabPane active" id="tab-about">
-      <div class="card">
-        <div class="cardHead">
-          <h2>Profile</h2>
-          <button id="editProfileBtn" class="editBtn">Edit</button>
+      <div class="formGrid">
+        <div class="field">
+          <label>Full name</label>
+          <input id="input_full_name" disabled />
         </div>
 
-        <div class="formGrid">
-          <div class="field">
-            <label>Full name</label>
-            <input id="fullName" disabled />
-          </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="input_email" disabled />
+        </div>
 
-          <div class="field">
-            <label>Email</label>
-            <input id="email" disabled />
-          </div>
+        <div class="field">
+          <label>Nationality</label>
+          <input id="input_nationality" disabled />
+        </div>
 
-          <div class="field">
-            <label>Nationality</label>
-            <input id="nationality" disabled />
-          </div>
-
-          <div class="field full">
-            <label>Bio</label>
-            <textarea id="bio" rows="4" disabled></textarea>
-          </div>
+        <div class="field full">
+          <label>Bio</label>
+          <textarea id="input_bio" rows="4" disabled></textarea>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Posts -->
-    <section class="tabPane" id="tab-posts">
-      <div class="card">
-        <h2>Posts</h2>
-        <div id="postsContainer" class="emptyState">
-          No posts yet.
-        </div>
+  <!-- POSTS -->
+  <section class="tabPane" id="tab-posts">
+    <div class="card">
+      <h2>Posts</h2>
+      <div id="postsContainer" class="emptyState">
+        No posts yet.
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Experience -->
-    <section class="tabPane" id="tab-experience">
-      <div class="card">
-        <h2 id="experienceTitle">Experience</h2>
+  <!-- EXPERIENCE -->
+  <section class="tabPane" id="tab-experience">
+    <div class="card">
+      <h2 id="experience_title">Experience</h2>
 
-        <!-- Seafarer -->
-        <div id="seaServiceContainer" class="timeline hidden"></div>
+      <!-- SEAFARER -->
+      <div id="sea_service_container" class="timeline hidden"></div>
 
-        <!-- Company / Professional -->
-        <div id="professionalExperience" class="experienceGrid hidden"></div>
+      <!-- COMPANY / PROFESSIONAL -->
+      <div id="professional_experience_container" class="experienceGrid hidden"></div>
+    </div>
+  </section>
+
+  <!-- DOCUMENTS -->
+  <section class="tabPane" id="tab-documents">
+    <div class="card">
+      <h2>Documents</h2>
+      <div id="documentsContainer" class="emptyState">
+        No documents uploaded.
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Documents -->
-    <section class="tabPane" id="tab-documents">
-      <div class="card">
-        <h2>Documents</h2>
-        <div id="documentsContainer" class="emptyState">
-          No documents uploaded.
-        </div>
-      </div>
-    </section>
+</main>
 
-  </main>
-
-  <script type="module" src="/profile/profile.js?v=FINAL"></script>
+<script type="module" src="/profile/profile.js?v=FINAL2"></script>
 </body>
 </html>
