@@ -5,58 +5,78 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4201" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4201" />
+  <link rel="stylesheet" href="/css/style.css?v=4301" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4301" />
 
   <style>
-    /* Minimal safety styles for modal if your profile.css doesn't include it yet */
-    .hidden{display:none !important}
+    .hidden{display:none!important}
 
+    /* Avatar button */
+    .avatarBtn{border:0;background:transparent;padding:0;cursor:pointer;border-radius:999px}
+    .avatarShell{
+      width:66px;height:66px;border-radius:999px;
+      border:2px solid rgba(31,111,134,.22);
+      background:#eef6fb; overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+    }
+    .avatarShell img{width:100%;height:100%;object-fit:cover}
+    .avatarFallback{font-weight:800;color:#1F6F86;font-size:22px}
+    .avatarHint{
+      position:absolute;bottom:-2px;right:-2px;
+      background:#fff;border:1px solid rgba(0,0,0,.08);
+      border-radius:999px;padding:6px 7px;font-size:12px;
+      box-shadow:0 10px 30px rgba(0,0,0,.12);
+    }
+
+    /* Modal */
     .modalBack{
       position:fixed; inset:0; display:none;
-      background:rgba(0,0,0,.45);
+      background:rgba(7,14,20,.62);
       z-index:9999;
-      align-items:center; justify-content:center;
-      padding:16px;
+      align-items:flex-end; justify-content:center;
+      padding:0;
+      backdrop-filter: blur(8px);
     }
     .modalBack.show{display:flex}
-
     .modal{
-      width:min(520px, 96vw);
+      width:min(720px, 100vw);
       background:#fff;
-      border-radius:16px;
-      padding:14px;
-      box-shadow: 0 20px 70px rgba(0,0,0,.35);
+      border-radius:22px 22px 0 0;
+      padding:14px 14px 18px;
+      box-shadow: 0 20px 80px rgba(0,0,0,.45);
     }
-    .modalHead{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:10px;
+    @media (min-width: 721px){
+      .modalBack{align-items:center;padding:16px}
+      .modal{border-radius:22px; max-height: calc(100vh - 40px); overflow:auto;}
     }
-    .modalTitle{font-weight:700}
-    .modalRow{margin-top:10px}
-    .range{width:100%}
-
-    /* Avatar clickable */
-    .avatarBtn{
-      border:0; background:transparent; padding:0; cursor:pointer;
+    .modalHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .modalTitle{font-weight:800}
+    .pillRow{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{
+      border:1px solid rgba(0,0,0,.10);
+      background:#fff;
+      padding:8px 12px;
       border-radius:999px;
+      font-weight:650;
+      cursor:pointer;
     }
-    .avatarShell{
-      width:66px; height:66px; border-radius:999px;
-      border:2px solid rgba(31,111,134,.25);
-      background:#eef6fb;
+    .pill.active{
+      border-color: rgba(31,111,134,.35);
+      box-shadow: 0 10px 30px rgba(31,111,134,.16);
+    }
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .muted{opacity:.75}
+    .range{width:100%}
+    .canvasWrap{
+      border-radius:18px;
       overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .avatarShell img{width:100%; height:100%; object-fit:cover}
-    .avatarFallback{
-      font-weight:800; color:#1F6F86; font-size:22px;
+      background: #f1f6fb;
+      border:1px solid rgba(0,0,0,.06);
     }
 
-    /* About editable blocks (contentEditable) */
-    .v[contenteditable="true"]{outline: none;}
-    textarea{font-family:inherit;}
-    input{font-family:inherit;}
+    /* Make combo list always open above everything */
+    .comboList{z-index:9999; position:relative;}
   </style>
 </head>
 
@@ -66,25 +86,21 @@
       <div class="brandWord">PEPSVAL</div>
       <div class="brandTag">connect, hire and grow</div>
     </a>
-
     <a class="btnGhost" href="/feed/index.html">Back</a>
   </header>
 
   <main class="wrap">
     <section class="profileCard">
 
-      <!-- TOP HEADER -->
       <div class="profileTop">
         <div class="avatarWrap">
-          <!-- CLICKABLE AVATAR -->
           <button id="avatarBtn" class="avatarBtn" type="button" aria-label="Change profile photo">
             <div class="avatarShell">
               <img id="avatarImg" class="hidden" alt="Profile photo" />
               <div id="avatarFallback" class="avatarFallback">P</div>
+              <div class="avatarHint">📷</div>
             </div>
           </button>
-
-          <!-- Hidden file input -->
           <input id="avatarFile" class="hidden" type="file" accept="image/*" />
         </div>
 
@@ -93,7 +109,6 @@
             <div class="name" id="profileName">Profile</div>
             <span id="typeBadge" class="badge">—</span>
           </div>
-
           <div class="miniRow">
             <div class="miniItem"><span id="miniTitleLabel">Title</span>: <span id="miniTitle">—</span></div>
             <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
@@ -101,18 +116,11 @@
         </div>
       </div>
 
-      <!-- TABS -->
       <div class="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
         <button class="tab" data-tab="posts" type="button">Posts</button>
-
-        <!-- Seafarer only -->
         <button id="tabDocumentsBtn" class="tab" data-tab="documents" type="button">Documents</button>
-
-        <!-- Company / Professional only -->
         <button id="tabExperienceBtn" class="tab" data-tab="experience" type="button">Experience</button>
-
-        <!-- Seafarer only -->
         <button id="tabSeaBtn" class="tab" data-tab="sea" type="button">Sea Service</button>
       </div>
 
@@ -150,39 +158,37 @@
             <div class="k">Bio</div>
             <div class="v bioText" id="bio">—</div>
           </div>
-        </div>
 
-        <!-- Seafarer rank dropdown (only appears when editing + role=seafarer) -->
-        <div id="rankEditWrap" class="field hidden" style="margin-top:14px;">
-          <label class="lbl">Ship role <span class="req">*</span></label>
+          <!-- ✅ Seafarer Role dropdown INSIDE grid (not bottom) -->
+          <div id="rankEditWrap" class="box span2 hidden">
+            <div class="k">Ship role <span class="req">*</span></div>
 
-          <div class="combo" data-combo="rank">
-            <input id="rankSearch" type="text" placeholder="Search ship role…" autocomplete="off" />
-            <input id="rankValue" type="hidden" />
-            <div class="comboList" id="rankList"></div>
+            <div class="combo" data-combo="rank" style="margin-top:8px;">
+              <input id="rankSearch" type="text" placeholder="Search ship role…" autocomplete="off" />
+              <input id="rankValue" type="hidden" />
+              <div class="comboList" id="rankList"></div>
+            </div>
+
+            <div class="field hidden" id="rankOtherWrap" style="margin-top:10px;">
+              <div class="k">Other role</div>
+              <input id="rankOther" type="text" placeholder="Write your ship role" />
+            </div>
+
+            <div class="help muted" style="margin-top:8px;">Choose from ship roles. If not found, choose Other and type.</div>
           </div>
-
-          <div class="field hidden" id="rankOtherWrap" style="margin-top:10px;">
-            <label class="lbl">Other role</label>
-            <input id="rankOther" type="text" placeholder="Write your ship role" />
-          </div>
-          <div class="help">Choose from ship roles. If not found, choose Other and type.</div>
         </div>
       </section>
 
-      <!-- POSTS -->
       <section id="tab_posts" class="pane hidden">
         <div class="paneTitle">Posts</div>
         <div class="muted">Coming next: your posts list.</div>
       </section>
 
-      <!-- DOCUMENTS (Seafarer) -->
       <section id="tab_documents" class="pane hidden">
         <div class="paneTitle">Documents</div>
         <div class="muted">Coming next: document upload + verification.</div>
       </section>
 
-      <!-- EXPERIENCE (Company/Professional) -->
       <section id="tab_experience" class="pane hidden">
         <div class="paneTitle" id="expTitle">Experience</div>
 
@@ -191,26 +197,20 @@
           <button id="saveExpBtn" class="btnPrimary hidden" type="button">Save</button>
         </div>
 
-        <!-- Professional -->
         <div id="proExpWrap" class="hidden">
           <div class="box span2">
             <div class="k">Summary (service years, specialization)</div>
-            <textarea id="proSummary" rows="3" style="width:100%;resize:vertical" placeholder="Example: 8 years in bulk carriers / tanker operations, cargo & stability..."></textarea>
+            <textarea id="proSummary" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Services (one per line)</div>
-            <textarea id="proServices" rows="4" style="width:100%;resize:vertical" placeholder="Example:
-• Marine surveying
-• Vetting support
-• Training & audits"></textarea>
+            <textarea id="proServices" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Achievements (one per line)</div>
-            <textarea id="proAchievements" rows="4" style="width:100%;resize:vertical" placeholder="Example:
-• Led 50+ inspections
-• Reduced incidents by 30%"></textarea>
+            <textarea id="proAchievements" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="paneTitle" style="margin-top:14px;">Companies / Roles (LinkedIn style)</div>
@@ -218,50 +218,44 @@
           <div id="expList" style="margin-top:10px;"></div>
         </div>
 
-        <!-- Company -->
         <div id="companyWrap" class="hidden">
           <div class="box span2">
             <div class="k">What the company is</div>
-            <textarea id="coWhat" rows="3" style="width:100%;resize:vertical" placeholder="What you do, who you serve, what sector..."></textarea>
+            <textarea id="coWhat" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Mission</div>
-            <textarea id="coMission" rows="3" style="width:100%;resize:vertical" placeholder="Mission statement"></textarea>
+            <textarea id="coMission" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Vision</div>
-            <textarea id="coVision" rows="3" style="width:100%;resize:vertical" placeholder="Vision statement"></textarea>
+            <textarea id="coVision" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Core values</div>
-            <textarea id="coValues" rows="3" style="width:100%;resize:vertical" placeholder="Safety, quality, trust, innovation..."></textarea>
+            <textarea id="coValues" rows="3" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box">
             <div class="k">Total workers</div>
-            <input id="coWorkers" type="number" min="0" placeholder="e.g., 120" style="width:100%;" />
+            <input id="coWorkers" type="number" min="0" style="width:100%;" />
           </div>
 
           <div class="box span2">
             <div class="k">Services (one per line)</div>
-            <textarea id="coServices" rows="4" style="width:100%;resize:vertical" placeholder="Crew management
-Training
-Ship management"></textarea>
+            <textarea id="coServices" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
 
           <div class="box span2">
             <div class="k">Achievements (one per line)</div>
-            <textarea id="coAchievements" rows="4" style="width:100%;resize:vertical" placeholder="ISO certified
-500+ seafarers placed
-Awarded best employer..."></textarea>
+            <textarea id="coAchievements" rows="4" style="width:100%;resize:vertical"></textarea>
           </div>
         </div>
       </section>
 
-      <!-- SEA SERVICE (Seafarer) -->
       <section id="tab_sea" class="pane hidden">
         <div class="paneTitle">Sea Service</div>
         <div class="muted">Coming next: add sea service entries + peer verification.</div>
@@ -270,7 +264,7 @@ Awarded best employer..."></textarea>
     </section>
   </main>
 
-  <!-- CROP MODAL -->
+  <!-- ✅ Modern Crop Modal -->
   <div id="cropBack" class="modalBack" aria-hidden="true">
     <div class="modal">
       <div class="modalHead">
@@ -278,25 +272,52 @@ Awarded best employer..."></textarea>
         <button id="cropClose" class="btnGhost" type="button">✕</button>
       </div>
 
-      <div class="modalRow">
-        <canvas id="cropCanvas" width="360" height="360" style="width:100%; border-radius:14px; background:#f1f6fb;"></canvas>
+      <div class="pillRow" style="margin-bottom:10px;">
+        <button id="ratio11" class="pill active" type="button">1:1</button>
+        <button id="ratio45" class="pill" type="button">4:5</button>
+        <button id="ratio169" class="pill" type="button">16:9</button>
       </div>
 
-      <div class="modalRow">
+      <div class="canvasWrap">
+        <canvas id="cropCanvas" width="420" height="420" style="width:100%;display:block;"></canvas>
+      </div>
+
+      <div style="margin-top:12px;">
         <div class="muted" style="margin-bottom:6px;">Zoom</div>
-        <input id="zoomRange" class="range" type="range" min="1" max="3" step="0.01" value="1.4" />
-        <div class="muted" style="margin-top:6px;">Drag the image to position.</div>
+        <input id="zoomRange" class="range" type="range" min="1" max="3" step="0.01" value="1.45" />
+        <div class="muted" style="margin-top:8px;">Drag to position. Use zoom for perfect fit.</div>
       </div>
 
-      <!-- Filters UI is injected by JS automatically (Brightness/Contrast/Saturation + presets) -->
+      <div class="grid2" style="margin-top:12px;">
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Brightness</div>
+          <input id="brightRange" class="range" type="range" min="70" max="140" step="1" value="105" />
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Contrast</div>
+          <input id="contrastRange" class="range" type="range" min="70" max="140" step="1" value="105" />
+        </div>
+      </div>
 
-      <div class="modalRow" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <div style="margin-top:12px;">
+        <div class="muted" style="margin-bottom:6px;">Saturation</div>
+        <input id="satRange" class="range" type="range" min="0" max="160" step="1" value="110" />
+      </div>
+
+      <div class="pillRow" style="margin-top:12px;justify-content:flex-end;">
+        <button id="presetWarm" class="pill" type="button">Warm</button>
+        <button id="presetCool" class="pill" type="button">Cool</button>
+        <button id="presetBW" class="pill" type="button">B&W</button>
+        <button id="presetReset" class="pill" type="button">Reset</button>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px;">
         <button id="cropCancel" class="btnGhost" type="button">Cancel</button>
         <button id="cropSave" class="btnPrimary" type="button">Save Photo</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="/profile/profile.js?v=4201"></script>
+  <script type="module" src="/profile/profile.js?v=4301"></script>
 </body>
 </html>
