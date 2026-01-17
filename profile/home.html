@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
 
-  <link rel="stylesheet" href="/css/style.css?v=4101" />
-  <link rel="stylesheet" href="/profile/profile.css?v=4101" />
+  <link rel="stylesheet" href="/css/style.css?v=4201" />
+  <link rel="stylesheet" href="/profile/profile.css?v=4201" />
 </head>
 
 <body>
@@ -55,7 +55,7 @@
         <button id="tabSeaBtn" class="tab" data-tab="sea" type="button">Sea Service</button>
       </div>
 
-      <!-- Panes -->
+      <!-- About -->
       <section id="tab_about" class="pane">
         <div class="paneTitle" id="aboutTitle">Overview</div>
 
@@ -103,29 +103,94 @@
         <div class="muted">Coming next: document upload + verification.</div>
       </section>
 
-      <!-- Company / Professional -->
+      <!-- Company / Professional (structured) -->
       <section id="tab_experience" class="pane hidden">
-        <div class="paneTitle" id="expTitle">Experience</div>
 
-        <div class="muted" style="margin-bottom:10px;">
-          You can write your experience like LinkedIn. Add years, companies, achievements, services, etc.
-          (You can even type simple tables using text.)
+        <!-- Professional Experience -->
+        <div id="proExpWrap" class="hidden">
+          <div class="paneTitle">Experience</div>
+          <div class="muted" style="margin-bottom:10px;">
+            Add service years, companies, achievements, services — like LinkedIn.
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Professional summary</div>
+            <textarea id="proSummary" rows="4" style="width:100%;resize:vertical" placeholder="Your professional summary…"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Services (one per line)</div>
+            <textarea id="proServices" rows="4" style="width:100%;resize:vertical" placeholder="Example:
+Crew training
+ISM audits
+Port operations support"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Achievements (one per line)</div>
+            <textarea id="proAchievements" rows="4" style="width:100%;resize:vertical" placeholder="Example:
+Reduced delays by 20%
+Handled 100+ port calls"></textarea>
+          </div>
+
+          <div class="paneTitle" style="margin-top:12px;">Work history</div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;">
+            <button id="addExpBtn" class="btnGhost" type="button">+ Add Experience</button>
+          </div>
+
+          <div id="expList"></div>
         </div>
 
-        <div class="box span2">
-          <div class="k">Experience / Portfolio</div>
-          <textarea id="experienceText" rows="10" style="width:100%; resize:vertical;"
-            placeholder="Example:
-• 5 years in crewing operations
-• Worked with: ABC Ship Mgmt, XYZ Crewing
-• Services: Crew sourcing, compliance, training
+        <!-- Company Profile -->
+        <div id="companyWrap" class="hidden">
+          <div class="paneTitle">Company profile</div>
+          <div class="muted" style="margin-bottom:10px;">
+            Define what the company is, mission, vision, core values, services, achievements, and workforce.
+          </div>
 
-Table example (type):
-Company | Role | Years
-ABC     | Ops  | 2019-2022
-XYZ     | HR   | 2022-2025
-"></textarea>
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">What the company is</div>
+            <textarea id="coWhat" rows="3" style="width:100%;resize:vertical" placeholder="What your company/institute does…"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Mission</div>
+            <textarea id="coMission" rows="3" style="width:100%;resize:vertical" placeholder="Mission…"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Core vision</div>
+            <textarea id="coVision" rows="3" style="width:100%;resize:vertical" placeholder="Vision…"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Core values</div>
+            <textarea id="coValues" rows="3" style="width:100%;resize:vertical" placeholder="Core values…"></textarea>
+          </div>
+
+          <div class="box" style="margin-bottom:12px;">
+            <div class="k">Total workers</div>
+            <input id="coWorkers" type="number" min="0" placeholder="e.g., 120" style="width:100%;" />
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Services (one per line)</div>
+            <textarea id="coServices" rows="5" style="width:100%;resize:vertical" placeholder="Example:
+Crew recruitment
+Vessel management
+Training & compliance"></textarea>
+          </div>
+
+          <div class="box span2" style="margin-bottom:12px;">
+            <div class="k">Achievements (one per line)</div>
+            <textarea id="coAchievements" rows="5" style="width:100%;resize:vertical" placeholder="Example:
+10,000+ seafarers placed
+ISO certified
+5 global offices"></textarea>
+          </div>
         </div>
+
       </section>
 
       <!-- Seafarer -->
@@ -137,6 +202,6 @@ XYZ     | HR   | 2022-2025
     </section>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=4101"></script>
+  <script type="module" src="/profile/profile.js?v=4201"></script>
 </body>
 </html>
