@@ -49,11 +49,7 @@ const els = {
 
 let currentUser = null;
 let countries = [];
-
-// Will be saved into profiles.avatar_url (path only)
 let avatarPath = null;
-
-/* ===================== DROPDOWNS ===================== */
 
 /* Seafarer ship roles only */
 const RANKS = [
@@ -63,42 +59,36 @@ const RANKS = [
   "Third Officer / 3/O",
   "Fourth Officer / 4/O",
   "Deck Cadet / Trainee",
-
   "Bosun",
   "AB / Able Seaman",
   "OS / Ordinary Seaman",
   "Trainee AB",
   "Trainee OS",
-
   "Chief Engineer",
   "Second Engineer",
   "Third Engineer",
   "Fourth Engineer",
   "Fifth Engineer / Junior Engineer",
   "Engine Cadet / Trainee",
-
   "Motorman",
   "Oiler",
   "Wiper",
   "Fitter",
   "Pumpman",
-
   "ETO / Electro-Technical Officer",
   "Electrician",
-
   "Cook / Messman",
   "Other"
 ];
 
-/* Company / Institute and Maritime Professionals (non-seafarer) */
+/* Company / Institute and Maritime Professionals */
 const ROLES = [
-  // Company / Institute / Employer-type roles
   "Crewing / Manning Company",
   "Ship Management Company",
   "Ship Owner / Operator",
   "Training Institute",
   "Maritime Academy / College",
-  "Marine Recruitment Agency",
+  "Maritime Recruitment Agency",
   "Ship Chandling / Supplier",
   "Port / Terminal Company",
   "Classification Society",
@@ -107,8 +97,6 @@ const ROLES = [
   "Maritime Software / IT Company",
   "Logistics / Freight Forwarder",
   "Other",
-
-  // Maritime Professional (shore / specialist)
   "Marine Superintendent",
   "Technical Superintendent",
   "Port Captain",
@@ -128,7 +116,6 @@ const ROLES = [
   "Other"
 ];
 
-/* ===================== UI HELPERS ===================== */
 function show(el){ el && el.classList.remove("hidden"); }
 function hide(el){ el && el.classList.add("hidden"); }
 
@@ -194,7 +181,6 @@ function getPhone(){
   return num;
 }
 
-/* ===================== GENERIC COMBO ===================== */
 function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
   if (!inputEl || !listEl) return;
   const key = comboName;
@@ -228,6 +214,7 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
           const txt = (typeof it === "string" ? it : (it?.name || it?.dial_code || "")).toLowerCase();
           return txt.includes(q);
         }).slice(0, 200);
+
     render(filtered);
     showList(listEl);
   }
@@ -242,11 +229,9 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
   render(items.slice(0, 120));
 }
 
-/* ===================== COUNTRIES ===================== */
 async function loadCountries(){
   const res = await fetch("/data/countries.json", { cache: "no-store" });
   const json = await res.json();
-
   countries = (json || [])
     .map(c => ({
       name: c.name || c.country || c.Country || "",
@@ -256,7 +241,6 @@ async function loadCountries(){
     .filter(c => c.name);
 }
 
-/* ===================== AVATAR PREVIEW ===================== */
 function setAvatarPreviewFromUrl(url){
   if (!els.avatarPreview) return;
   els.avatarPreview.innerHTML = "";
@@ -266,7 +250,7 @@ function setAvatarPreviewFromUrl(url){
   if (!url) els.avatarPreview.innerHTML = `<span class="avatarHint">Add photo</span>`;
 }
 
-/* ===================== MODERN CROP MODAL (Injected) ===================== */
+/* ===================== MODERN CROP MODAL ===================== */
 let cropModal = null;
 let cropCanvas = null;
 let cropCtx = null;
@@ -280,7 +264,7 @@ let dragging = false;
 let lastX = 0, lastY = 0;
 
 let aspect = 1; // 1:1 default
-let pendingBlob = null; // saved avatar blob ready to upload
+let pendingBlob = null;
 
 function ensureCropModal(){
   if (cropModal) return;
@@ -340,12 +324,7 @@ function ensureCropModal(){
       border-color: rgba(31,111,134,.30);
       color:#0b1b24;
     }
-    .pvSliderRow{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:10px;
-      margin-top: 12px;
-    }
+    .pvSliderRow{display:grid; grid-template-columns:1fr; gap:10px; margin-top: 12px;}
     .pvSlider{
       display:flex; align-items:center; gap:10px;
       background: rgba(0,0,0,.03);
@@ -355,16 +334,8 @@ function ensureCropModal(){
     }
     .pvSlider .lbl{min-width:88px; font-weight:700; color:#334; font-size:13px}
     .pvSlider input[type="range"]{width:100%}
-    .pvFoot{
-      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
-      margin-top: 14px;
-    }
-    .pvBtn{
-      border:0; cursor:pointer;
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-weight:800;
-    }
+    .pvFoot{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top: 14px;}
+    .pvBtn{border:0; cursor:pointer; padding: 10px 14px; border-radius: 14px; font-weight:800;}
     .pvGhost{background: rgba(0,0,0,.06)}
     .pvPrimary{background: #1F6F86; color:#fff}
   `;
@@ -437,7 +408,6 @@ function ensureCropModal(){
   document.getElementById("pvCropClose").addEventListener("click", closeCrop);
   document.getElementById("pvCancel").addEventListener("click", closeCrop);
 
-  // Aspect buttons
   back.querySelectorAll("[data-aspect]").forEach((btn) => {
     btn.addEventListener("click", () => {
       back.querySelectorAll("[data-aspect]").forEach(b => b.classList.remove("active"));
@@ -447,7 +417,6 @@ function ensureCropModal(){
     });
   });
 
-  // Sliders
   const rerender = () => drawCrop();
   document.getElementById("pvZoom").addEventListener("input", (e) => {
     zoom = Number(e.target.value || 1.4);
@@ -457,45 +426,30 @@ function ensureCropModal(){
   document.getElementById("pvContrast").addEventListener("input", rerender);
   document.getElementById("pvSat").addEventListener("input", rerender);
 
-  // Presets
   const bright = () => document.getElementById("pvBright");
   const cont = () => document.getElementById("pvContrast");
   const sat = () => document.getElementById("pvSat");
 
   document.getElementById("pvPresetWarm").addEventListener("click", () => {
-    bright().value = "108";
-    cont().value = "108";
-    sat().value = "125";
-    drawCrop();
+    bright().value = "108"; cont().value = "108"; sat().value = "125"; drawCrop();
   });
   document.getElementById("pvPresetCool").addEventListener("click", () => {
-    bright().value = "102";
-    cont().value = "106";
-    sat().value = "112";
-    drawCrop();
+    bright().value = "102"; cont().value = "106"; sat().value = "112"; drawCrop();
   });
   document.getElementById("pvPresetBW").addEventListener("click", () => {
-    bright().value = "103";
-    cont().value = "112";
-    sat().value = "0";
-    drawCrop();
+    bright().value = "103"; cont().value = "112"; sat().value = "0"; drawCrop();
   });
   document.getElementById("pvPresetReset").addEventListener("click", () => {
     document.getElementById("pvZoom").value = "1.4";
     zoom = 1.4;
-    bright().value = "105";
-    cont().value = "105";
-    sat().value = "110";
-    offsetX = 0;
-    offsetY = 0;
+    bright().value = "105"; cont().value = "105"; sat().value = "110";
+    offsetX = 0; offsetY = 0;
     drawCrop();
   });
 
-  // Save photo (creates blob; actual upload happens on profile save)
   document.getElementById("pvSavePhoto").addEventListener("click", async () => {
     try {
       pendingBlob = await exportCroppedWebpBlob();
-      // Update preview immediately
       const url = URL.createObjectURL(pendingBlob);
       setAvatarPreviewFromUrl(url);
       closeCrop();
@@ -506,26 +460,21 @@ function ensureCropModal(){
     }
   });
 
-  // Drag to position
   cropCanvas.addEventListener("pointerdown", (ev) => {
     if (!cropImg) return;
     dragging = true;
     const p = pointerPos(ev);
-    lastX = p.x;
-    lastY = p.y;
+    lastX = p.x; lastY = p.y;
     cropCanvas.setPointerCapture(ev.pointerId);
   });
-
   cropCanvas.addEventListener("pointermove", (ev) => {
     if (!dragging || !cropImg) return;
     const p = pointerPos(ev);
     offsetX += (p.x - lastX);
     offsetY += (p.y - lastY);
-    lastX = p.x;
-    lastY = p.y;
+    lastX = p.x; lastY = p.y;
     drawCrop();
   });
-
   cropCanvas.addEventListener("pointerup", () => { dragging = false; });
   cropCanvas.addEventListener("pointercancel", () => { dragging = false; });
 }
@@ -540,7 +489,6 @@ function openCropWithFile(file){
     imgW = img.naturalWidth;
     imgH = img.naturalHeight;
 
-    // reset position for new image
     zoom = 1.4;
     offsetX = 0;
     offsetY = 0;
@@ -572,105 +520,14 @@ function getFilterString(){
   return `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
 }
 
+/* ✅ FIXED: overlay is drawn as 4 rectangles (no clearRect that deletes image) */
 function drawCrop(){
   if (!cropCtx || !cropImg) return;
 
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
-
   cropCtx.clearRect(0, 0, cw, ch);
 
-  // Determine crop frame based on aspect ratio (centered)
-  const pad = 26;
-  const frameMaxW = cw - pad * 2;
-  const frameMaxH = ch - pad * 2;
-
-  let frameW = frameMaxW;
-  let frameH = frameW / aspect;
-
-  if (frameH > frameMaxH) {
-    frameH = frameMaxH;
-    frameW = frameH * aspect;
-  }
-
-  const frameX = (cw - frameW) / 2;
-  const frameY = (ch - frameH) / 2;
-
-  // Draw image behind
-  cropCtx.save();
-  cropCtx.filter = getFilterString();
-
-  const drawW = imgW * zoom;
-  const drawH = imgH * zoom;
-  const x = (cw - drawW) / 2 + offsetX;
-  const y = (ch - drawH) / 2 + offsetY;
-
-  cropCtx.drawImage(cropImg, x, y, drawW, drawH);
-  cropCtx.restore();
-
-  // Dim outside frame
-  cropCtx.save();
-  cropCtx.fillStyle = "rgba(3,10,14,.45)";
-  cropCtx.fillRect(0, 0, cw, ch);
-  cropCtx.clearRect(frameX, frameY, frameW, frameH);
-  cropCtx.restore();
-
-  // Frame border
-  cropCtx.save();
-  cropCtx.strokeStyle = "rgba(31,111,134,.95)";
-  cropCtx.lineWidth = 3;
-  cropCtx.strokeRect(frameX, frameY, frameW, frameH);
-  cropCtx.restore();
-
-  // subtle corners
-  cropCtx.save();
-  cropCtx.strokeStyle = "rgba(255,255,255,.9)";
-  cropCtx.lineWidth = 2;
-  const corner = 18;
-  // TL
-  cropCtx.beginPath();
-  cropCtx.moveTo(frameX, frameY + corner);
-  cropCtx.lineTo(frameX, frameY);
-  cropCtx.lineTo(frameX + corner, frameY);
-  cropCtx.stroke();
-  // TR
-  cropCtx.beginPath();
-  cropCtx.moveTo(frameX + frameW - corner, frameY);
-  cropCtx.lineTo(frameX + frameW, frameY);
-  cropCtx.lineTo(frameX + frameW, frameY + corner);
-  cropCtx.stroke();
-  // BL
-  cropCtx.beginPath();
-  cropCtx.moveTo(frameX, frameY + frameH - corner);
-  cropCtx.lineTo(frameX, frameY + frameH);
-  cropCtx.lineTo(frameX + corner, frameY + frameH);
-  cropCtx.stroke();
-  // BR
-  cropCtx.beginPath();
-  cropCtx.moveTo(frameX + frameW - corner, frameY + frameH);
-  cropCtx.lineTo(frameX + frameW, frameY + frameH);
-  cropCtx.lineTo(frameX + frameW, frameY + frameH - corner);
-  cropCtx.stroke();
-  cropCtx.restore();
-}
-
-async function exportCroppedWebpBlob(){
-  if (!cropImg) throw new Error("No image");
-
-  // Create output canvas as a square for avatar final (best for profile)
-  // Even if user chooses 4:5 or 16:9, we’ll still export to avatar.webp in 1:1
-  // BUT: you asked ratio selectable — for setup we respect it visually and export that frame ratio.
-  const outW = 720;
-  const outH = Math.round(outW / aspect);
-
-  const out = document.createElement("canvas");
-  out.width = outW;
-  out.height = outH;
-  const ctx = out.getContext("2d");
-
-  // Match the same frame used in drawCrop
-  const cw = cropCanvas.width;
-  const ch = cropCanvas.height;
   const pad = 26;
   const frameMaxW = cw - pad * 2;
   const frameMaxH = ch - pad * 2;
@@ -682,14 +539,71 @@ async function exportCroppedWebpBlob(){
   const frameX = (cw - frameW) / 2;
   const frameY = (ch - frameH) / 2;
 
-  // Recompute image draw rect on cropCanvas
+  // Draw image
+  cropCtx.save();
+  cropCtx.filter = getFilterString();
+
   const drawW = imgW * zoom;
   const drawH = imgH * zoom;
   const x = (cw - drawW) / 2 + offsetX;
   const y = (ch - drawH) / 2 + offsetY;
 
-  // We need to map the frame area to source image coordinates
-  // Source area on cropCanvas that corresponds to frame:
+  cropCtx.drawImage(cropImg, x, y, drawW, drawH);
+  cropCtx.restore();
+
+  // Dark overlay OUTSIDE the frame (4 rectangles)
+  cropCtx.save();
+  cropCtx.fillStyle = "rgba(3,10,14,.45)";
+
+  // Top
+  cropCtx.fillRect(0, 0, cw, frameY);
+  // Bottom
+  cropCtx.fillRect(0, frameY + frameH, cw, ch - (frameY + frameH));
+  // Left
+  cropCtx.fillRect(0, frameY, frameX, frameH);
+  // Right
+  cropCtx.fillRect(frameX + frameW, frameY, cw - (frameX + frameW), frameH);
+
+  cropCtx.restore();
+
+  // Frame border
+  cropCtx.save();
+  cropCtx.strokeStyle = "rgba(31,111,134,.95)";
+  cropCtx.lineWidth = 3;
+  cropCtx.strokeRect(frameX, frameY, frameW, frameH);
+  cropCtx.restore();
+}
+
+async function exportCroppedWebpBlob(){
+  if (!cropImg) throw new Error("No image");
+
+  const outW = 720;
+  const outH = Math.round(outW / aspect);
+
+  const out = document.createElement("canvas");
+  out.width = outW;
+  out.height = outH;
+  const ctx = out.getContext("2d");
+
+  const cw = cropCanvas.width;
+  const ch = cropCanvas.height;
+  const pad = 26;
+
+  const frameMaxW = cw - pad * 2;
+  const frameMaxH = ch - pad * 2;
+
+  let frameW = frameMaxW;
+  let frameH = frameW / aspect;
+  if (frameH > frameMaxH) { frameH = frameMaxH; frameW = frameH * aspect; }
+
+  const frameX = (cw - frameW) / 2;
+  const frameY = (ch - frameH) / 2;
+
+  const drawW = imgW * zoom;
+  const drawH = imgH * zoom;
+  const x = (cw - drawW) / 2 + offsetX;
+  const y = (ch - drawH) / 2 + offsetY;
+
   const sx = (frameX - x) / drawW * imgW;
   const sy = (frameY - y) / drawH * imgH;
   const sw = frameW / drawW * imgW;
@@ -705,7 +619,7 @@ async function exportCroppedWebpBlob(){
   return blob;
 }
 
-/* ===================== VALIDATION ===================== */
+/* ===================== VALIDATION + UI ===================== */
 function validate(){
   clearError();
 
@@ -722,12 +636,10 @@ function validate(){
   const roleOtherOk = !(isCompanyOrProfessional() && (els.roleValue?.value === "Other")) || ((els.roleOther?.value || "").trim().length > 1);
 
   const ok = acctOk && otherOk && nationalityOk && rankOk && rankOtherOk && roleOk && roleOtherOk;
-
   if (els.saveBtn) els.saveBtn.disabled = !ok;
   return ok;
 }
 
-/* ===================== ACCOUNT UI SWITCH ===================== */
 function syncAccountUI(){
   const acct = els.accountType?.value || "";
 
@@ -737,7 +649,6 @@ function syncAccountUI(){
   if (acct === "seafarer") show(els.rankWrap);
   else hide(els.rankWrap);
 
-  // employer + shore + other use ROLE dropdown (company/institute/professional)
   if (acct === "employer" || acct === "shore" || acct === "other") {
     show(els.roleWrap);
     show(els.companyWrap);
@@ -749,7 +660,6 @@ function syncAccountUI(){
   validate();
 }
 
-/* ===================== UPLOAD AVATAR (Storage + DB path) ===================== */
 async function uploadAvatarIfAny(){
   if (!pendingBlob) return null;
   if (!currentUser?.id) return null;
@@ -767,7 +677,6 @@ async function uploadAvatarIfAny(){
   return path;
 }
 
-/* ===================== SAVE PROFILE ===================== */
 async function saveProfile(){
   if (!validate()) {
     showError("Please complete the required fields (Account type, Nationality, Role).");
@@ -778,7 +687,6 @@ async function saveProfile(){
   els.saveBtn.textContent = "Saving…";
 
   try {
-    // Upload avatar first (if user selected)
     await uploadAvatarIfAny();
 
     const payload = {
@@ -789,7 +697,6 @@ async function saveProfile(){
 
       rank: isSeafarer() ? getRank() : null,
 
-      // company/professional fields
       role: isCompanyOrProfessional() ? getRole() : null,
       company_name: isCompanyOrProfessional() ? (els.companyName?.value || "").trim() : null,
 
@@ -797,7 +704,7 @@ async function saveProfile(){
       phone: getPhone(),
       bio: (els.bio?.value || "").trim(),
 
-      avatar_url: avatarPath, // path only
+      avatar_url: avatarPath,
       setup_complete: true,
       updated_at: new Date().toISOString()
     };
@@ -814,7 +721,6 @@ async function saveProfile(){
   }
 }
 
-/* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", async () => {
   const { data } = await supabase.auth.getUser();
   currentUser = data?.user;
@@ -826,7 +732,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadCountries();
 
-  // Rank combo
   makeCombo({
     comboName: "rank",
     inputEl: els.rankSearch,
@@ -841,7 +746,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Role combo (company/professional)
   makeCombo({
     comboName: "role",
     inputEl: els.roleSearch,
@@ -856,7 +760,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Country combo
   makeCombo({
     comboName: "country",
     inputEl: els.countrySearch,
@@ -874,7 +777,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Dial combo
   makeCombo({
     comboName: "dial",
     inputEl: els.dialSearch,
@@ -888,7 +790,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Avatar: open crop modal on select
   els.photoInput?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -903,7 +804,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     validate();
   });
 
-  // Events
   els.accountType?.addEventListener("change", syncAccountUI);
   els.accountTypeOther?.addEventListener("input", validate);
   els.rankOther?.addEventListener("input", validate);
@@ -919,11 +819,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.fullName?.addEventListener("input", validate);
   els.dob?.addEventListener("change", validate);
 
-  // Save
   els.form?.addEventListener("submit", (e) => { e.preventDefault(); saveProfile(); });
   els.saveBtn?.addEventListener("click", (e) => { e.preventDefault(); saveProfile(); });
 
-  // initial
   syncAccountUI();
   validate();
 });
