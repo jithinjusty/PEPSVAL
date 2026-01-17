@@ -1,192 +1,44 @@
 :root{
   --bg:#f6fbff;
-  --card:#ffffff;
+  --card:#fff;
   --line:#dbe7ef;
   --text:#0b1b24;
   --muted:#5a6b76;
   --brand:#1F6F86;
+  --radius:18px;
 }
 
-.hidden{display:none !important}
+body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
 
-.wrap{
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 14px 12px 80px;
-}
+.profileWrap{max-width:900px;margin:auto;padding:12px}
+.profileCard{background:var(--card);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
 
-.profileCard{
-  background: var(--card);
-  border: 1px solid rgba(0,0,0,.06);
-  border-radius: 22px;
-  box-shadow: 0 10px 35px rgba(0,0,0,.06);
-  padding: 14px;
-  overflow: visible; /* IMPORTANT: dropdown must not be clipped */
-}
+.profileHeader{display:flex;gap:14px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
+.avatarBtn{width:72px;height:72px;border-radius:999px;border:1px solid var(--line);overflow:hidden;background:#eef6fb}
+.avatarImg{width:100%;height:100%;object-fit:cover}
+.avatarFallback{display:flex;align-items:center;justify-content:center;height:100%;font-weight:900;color:var(--brand)}
 
-.profileTop{
-  display:flex;
-  gap:14px;
-  align-items:center;
-  padding: 10px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(31,111,134,.08), rgba(255,255,255,0));
-  border: 1px solid rgba(31,111,134,.12);
-}
+.headerInfo h1{margin:0;font-size:20px}
+.headerMeta{font-size:13px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap}
 
-.avatarWrap{display:flex; flex-direction:column; gap:6px; align-items:center}
-.avatarBtn{border:0; background:transparent; padding:0; cursor:pointer}
-.avatarShell{
-  width: 72px;
-  height: 72px;
-  border-radius: 999px;
-  border: 2px solid rgba(31,111,134,.25);
-  background: #eef6fb;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.avatarShell img{width:100%; height:100%; object-fit:cover}
-.avatarFallback{font-weight:900; color: var(--brand); font-size: 22px}
-.avatarHint{font-size:12px; color: var(--muted)}
+.tabs{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:1px solid var(--line);padding:8px 14px;border-radius:999px;background:#fff;font-weight:800}
+.tab.active{background:rgba(31,111,134,.12);color:var(--brand)}
 
-.headerText{flex:1}
-.nameRow{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-.name{font-size:22px; font-weight:900; color: var(--text)}
-.badge{
-  font-weight:800;
-  padding: 7px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(31,111,134,.25);
-  background: rgba(31,111,134,.08);
-  color: var(--text);
-}
+.tabPane{padding:14px}
+.hidden{display:none}
 
-.miniRow{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; color: var(--muted); font-weight:600}
-.miniItem{font-size:13px}
+.paneHeader{display:flex;justify-content:space-between;align-items:center}
 
-.tabs{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  padding: 12px 6px 2px;
-}
+.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.formGrid{grid-template-columns:1fr}}
 
-.tab{
-  border: 1px solid rgba(0,0,0,.10);
-  background: #fff;
-  padding: 8px 12px;
-  border-radius: 999px;
-  cursor:pointer;
-  font-weight:800;
-  color: var(--text);
-}
-.tab.active{
-  border-color: rgba(31,111,134,.35);
-  background: rgba(31,111,134,.10);
-}
+.field label{font-size:12px;font-weight:800;color:var(--muted)}
+.value{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f9fcff}
+.value.bio{min-height:80px}
+.field.full{grid-column:1/-1}
 
-.pane{
-  padding: 10px 8px 14px;
-  overflow: visible; /* IMPORTANT */
-}
+.btnGhost,.btnPrimary{padding:8px 14px;border-radius:999px;font-weight:900}
+.btnPrimary{background:var(--brand);color:#fff;border:none}
 
-.paneHead{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.paneTitle{font-weight:900; font-size:18px; color: var(--text)}
-.btnRow{display:flex; gap:10px}
-
-.aboutGrid{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-@media (max-width: 720px){
-  .aboutGrid{grid-template-columns: 1fr;}
-  .span2{grid-column:auto;}
-}
-
-.box{
-  border: 1px solid rgba(0,0,0,.06);
-  border-radius: 18px;
-  padding: 12px;
-  background: #fff;
-}
-.span2{grid-column: span 2;}
-
-.k{
-  font-size: 12px;
-  letter-spacing: .2px;
-  font-weight: 900;
-  color: #3a4b56;
-  margin-bottom: 6px;
-}
-.v{
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text);
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: rgba(0,0,0,.03);
-  border: 1px solid rgba(0,0,0,.06);
-  min-height: 40px;
-  display:flex;
-  align-items:center;
-}
-.v[contenteditable="true"]{
-  outline:none;
-  background: rgba(31,111,134,.08);
-  border-color: rgba(31,111,134,.22);
-}
-
-.bioText{align-items:flex-start}
-
-.muted{color: var(--muted); font-weight:700}
-
-/* ===== Combo dropdown (FIX for your issue) ===== */
-.combo{position:relative}
-.combo input{
-  width:100%;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,.10);
-  background:#fff;
-  font-weight:800;
-  outline:none;
-}
-.comboList{
-  position:absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,.10);
-  border-radius: 16px;
-  max-height: 260px;
-  overflow:auto;
-  z-index: 9999;
-  display:none;
-  box-shadow: 0 20px 60px rgba(0,0,0,.15);
-}
-.comboList.show{display:block}
-
-.comboItem{
-  padding: 10px 12px;
-  cursor:pointer;
-  font-weight:800;
-}
-.comboItem:hover{background: rgba(31,111,134,.08)}
-.comboEmpty{padding: 10px 12px; color: var(--muted); font-weight:800}
-
-.help{margin-top:8px; color: var(--muted); font-weight:700; font-size:12px}
-.field{margin-top: 0}
-.lbl{font-weight:900; color: var(--text)}
-.req{color:#d12; font-weight:900}
+.dropdown{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;z-index:10;width:100%;max-height:220px;overflow:auto}
