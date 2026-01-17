@@ -16,6 +16,20 @@ const elProfileName = document.getElementById("profileName");
 const elMiniRank = document.getElementById("miniRank");
 const elMiniNationality = document.getElementById("miniNationality");
 
+const miniLabel1 = document.getElementById("miniLabel1");
+const miniLabel2 = document.getElementById("miniLabel2");
+
+const k_fullName = document.getElementById("k_fullName");
+const k_rank = document.getElementById("k_rank");
+const k_nationality = document.getElementById("k_nationality");
+const k_lastVessel = document.getElementById("k_lastVessel");
+const k_availability = document.getElementById("k_availability");
+const overviewTitle = document.getElementById("overviewTitle");
+const overviewHint = document.getElementById("overviewHint");
+
+const tabBtn_sea = document.getElementById("tabBtn_sea");
+const tab_sea = document.getElementById("tab_sea");
+
 const postsWrap = document.getElementById("postsWrap");
 const documentsWrap = document.getElementById("documentsWrap");
 const seaWrap = document.getElementById("seaWrap");
@@ -36,6 +50,7 @@ const toastEl = document.getElementById("toast");
 /* ---------------- State ---------------- */
 let currentUser = null;
 let currentUserId = null;
+let currentAccountKind = "seafarer"; // seafarer | company | professional | other
 
 /* ---------------- Helpers ---------------- */
 function toast(msg) {
@@ -77,11 +92,7 @@ function setEditable(state) {
     fields.availability,
     fields.bio,
   ];
-
-  editableEls.forEach(el => {
-    if (!el) return;
-    el.contentEditable = state;
-  });
+  editableEls.forEach(el => { if (el) el.contentEditable = state; });
 
   card?.classList.toggle("is-editing", state);
   editBtn?.classList.toggle("hidden", state);
@@ -101,9 +112,7 @@ function publicAvatarUrlFromPath(path) {
 
 function setAvatar(avatarUrlOrPath, nameForInitials) {
   const raw = (avatarUrlOrPath || "").toString().trim();
-  const finalUrl = raw
-    ? (looksLikeUrl(raw) ? raw : publicAvatarUrlFromPath(raw))
-    : "";
+  const finalUrl = raw ? (looksLikeUrl(raw) ? raw : publicAvatarUrlFromPath(raw)) : "";
 
   if (finalUrl) {
     avatarImg.src = finalUrl;
@@ -129,11 +138,89 @@ function setAccountTypeBadge(account_type, account_type_label) {
   typeBadge.textContent = label;
 }
 
-function pickFirst(obj, keys, fallback = null) {
+function pickFirst(obj, keys, fallback = "") {
   for (const k of keys) {
     if (obj && obj[k] != null && String(obj[k]).trim() !== "") return obj[k];
   }
   return fallback;
+}
+
+function detectAccountKind(p) {
+  const label = (p?.account_type_label || p?.account_type || "").toString().toLowerCase();
+
+  if (label.includes("seafarer")) return "seafarer";
+  if (label.includes("company") || label.includes("institute") || label.includes("employer")) return "company";
+  if (label.includes("professional") || label.includes("shore")) return "professional";
+  return "other";
+}
+
+function show(el){ el && el.classList.remove("hidden"); }
+function hide(el){ el && el.classList.add("hidden"); }
+
+function applyLayout(kind) {
+  currentAccountKind = kind;
+
+  // Default: show everything
+  show(tabBtn_sea);
+  show(tab_sea);
+
+  // Seafarer layout
+  if (kind === "seafarer") {
+    if (overviewTitle) overviewTitle.textContent = "Overview";
+    if (overviewHint) overviewHint.textContent = "Your profile is your identity on Pepsval. Verified details increase trust and visibility.";
+
+    if (miniLabel1) miniLabel1.textContent = "Rank";
+    if (miniLabel2) miniLabel2.textContent = "Nationality";
+
+    if (k_fullName) k_fullName.textContent = "Full Name";
+    if (k_rank) k_rank.textContent = "Rank";
+    if (k_nationality) k_nationality.textContent = "Nationality";
+    if (k_lastVessel) k_lastVessel.textContent = "Last Vessel / Company";
+    if (k_availability) k_availability.textContent = "Availability / Job Title";
+
+    return;
+  }
+
+  // Company / Professional: hide Sea Service tab + pane
+  hide(tabBtn_sea);
+  hide(tab_sea);
+
+  if (kind === "company") {
+    if (overviewTitle) overviewTitle.textContent = "Company Profile";
+    if (overviewHint) overviewHint.textContent = "Keep your company profile accurate. Verified details improve trust with seafarers.";
+
+    if (miniLabel1) miniLabel1.textContent = "Category";
+    if (miniLabel2) miniLabel2.textContent = "Country";
+
+    if (k_fullName) k_fullName.textContent = "Company / Institute Name";
+    if (k_rank) k_rank.textContent = "Department / Contact";
+    if (k_nationality) k_nationality.textContent = "Country";
+    if (k_lastVessel) k_lastVessel.textContent = "Company / Brand";
+    if (k_availability) k_availability.textContent = "Business Type / Role";
+    return;
+  }
+
+  if (kind === "professional") {
+    if (overviewTitle) overviewTitle.textContent = "Professional Profile";
+    if (overviewHint) overviewHint.textContent = "A strong professional profile helps companies and seafarers trust your experience.";
+
+    if (miniLabel1) miniLabel1.textContent = "Role";
+    if (miniLabel2) miniLabel2.textContent = "Country";
+
+    if (k_fullName) k_fullName.textContent = "Full Name";
+    if (k_rank) k_rank.textContent = "Specialty / Position";
+    if (k_nationality) k_nationality.textContent = "Country";
+    if (k_lastVessel) k_lastVessel.textContent = "Company / Organization";
+    if (k_availability) k_availability.textContent = "Role / Job Title";
+    return;
+  }
+
+  // Other
+  if (overviewTitle) overviewTitle.textContent = "Profile";
+  if (miniLabel1) miniLabel1.textContent = "Role";
+  if (miniLabel2) miniLabel2.textContent = "Country";
+  hide(tabBtn_sea);
+  hide(tab_sea);
 }
 
 /* ---------------- Tabs ---------------- */
@@ -148,6 +235,9 @@ function initTabs() {
   };
 
   function activate(key) {
+    // Prevent activating hidden sea tab
+    if (key === "sea" && currentAccountKind !== "seafarer") key = "about";
+
     tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === key));
     Object.entries(panes).forEach(([k, el]) => {
       if (!el) return;
@@ -189,7 +279,7 @@ async function ensureProfileRow(user) {
 }
 
 async function fetchProfile(userId) {
-  // IMPORTANT: select("*") avoids crashes if some columns don't exist
+  // select("*") prevents missing-column crashes when schema changes
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -212,30 +302,57 @@ async function loadProfile() {
 
   const p = await fetchProfile(currentUserId);
 
+  // Decide layout first
+  const kind = detectAccountKind(p);
+  applyLayout(kind);
+
   const fullName = pickFirst(p, ["full_name", "name"], "");
-  const rank = pickFirst(p, ["rank"], "");
-  const nationality = pickFirst(p, ["nationality", "country"], "");
-  const bio = pickFirst(p, ["bio", "about"], "");
   const email = pickFirst(p, ["email"], currentUser.email || "");
+  const nationality = pickFirst(p, ["nationality", "country"], "");
+
+  // Setup page uses: company_name + role + rank(for seafarer)
+  // Older profile used: company + job_title
+  const company = pickFirst(p, ["company_name", "company", "last_company", "last_vessel"], "");
+  const role = pickFirst(p, ["role", "job_title", "availability"], "");
+  const rank = pickFirst(p, ["rank"], "");
+
+  const bio = pickFirst(p, ["bio", "about"], "");
   const avatar = pickFirst(p, ["avatar_url", "avatar"], "");
 
-  // Setup page uses: company_name + role
-  // Older pages may use: company + job_title
-  const company = pickFirst(p, ["company_name", "company", "last_company", "last_vessel"], "");
-  const availability = pickFirst(p, ["role", "job_title", "availability"], "");
-
   fields.full_name.textContent = safeText(fullName);
-  fields.rank.textContent = safeText(rank);
-  fields.nationality.textContent = safeText(nationality);
-  fields.lastVessel.textContent = safeText(company);
-  fields.availability.textContent = safeText(availability);
-  fields.bio.textContent = safeText(bio);
   fields.email.textContent = safeText(email);
 
-  elProfileName.textContent = safeText(fullName, "Profile");
-  elMiniRank.textContent = safeText(rank);
-  elMiniNationality.textContent = safeText(nationality);
+  // Values mapped by type (same boxes, different meaning)
+  if (kind === "seafarer") {
+    fields.rank.textContent = safeText(rank);
+    fields.nationality.textContent = safeText(nationality);
+    fields.lastVessel.textContent = safeText(company);
+    fields.availability.textContent = safeText(role);
 
+    elMiniRank.textContent = safeText(rank);
+    elMiniNationality.textContent = safeText(nationality);
+  } else if (kind === "company") {
+    fields.rank.textContent = safeText(rank);            // Department / Contact
+    fields.nationality.textContent = safeText(nationality);
+    fields.lastVessel.textContent = safeText(company);  // Company / Brand
+    fields.availability.textContent = safeText(role);   // Business Type / Role
+
+    elMiniRank.textContent = safeText(role, "—");       // Category
+    elMiniNationality.textContent = safeText(nationality);
+  } else {
+    // professional / other
+    fields.rank.textContent = safeText(rank);            // Specialty / Position
+    fields.nationality.textContent = safeText(nationality);
+    fields.lastVessel.textContent = safeText(company);   // Organization
+    fields.availability.textContent = safeText(role);    // Role / Job Title
+
+    elMiniRank.textContent = safeText(role, "—");
+    elMiniNationality.textContent = safeText(nationality);
+  }
+
+  fields.bio.textContent = safeText(bio);
+
+  elProfileName.textContent = safeText(fullName, "Profile");
   setAvatar(avatar, fullName || currentUser.email || "P");
   setAccountTypeBadge(p?.account_type, p?.account_type_label);
 }
@@ -248,20 +365,28 @@ saveBtn.onclick = async () => {
 
   const updates = {
     full_name: normalizeEditableValue(fields.full_name.textContent),
-    rank: normalizeEditableValue(fields.rank.textContent),
     nationality: normalizeEditableValue(fields.nationality.textContent),
-
-    // Save into both "new" and "old" names for compatibility
-    company_name: normalizeEditableValue(fields.lastVessel.textContent),
-    role: normalizeEditableValue(fields.availability.textContent),
-
     bio: normalizeEditableValue(fields.bio.textContent),
     updated_at: new Date().toISOString(),
   };
 
-  Object.keys(updates).forEach(k => {
-    if (updates[k] === null) delete updates[k];
-  });
+  // Save meaning depends on type, but we still store in consistent columns:
+  // - rank
+  // - company_name
+  // - role
+  const vRank = normalizeEditableValue(fields.rank.textContent);
+  const vCompany = normalizeEditableValue(fields.lastVessel.textContent);
+  const vRole = normalizeEditableValue(fields.availability.textContent);
+
+  if (vRank) updates.rank = vRank;
+  if (vCompany) updates.company_name = vCompany;
+  if (vRole) updates.role = vRole;
+
+  // Backward compatibility (older code may use these)
+  if (vCompany) updates.company = vCompany;
+  if (vRole) updates.job_title = vRole;
+
+  Object.keys(updates).forEach(k => { if (updates[k] === null) delete updates[k]; });
 
   const { error } = await supabase.from("profiles").update(updates).eq("id", currentUserId);
   if (error) {
@@ -276,12 +401,11 @@ saveBtn.onclick = async () => {
   await loadProfile();
 };
 
-/* ---------------- Posts tab ---------------- */
+/* ---------------- Posts tab (unchanged logic) ---------------- */
 function detectKeys(row) {
   const keys = row ? Object.keys(row) : [];
   const pick = (cands) => cands.find(k => keys.includes(k)) || null;
   return {
-    idKey: pick(["id", "post_id"]),
     userKey: pick(["user_id", "author_id", "profile_id", "uid", "user"]),
     contentKey: pick(["content", "text", "body", "caption", "post_text", "message"]),
     mediaKey: pick(["media_url", "image_url", "image", "photo_url", "video_url", "media"]),
@@ -366,10 +490,10 @@ async function loadMyPosts() {
   }).join("");
 }
 
-/* ---------------- Generic tabs ---------------- */
+/* ---------------- Generic tabs (unchanged) ---------------- */
 async function trySelectTable(table) {
   const t = await supabase.from(table).select("*").limit(1);
-  if (t.error) return { ok: false, error: t.error };
+  if (t.error) return { ok: false };
   return { ok: true };
 }
 
@@ -476,7 +600,7 @@ async function loadGenericTab(targetEl, tableCandidates) {
   }).join("");
 }
 
-/* ---------------- Avatar editor (crop + filters) ---------------- */
+/* ---------------- Avatar editor (keep your existing modal system) ---------------- */
 const modal = document.getElementById("imgModal");
 const cropCanvas = document.getElementById("cropCanvas");
 const zoomRange = document.getElementById("zoomRange");
@@ -530,13 +654,7 @@ function draw() {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, cw, ch);
 
-  if (!imgObj) {
-    ctx.fillStyle = "rgba(0,0,0,.55)";
-    ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Choose a photo", cw / 2, ch / 2);
-    return;
-  }
+  if (!imgObj) return;
 
   const zoom = parseFloat(zoomRange?.value || "1");
   const bri = parseFloat(briRange?.value || "1");
@@ -555,10 +673,6 @@ function draw() {
 
   ctx.drawImage(imgObj, x, y, w, h);
   ctx.restore();
-
-  ctx.strokeStyle = "rgba(0,0,0,.10)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, cw - 2, ch - 2);
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -578,7 +692,6 @@ function canvasToDataUrlWebp(size = 360, quality = 0.9) {
   const octx = out.getContext("2d");
   octx.drawImage(cropCanvas, 0, 0, size, size);
 
-  // Prefer webp; fallback to jpeg if browser doesn't support webp export
   try {
     const webp = out.toDataURL("image/webp", quality);
     if (webp.startsWith("data:image/webp")) return webp;
@@ -643,8 +756,7 @@ function wireEditorControls() {
   resetEditBtn?.addEventListener("click", resetEditor);
 
   saveAvatarBtn?.addEventListener("click", async () => {
-    if (!currentUserId) return;
-    if (!imgObj) return;
+    if (!currentUserId || !imgObj) return;
 
     try {
       saveAvatarBtn.disabled = true;
