@@ -12,11 +12,17 @@ const elMiniNationality = document.getElementById("miniNationality");
 
 const aboutTitle = document.getElementById("aboutTitle");
 const titleLabel = document.getElementById("titleLabel");
+
 const tabSeaBtn = document.getElementById("tabSeaBtn");
+const tabDocumentsBtn = document.getElementById("tabDocumentsBtn");
+const tabExperienceBtn = document.getElementById("tabExperienceBtn");
+
+const experienceText = document.getElementById("experienceText");
+const expTitle = document.getElementById("expTitle");
 
 const fields = {
   full_name: document.getElementById("fullName"),
-  titleValue: document.getElementById("titleValue"), // stored in profiles.rank (for all roles)
+  titleValue: document.getElementById("titleValue"), // stored in profiles.rank
   nationality: document.getElementById("nationality"),
   bio: document.getElementById("bio"),
   email: document.getElementById("email"),
@@ -64,7 +70,14 @@ function aboutTitleForRole(role) {
   return "Seafarer profile";
 }
 
+function expTitleForRole(role) {
+  if (role === "company") return "Company experience";
+  if (role === "professional") return "Experience";
+  return "Experience";
+}
+
 function setEditable(state) {
+  // About section uses contentEditable blocks
   const editableEls = [
     fields.full_name,
     fields.titleValue,
@@ -78,6 +91,12 @@ function setEditable(state) {
     el.style.background = state ? "#eef6fb" : "";
   });
 
+  // Experience textarea should be editable only when in edit mode
+  if (experienceText) {
+    experienceText.disabled = !state;
+    experienceText.style.background = state ? "#eef6fb" : "";
+  }
+
   editBtn?.classList.toggle("hidden", state);
   saveBtn?.classList.toggle("hidden", !state);
 }
@@ -85,7 +104,7 @@ function setEditable(state) {
 async function fetchProfileRow(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, rank, nationality, bio, setup_complete")
+    .select("id, full_name, role, rank, nationality, bio, experience_text, setup_complete")
     .eq("id", userId)
     .single();
 
@@ -94,26 +113,32 @@ async function fetchProfileRow(userId) {
 }
 
 function applyRoleUI(role) {
-  const label = roleLabel(role);
-  currentRole = role || "seafarer";
+  currentRole = (role || "seafarer").trim();
 
-  if (typeBadge) typeBadge.textContent = label;
+  if (typeBadge) typeBadge.textContent = roleLabel(currentRole);
 
   const titleLbl = titleLabelForRole(currentRole);
   if (titleLabel) titleLabel.textContent = titleLbl;
   if (elMiniTitleLabel) elMiniTitleLabel.textContent = titleLbl;
   if (aboutTitle) aboutTitle.textContent = aboutTitleForRole(currentRole);
 
-  // Sea Service only for seafarer
-  const seaVisible = currentRole === "seafarer";
-  if (tabSeaBtn) tabSeaBtn.style.display = seaVisible ? "" : "none";
+  // Seafarer sees Documents + Sea Service
+  const isSeafarer = currentRole === "seafarer";
 
-  // If currently on sea tab and role isn't seafarer, force About tab
-  if (!seaVisible) {
+  if (tabSeaBtn) tabSeaBtn.style.display = isSeafarer ? "" : "none";
+  if (tabDocumentsBtn) tabDocumentsBtn.style.display = isSeafarer ? "" : "none";
+
+  // Company/Professional sees Experience
+  if (tabExperienceBtn) tabExperienceBtn.style.display = isSeafarer ? "none" : "";
+
+  if (expTitle) expTitle.textContent = expTitleForRole(currentRole);
+
+  // If user is not seafarer and currently on a hidden tab, force About
+  if (!isSeafarer) {
     const seaPane = document.getElementById("tab_sea");
-    if (seaPane && !seaPane.classList.contains("hidden")) {
-      switchTab("about");
-    }
+    const docsPane = document.getElementById("tab_documents");
+    if (seaPane && !seaPane.classList.contains("hidden")) switchTab("about");
+    if (docsPane && !docsPane.classList.contains("hidden")) switchTab("about");
   }
 }
 
@@ -126,7 +151,7 @@ function wireTabs() {
 
 function switchTab(name) {
   const tabs = Array.from(document.querySelectorAll(".tab[data-tab]"));
-  const panes = ["about", "posts", "documents", "sea"].map(x => document.getElementById(`tab_${x}`));
+  const panes = ["about", "posts", "documents", "experience", "sea"].map(x => document.getElementById(`tab_${x}`));
 
   tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
   panes.forEach(p => {
@@ -146,14 +171,13 @@ async function loadProfile() {
   }
 
   currentUserId = session.user.id;
-
   const p = await fetchProfileRow(currentUserId);
 
   applyRoleUI(p.role);
 
   // About fields
   fields.full_name.textContent = safeText(p.full_name);
-  fields.titleValue.textContent = safeText(p.rank); // we store category-specific title in rank
+  fields.titleValue.textContent = safeText(p.rank);
   fields.nationality.textContent = safeText(p.nationality);
   fields.bio.textContent = safeText(p.bio);
   fields.email.textContent = safeText(session.user.email);
@@ -162,6 +186,11 @@ async function loadProfile() {
   elProfileName.textContent = safeText(p.full_name, "Profile");
   elMiniTitle.textContent = safeText(p.rank);
   elMiniNationality.textContent = safeText(p.nationality);
+
+  // Experience (company/professional)
+  if (experienceText) {
+    experienceText.value = (p.experience_text || "").toString();
+  }
 
   // Avatar initials
   if (avatarFallback) avatarFallback.textContent = initialsFromName(p.full_name || session.user.email || "P");
@@ -180,6 +209,11 @@ saveBtn?.addEventListener("click", async () => {
     bio: normalizeEditableValue(fields.bio.textContent),
     updated_at: new Date().toISOString()
   };
+
+  // Only save experience for non-seafarer accounts (but harmless even if saved)
+  if (experienceText) {
+    updates.experience_text = (experienceText.value || "").toString().trim() || null;
+  }
 
   Object.keys(updates).forEach(k => {
     if (updates[k] === null) delete updates[k];
