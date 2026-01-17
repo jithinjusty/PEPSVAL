@@ -48,9 +48,7 @@ const coAchievements = document.getElementById("coAchievements");
 let currentUserId = null;
 let currentRole = "seafarer";
 let editMode = false;
-
-// Professional experiences in memory
-let expItems = []; // [{id, company, position, start_date, end_date, currently_working, location, description, sort_order}]
+let expItems = [];
 
 function safeText(v, fallback = "—") {
   const t = (v ?? "").toString().trim();
@@ -95,40 +93,8 @@ function textToLines(t) {
     .map(x => x.trim())
     .filter(Boolean);
 }
-
 function linesToText(arr) {
   return (arr || []).join("\n");
-}
-
-function setEditable(state) {
-  editMode = state;
-
-  // About fields use contentEditable
-  const aboutEditable = [fields.full_name, fields.titleValue, fields.nationality, fields.bio];
-  aboutEditable.forEach(el => {
-    if (!el) return;
-    el.contentEditable = state;
-    el.style.background = state ? "#eef6fb" : "";
-  });
-
-  // Professional inputs
-  if (proSummary) proSummary.disabled = !state;
-  if (proServices) proServices.disabled = !state;
-  if (proAchievements) proAchievements.disabled = !state;
-  if (addExpBtn) addExpBtn.disabled = !state;
-
-  // Company inputs
-  [coWhat, coMission, coVision, coValues, coWorkers, coServices, coAchievements].forEach(el => {
-    if (!el) return;
-    el.disabled = !state;
-    el.style.background = state ? "#eef6fb" : "";
-  });
-
-  // Re-render experiences so inputs enable/disable
-  renderExperienceList();
-
-  editBtn?.classList.toggle("hidden", state);
-  saveBtn?.classList.toggle("hidden", !state);
 }
 
 function wireTabs() {
@@ -158,18 +124,13 @@ function applyRoleUI(role) {
 
   const isSeafarer = currentRole === "seafarer";
 
-  // Seafarer sees Documents + Sea Service
   if (tabSeaBtn) tabSeaBtn.style.display = isSeafarer ? "" : "none";
   if (tabDocumentsBtn) tabDocumentsBtn.style.display = isSeafarer ? "" : "none";
-
-  // Company/Professional sees Experience
   if (tabExperienceBtn) tabExperienceBtn.style.display = isSeafarer ? "none" : "";
 
-  // Experience pane split
   if (proExpWrap) proExpWrap.classList.toggle("hidden", currentRole !== "professional");
   if (companyWrap) companyWrap.classList.toggle("hidden", currentRole !== "company");
 
-  // If role hides current tab, bounce to About
   if (!isSeafarer) {
     const seaPane = document.getElementById("tab_sea");
     const docsPane = document.getElementById("tab_documents");
@@ -178,17 +139,7 @@ function applyRoleUI(role) {
   }
 }
 
-async function fetchProfileRow(userId) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, rank, nationality, bio, setup_complete")
-    .eq("id", userId)
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-/* ---------------- Professional Experience UI ---------------- */
+/* ---------- Experience cards ---------- */
 
 function newExpItem() {
   return {
@@ -259,7 +210,6 @@ function renderExperienceList() {
         </div>
       `;
 
-      // Fill values
       const setVal = (sel, val) => {
         const el = card.querySelector(sel);
         if (!el) return;
@@ -276,28 +226,22 @@ function renderExperienceList() {
       setVal('[data-f="location"]', it.location);
       setVal('[data-f="description"]', it.description);
 
-      // Wire input updates
       card.querySelectorAll("[data-f]").forEach(input => {
-        input.addEventListener("input", () => {
+        const update = () => {
           const f = input.getAttribute("data-f");
           if (f === "currently_working") it.currently_working = input.checked;
           else it[f] = input.value;
-        });
-        input.addEventListener("change", () => {
-          const f = input.getAttribute("data-f");
-          if (f === "currently_working") it.currently_working = input.checked;
-          else it[f] = input.value;
-        });
+        };
+        input.addEventListener("input", update);
+        input.addEventListener("change", update);
       });
 
-      // Wire actions
       card.querySelectorAll("[data-act]").forEach(btn => {
         btn.disabled = !editMode;
         btn.addEventListener("click", () => {
           const act = btn.getAttribute("data-act");
           if (act === "delete") {
             expItems = expItems.filter(x => x !== it);
-            // reindex sort_order
             expItems.forEach((x, i) => x.sort_order = i);
             renderExperienceList();
           }
@@ -324,27 +268,63 @@ function renderExperienceList() {
     });
 }
 
-/* ---------------- Load role-specific DB data ---------------- */
+/* ---------- Edit mode toggle ---------- */
+
+function setEditable(state) {
+  editMode = state;
+
+  // About fields
+  const aboutEditable = [fields.full_name, fields.titleValue, fields.nationality, fields.bio];
+  aboutEditable.forEach(el => {
+    if (!el) return;
+    el.contentEditable = state;
+    el.style.background = state ? "#eef6fb" : "";
+  });
+
+  // Professional fields
+  [proSummary, proServices, proAchievements].forEach(el => {
+    if (!el) return;
+    el.disabled = !state;
+    el.style.background = state ? "#eef6fb" : "";
+  });
+  if (addExpBtn) addExpBtn.disabled = !state;
+
+  // Company fields
+  [coWhat, coMission, coVision, coValues, coWorkers, coServices, coAchievements].forEach(el => {
+    if (!el) return;
+    el.disabled = !state;
+    el.style.background = state ? "#eef6fb" : "";
+  });
+
+  renderExperienceList();
+
+  editBtn?.classList.toggle("hidden", state);
+  saveBtn?.classList.toggle("hidden", !state);
+}
+
+/* ---------- Load / Save ---------- */
+
+async function fetchProfileRow(userId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, rank, nationality, bio, setup_complete")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  return data;
+}
 
 async function loadProfessionalDetails() {
-  // details
-  const { data: det, error: detErr } = await supabase
+  const { data: det } = await supabase
     .from("professional_details")
     .select("summary, services, achievements")
     .eq("profile_id", currentUserId)
     .maybeSingle();
 
-  if (!detErr && det) {
-    if (proSummary) proSummary.value = det.summary || "";
-    if (proServices) proServices.value = linesToText(det.services || []);
-    if (proAchievements) proAchievements.value = linesToText(det.achievements || []);
-  } else {
-    if (proSummary) proSummary.value = "";
-    if (proServices) proServices.value = "";
-    if (proAchievements) proAchievements.value = "";
-  }
+  if (proSummary) proSummary.value = det?.summary || "";
+  if (proServices) proServices.value = linesToText(det?.services || []);
+  if (proAchievements) proAchievements.value = linesToText(det?.achievements || []);
 
-  // experiences
   const { data: exps, error: expErr } = await supabase
     .from("professional_experience")
     .select("id, company, position, start_date, end_date, currently_working, location, description, sort_order")
@@ -361,69 +341,20 @@ async function loadProfessionalDetails() {
 }
 
 async function loadCompanyDetails() {
-  const { data: det, error } = await supabase
+  const { data: det } = await supabase
     .from("company_details")
     .select("what_we_are, mission, vision, core_values, services, achievements, total_workers")
     .eq("profile_id", currentUserId)
     .maybeSingle();
 
-  if (!error && det) {
-    if (coWhat) coWhat.value = det.what_we_are || "";
-    if (coMission) coMission.value = det.mission || "";
-    if (coVision) coVision.value = det.vision || "";
-    if (coValues) coValues.value = det.core_values || "";
-    if (coWorkers) coWorkers.value = (det.total_workers ?? "") === null ? "" : String(det.total_workers ?? "");
-    if (coServices) coServices.value = linesToText(det.services || []);
-    if (coAchievements) coAchievements.value = linesToText(det.achievements || []);
-  } else {
-    if (coWhat) coWhat.value = "";
-    if (coMission) coMission.value = "";
-    if (coVision) coVision.value = "";
-    if (coValues) coValues.value = "";
-    if (coWorkers) coWorkers.value = "";
-    if (coServices) coServices.value = "";
-    if (coAchievements) coAchievements.value = "";
-  }
+  if (coWhat) coWhat.value = det?.what_we_are || "";
+  if (coMission) coMission.value = det?.mission || "";
+  if (coVision) coVision.value = det?.vision || "";
+  if (coValues) coValues.value = det?.core_values || "";
+  if (coWorkers) coWorkers.value = (det?.total_workers ?? "") === null ? "" : String(det?.total_workers ?? "");
+  if (coServices) coServices.value = linesToText(det?.services || []);
+  if (coAchievements) coAchievements.value = linesToText(det?.achievements || []);
 }
-
-async function loadProfile() {
-  const session = await requireAuth();
-  if (!session) return;
-
-  const me = await getMyProfile(session.user.id);
-  if (!me || me.setup_complete !== true) {
-    window.location.href = "/setup/profile-setup.html";
-    return;
-  }
-
-  currentUserId = session.user.id;
-
-  const p = await fetchProfileRow(currentUserId);
-  applyRoleUI(p.role);
-
-  // About fields
-  fields.full_name.textContent = safeText(p.full_name);
-  fields.titleValue.textContent = safeText(p.rank);
-  fields.nationality.textContent = safeText(p.nationality);
-  fields.bio.textContent = safeText(p.bio);
-  fields.email.textContent = safeText(session.user.email);
-
-  // Header
-  elProfileName.textContent = safeText(p.full_name, "Profile");
-  elMiniTitle.textContent = safeText(p.rank);
-  elMiniNationality.textContent = safeText(p.nationality);
-
-  // Avatar initials
-  if (avatarFallback) avatarFallback.textContent = initialsFromName(p.full_name || session.user.email || "P");
-
-  // Role-specific load
-  if (currentRole === "professional") await loadProfessionalDetails();
-  if (currentRole === "company") await loadCompanyDetails();
-
-  setEditable(false);
-}
-
-/* ---------------- Save role-specific data ---------------- */
 
 async function saveProfessionalData() {
   const payload = {
@@ -437,15 +368,12 @@ async function saveProfessionalData() {
   const { error: dErr } = await supabase
     .from("professional_details")
     .upsert(payload, { onConflict: "profile_id" });
-
   if (dErr) throw dErr;
 
-  // Simplest safe sync: delete all then insert again
   const { error: delErr } = await supabase
     .from("professional_experience")
     .delete()
     .eq("profile_id", currentUserId);
-
   if (delErr) throw delErr;
 
   const cleaned = expItems
@@ -491,22 +419,46 @@ async function saveCompanyData() {
   if (error) throw error;
 }
 
-/* ---------------- Actions ---------------- */
+async function loadProfile() {
+  const session = await requireAuth();
+  if (!session) return;
 
-addExpBtn?.addEventListener("click", () => {
-  if (!editMode) return;
-  expItems.push(newExpItem());
-  expItems.forEach((x, i) => x.sort_order = i);
-  renderExperienceList();
-});
+  const me = await getMyProfile(session.user.id);
+  if (!me || me.setup_complete !== true) {
+    window.location.href = "/setup/profile-setup.html";
+    return;
+  }
 
+  currentUserId = session.user.id;
+
+  const p = await fetchProfileRow(currentUserId);
+  applyRoleUI(p.role);
+
+  fields.full_name.textContent = safeText(p.full_name);
+  fields.titleValue.textContent = safeText(p.rank);
+  fields.nationality.textContent = safeText(p.nationality);
+  fields.bio.textContent = safeText(p.bio);
+  fields.email.textContent = safeText(session.user.email);
+
+  elProfileName.textContent = safeText(p.full_name, "Profile");
+  elMiniTitle.textContent = safeText(p.rank);
+  elMiniNationality.textContent = safeText(p.nationality);
+
+  if (avatarFallback) avatarFallback.textContent = initialsFromName(p.full_name || session.user.email || "P");
+
+  if (currentRole === "professional") await loadProfessionalDetails();
+  if (currentRole === "company") await loadCompanyDetails();
+
+  setEditable(false);
+}
+
+// buttons
 editBtn?.addEventListener("click", () => setEditable(true));
 
 saveBtn?.addEventListener("click", async () => {
   if (!currentUserId) return;
 
   try {
-    // Save About section (profiles)
     const updates = {
       full_name: normalizeEditableValue(fields.full_name.textContent),
       rank: normalizeEditableValue(fields.titleValue.textContent),
@@ -522,7 +474,6 @@ saveBtn?.addEventListener("click", async () => {
     const { error: pErr } = await supabase.from("profiles").update(updates).eq("id", currentUserId);
     if (pErr) throw pErr;
 
-    // Save role-specific
     if (currentRole === "professional") await saveProfessionalData();
     if (currentRole === "company") await saveCompanyData();
 
@@ -534,8 +485,15 @@ saveBtn?.addEventListener("click", async () => {
   }
 });
 
-/* ---------------- Init ---------------- */
+// add experience
+addExpBtn?.addEventListener("click", () => {
+  if (!editMode) return;
+  expItems.push(newExpItem());
+  expItems.forEach((x, i) => x.sort_order = i);
+  renderExperienceList();
+});
 
+// init
 (function init() {
   wireTabs();
   loadProfile().catch(e => {
