@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/profile/profile.css?v=20260117-final2" />
 </head>
 
-<body class="app-bg">
+<body>
   <header class="topbar">
     <a class="brand" href="/feed/index.html" aria-label="Go to feed">
       <div class="brandWord">PEPSVAL</div>
@@ -37,65 +37,67 @@
           </div>
 
           <div class="miniRow">
-            <div class="miniItem">Rank: <span id="miniRank">—</span></div>
-            <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
+            <div class="miniItem"><span id="miniLabel1">Rank</span>: <span id="miniRank">—</span></div>
+            <div class="miniItem"><span id="miniLabel2">Nationality</span>: <span id="miniNationality">—</span></div>
           </div>
         </div>
       </div>
 
+      <!-- Tabs -->
       <div class="tabs" id="tabs">
         <button class="tab active" data-tab="about" type="button">About</button>
-        <button class="tab" data-tab="posts" type="button">Posts</button>
-        <button class="tab" data-tab="documents" type="button">Documents</button>
-        <button class="tab" data-tab="sea" type="button">Sea Service</button>
-        <button class="tab" data-tab="media" type="button">Media</button>
+        <button class="tab" data-tab="posts" type="button" id="tabBtn_posts">Posts</button>
+        <button class="tab" data-tab="documents" type="button" id="tabBtn_documents">Documents</button>
+        <button class="tab" data-tab="sea" type="button" id="tabBtn_sea">Sea Service</button>
+        <button class="tab" data-tab="media" type="button" id="tabBtn_media">Media</button>
       </div>
 
+      <!-- Panes -->
       <section id="tab_about" class="pane">
-        <div class="paneTitle">Overview</div>
+        <div class="paneTitle" id="overviewTitle">Overview</div>
 
         <div class="btnRow">
           <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
           <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
         </div>
 
-        <p class="muted">
+        <p class="muted" id="overviewHint">
           Your profile is your identity on Pepsval. Verified details increase trust and visibility.
         </p>
 
         <div class="aboutGrid">
           <div class="box">
-            <div class="k">Full Name</div>
+            <div class="k" id="k_fullName">Full Name</div>
             <div class="v" id="fullName">—</div>
           </div>
 
           <div class="box">
-            <div class="k">Email</div>
+            <div class="k" id="k_email">Email</div>
             <div class="v" id="email">—</div>
           </div>
 
           <div class="box">
-            <div class="k">Rank</div>
+            <div class="k" id="k_rank">Rank</div>
             <div class="v" id="rank">—</div>
           </div>
 
           <div class="box">
-            <div class="k">Nationality</div>
+            <div class="k" id="k_nationality">Nationality</div>
             <div class="v" id="nationality">—</div>
           </div>
 
           <div class="box">
-            <div class="k">Last Vessel / Company</div>
+            <div class="k" id="k_lastVessel">Last Vessel / Company</div>
             <div class="v" id="lastVessel">—</div>
           </div>
 
           <div class="box">
-            <div class="k">Availability / Job Title</div>
+            <div class="k" id="k_availability">Availability / Job Title</div>
             <div class="v" id="availability">—</div>
           </div>
 
           <div class="box span2">
-            <div class="k">Bio</div>
+            <div class="k" id="k_bio">Bio</div>
             <div class="v bioText" id="bio">—</div>
           </div>
         </div>
@@ -107,13 +109,13 @@
       </section>
 
       <section id="tab_documents" class="pane hidden">
-        <div class="paneTitle">Documents</div>
+        <div class="paneTitle" id="documentsTitle">Documents</div>
         <div id="documentsWrap" class="muted">Loading…</div>
       </section>
 
       <section id="tab_sea" class="pane hidden">
         <div class="paneTitle">Sea Service</div>
-        <div class="note">
+        <div class="note" id="seaNote">
           Sea service entries become <b>locked</b> once any peer or employer verification is approved.
         </div>
         <div id="seaWrap" class="muted">Loading…</div>
@@ -126,6 +128,7 @@
     </section>
   </main>
 
+  <!-- Avatar Editor Modal -->
   <div id="imgModal" class="modal hidden" aria-hidden="true">
     <div class="modalOverlay" data-close="1"></div>
     <div class="modalCard" role="dialog" aria-modal="true" aria-label="Edit photo">
