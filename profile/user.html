@@ -21,16 +21,120 @@
 
   <main class="wrap">
     <section class="profileCard">
-      <div class="profileHeader">
-        <div class="pfpWrap">
-          <img id="avatarImg" src="/assets/logo.webp" alt="Avatar" />
+      <div class="profileTop">
+        <div class="avatarWrap" id="avatarWrap">
+          <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
+          <div id="avatarFallback" class="avatarFallback hidden">P</div>
         </div>
-        <div class="userMain">
-          <h1 id="fullName">Loading…</h1>
-          <p id="rank" class="muted">Rank/Job</p>
-          <button id="messageBtn" class="pv-btn" style="margin-top:12px;">Message</button>
+
+        <div class="headerText">
+          <div class="nameRow">
+            <div class="name" id="fullName">Loading…</div>
+            <span id="typeBadge" class="badge hidden">Seafarer</span>
+          </div>
+
+          <div class="miniRow">
+            <div id="rankLabel" class="miniItem">Rank: <span id="rank">—</span></div>
+            <button id="messageBtn" class="btnPrimary">Message</button>
+          </div>
         </div>
       </div>
+
+      <!-- Tabs (built dynamically) -->
+      <div id="tabs" class="tabs"></div>
+
+      <!-- Panes -->
+      <section id="tab_about" class="pane">
+        <div class="paneTitle" id="aboutTitle">About</div>
+
+        <!-- Seafarer -->
+        <div id="about_seafarer" class="aboutGrid hidden">
+          <div class="box">
+            <div class="k">Nationality</div>
+            <div class="v" id="s_nationality">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Rank onboard</div>
+            <div class="v" id="s_rank">—</div>
+          </div>
+          <div class="box span2">
+            <div class="k">About</div>
+            <div class="v" id="s_bio">—</div>
+          </div>
+        </div>
+
+        <!-- Company -->
+        <div id="about_company" class="aboutGrid hidden">
+          <div class="box">
+            <div class="k">Contact</div>
+            <div class="v" id="c_phone">—</div>
+          </div>
+          <div class="box span2">
+            <div class="k">Emails</div>
+            <div id="c_emails" class="multiList"></div>
+          </div>
+          <div class="box span2">
+            <div class="k">Type of Services Provided</div>
+            <div class="v" id="c_services">—</div>
+          </div>
+          <div class="box span2">
+            <div class="k">Achievements & Data</div>
+            <div class="v" id="c_achievements">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Vision</div>
+            <div class="v" id="c_vision">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Mission</div>
+            <div class="v" id="c_mission">—</div>
+          </div>
+        </div>
+
+        <!-- Professional -->
+        <div id="about_professional" class="aboutGrid hidden">
+          <div class="box">
+            <div class="k">Position</div>
+            <div class="v" id="p_position">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Company</div>
+            <div class="v" id="p_company">—</div>
+          </div>
+          <div class="box span2">
+            <div class="k">About</div>
+            <div class="v" id="p_bio">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab_posts" class="pane hidden">
+        <div class="paneTop">
+          <div class="paneTitle">Posts</div>
+          <div id="postCounts" class="postCounts">0 posts</div>
+        </div>
+        <div id="postsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_jobs" class="pane hidden">
+        <div class="paneTitle">Jobs</div>
+        <div id="jobsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_documents" class="pane hidden">
+        <div class="paneTitle">Documents</div>
+        <div id="documentsWrap" class="muted">Private</div>
+      </section>
+
+      <section id="tab_sea" class="pane hidden">
+        <div class="paneTitle">Sea Service</div>
+        <div id="seaWrap" class="muted">Private</div>
+      </section>
+
+      <section id="tab_experience" class="pane hidden">
+        <div class="paneTitle">Experience</div>
+        <div id="expWrap" class="muted">Private</div>
+      </section>
     </section>
   </main>
 
