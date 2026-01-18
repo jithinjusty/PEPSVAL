@@ -53,6 +53,7 @@ const docsVisLabel = document.getElementById("docsVisLabel");
 
 // About fields
 const f = {
+  account_type: document.getElementById("f_account_type"),
   full_name: document.getElementById("f_full_name"),
   dob: document.getElementById("f_dob"),
   email: document.getElementById("f_email"),
@@ -237,6 +238,7 @@ function setEditing(state) {
   };
 
   // Seafarer
+  enable(f.account_type, editing);
   enable(f.full_name, editing);
   enable(f.dob, editing);
   enable(f.phone, editing);
@@ -444,6 +446,11 @@ async function fetchProfile(userId) {
 }
 
 function paintAbout() {
+  // Populate type selector
+  if (f.account_type) {
+    f.account_type.value = profile?.account_type || "seafarer";
+  }
+
   // switch which about section to show
   if (accountKind === "seafarer") showAboutSection("seafarer");
   if (accountKind === "company") showAboutSection("company");
@@ -504,9 +511,16 @@ async function loadProfile() {
 async function saveProfile() {
   if (!me) return;
 
-  const updates = { updated_at: new Date().toISOString() };
+  const typeFromUi = f.account_type?.value || "seafarer";
+  const updates = {
+    updated_at: new Date().toISOString(),
+    account_type: typeFromUi
+  };
 
-  if (accountKind === "seafarer") {
+  // We should respect the type set in UI even if the current accountKind is different (switching)
+  const logicalKind = getAccountKind(typeFromUi);
+
+  if (logicalKind === "seafarer") {
     updates.full_name = safeText(f.full_name.value, null);
     updates.dob = safeText(f.dob.value, null);
     updates.phone = safeText(f.phone.value, null);
@@ -534,7 +548,7 @@ async function saveProfile() {
     if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
-  if (accountKind === "professional") {
+  if (logicalKind === "professional") {
     updates.full_name = safeText(p.full_name.value, null);
     updates.dob = safeText(p.dob.value, null);
     updates.phone = safeText(p.phone.value, null);
@@ -555,7 +569,9 @@ async function saveProfile() {
   if (error) throw error;
 
   profile = await fetchProfile(me.id);
+  accountKind = getAccountKind(profile?.account_type);
   paintHeader();
+  buildTabs();
   paintAbout();
   setEditing(false);
 }
