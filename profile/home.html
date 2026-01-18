@@ -116,13 +116,22 @@
               </div>
             </div>
             <div class="box span2">
-              <div class="k">About company</div>
-              <textarea class="v input textarea" id="c_about" rows="4"
-                placeholder="Services, achievements, data…"></textarea>
+              <div class="k">Type of Services Provided</div>
+              <textarea class="v input textarea" id="c_services" rows="3"
+                placeholder="List your core services…"></textarea>
             </div>
             <div class="box span2">
-              <div class="k">Vision & Mission</div>
-              <textarea class="v input textarea" id="c_vision" rows="4" placeholder="Vision and mission…"></textarea>
+              <div class="k">Achievements & Data</div>
+              <textarea class="v input textarea" id="c_achievements" rows="3"
+                placeholder="Key milestones, fleet size, etc…"></textarea>
+            </div>
+            <div class="box">
+              <div class="k">Vision</div>
+              <textarea class="v input textarea" id="c_vision" rows="3" placeholder="Company vision…"></textarea>
+            </div>
+            <div class="box">
+              <div class="k">Mission</div>
+              <textarea class="v input textarea" id="c_mission" rows="3" placeholder="Company mission…"></textarea>
             </div>
           </div>
 
@@ -260,6 +269,100 @@
             <button id="cancelAvatarBtn" class="btnSecondary">Cancel</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Job Posting Modal -->
+    <div id="jobModal" class="modal hidden">
+      <div class="modalOverlay"></div>
+      <div class="modalContent" style="max-width: 700px;">
+        <div class="modalHeader">
+          <h2 id="jobModalTitle">Create New Job Post</h2>
+          <button id="closeJobModal" class="iconBtn" aria-label="Close">&times;</button>
+        </div>
+
+        <form id="jobForm" class="jobFormWrap" autocomplete="off">
+          <input type="hidden" id="j_id">
+
+          <div class="aboutGrid">
+            <div class="box span2">
+              <div class="k">Job Title</div>
+              <input class="v input" id="j_title" placeholder="e.g. Master for Oil Tanker" required />
+            </div>
+
+            <div class="box">
+              <div class="k">Rank</div>
+              <input class="v input" id="j_rank" placeholder="Master / Chief Engineer / AB..." list="rankList" />
+            </div>
+
+            <div class="box">
+              <div class="k">Vessel Name / Detail</div>
+              <input class="v input" id="j_vessel_name" placeholder="Vessel Name (optional)" />
+            </div>
+
+            <div class="box">
+              <div class="k">Vessel Type</div>
+              <input class="v input" id="j_vessel_type" placeholder="Bulk / Tanker / Container..." />
+            </div>
+
+            <div class="box">
+              <div class="k">Contract Type</div>
+              <select class="v input" id="j_contract_type">
+                <option value="Temporary">Temporary / Single Voyage</option>
+                <option value="Permanent">Permanent</option>
+                <option value="Rotational">Rotational</option>
+              </select>
+            </div>
+
+            <div class="box">
+              <div class="k">Salary / Wages</div>
+              <input class="v input" id="j_salary" placeholder="e.g. USD 4500 / Month" />
+            </div>
+
+            <div class="box">
+              <div class="k">Contract Duration</div>
+              <input class="v input" id="j_duration" placeholder="e.g. 4+1 months" />
+            </div>
+
+            <div class="box">
+              <div class="k">Joining Location</div>
+              <input class="v input" id="j_location" placeholder="e.g. Fujairah, Singapore..." />
+            </div>
+
+            <div class="box">
+              <div class="k">Joining Date</div>
+              <input class="v input" id="j_joining_date" type="date" />
+            </div>
+
+            <div class="box span2">
+              <div class="k">Detailed Job Description</div>
+              <textarea class="v input textarea" id="j_description" rows="4"
+                placeholder="Describe the role and responsibilities..."></textarea>
+            </div>
+
+            <div class="box span2">
+              <div class="k">Requirements (Certificates, Visas, etc.)</div>
+              <textarea class="v input textarea" id="j_requirements" rows="3"
+                placeholder="US Visa, Advance Tanker, STCW..."></textarea>
+            </div>
+
+            <div class="box span2">
+              <div class="k">Benefits & Perks</div>
+              <textarea class="v input textarea" id="j_benefits" rows="2"
+                placeholder="Wifi, Gym, Health Insurance..."></textarea>
+            </div>
+
+            <div class="box span2">
+              <div class="k">Tags / Badges (comma separated)</div>
+              <input class="v input" id="j_tags" placeholder="URGENT, NEW, VISA SPONSORED" />
+            </div>
+          </div>
+
+          <div class="modalActions">
+            <button type="submit" id="saveJobBtn" class="btnPrimary">Publish Job Post</button>
+            <button type="button" id="cancelJobBtn" class="btnSecondary">Discard</button>
+          </div>
+        </form>
       </div>
     </div>
   </main>
