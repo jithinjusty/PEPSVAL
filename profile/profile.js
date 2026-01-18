@@ -832,26 +832,40 @@ documentsWrap?.addEventListener("click", async (e) => {
   }
 
   if (action === "saveDocs") {
-    const oldText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Saving...";
-    const rows = scrapeDocsFromDOM();
-
-    for (const r of rows) {
-      const payload = {
-        user_id: me.id,
-        name: r.name,
-        issued_by: r.issued_by, // Allow empty for incomplete rows?
-        issue_date: r.issue_date || null,
-        expiry_date: r.expiry_date || null
-      };
-      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
-
-      // Upsert
-      await supabase.from("documents").upsert(payload);
+    console.log("Saving docs...");
+    const btn = e.target.closest("button"); // The delegate target might be button inside
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Saving...";
     }
 
-    await loadDocumentsSafe();
+    try {
+      const rows = scrapeDocsFromDOM();
+      console.log("Scraped docs:", rows);
+
+      for (const r of rows) {
+        const payload = {
+          user_id: me.id,
+          name: r.name,
+          issued_by: r.issued_by,
+          issue_date: r.issue_date || null,
+          expiry_date: r.expiry_date || null
+        };
+        if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+        const { error } = await supabase.from("documents").upsert(payload);
+        if (error) throw error;
+      }
+      alert("Documents saved!");
+      await loadDocumentsSafe();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed: " + err.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Save Documents";
+      }
+    }
   }
 });
 
@@ -1001,25 +1015,41 @@ seaWrap?.addEventListener("click", async (e) => {
   }
 
   if (action === "saveSea") {
-    btn.disabled = true;
-    btn.textContent = "Saving...";
-    const rows = scrapeSeaFromDOM();
-
-    for (const r of rows) {
-      const payload = {
-        user_id: me.id,
-        ship_name: r.ship_name,
-        imo: r.imo,
-        rank: r.rank,
-        signed_on: r.signed_on || null,
-        signed_off: r.signed_off || null,
-      };
-      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
-
-      await supabase.from("sea_service").upsert(payload);
+    console.log("Saving sea service...");
+    const btn = e.target.closest("button");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Saving...";
     }
 
-    await loadSeaSafe();
+    try {
+      const rows = scrapeSeaFromDOM();
+      console.log("Scraped sea:", rows);
+
+      for (const r of rows) {
+        const payload = {
+          user_id: me.id,
+          ship_name: r.ship_name,
+          imo: r.imo,
+          rank: r.rank,
+          signed_on: r.signed_on || null,
+          signed_off: r.signed_off || null,
+        };
+        if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+        const { error } = await supabase.from("sea_service").upsert(payload);
+        if (error) throw error;
+      }
+      alert("Sea Service saved!");
+      await loadSeaSafe();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed: " + err.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Save Sea Service";
+      }
+    }
   }
 });
 
