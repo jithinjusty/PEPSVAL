@@ -718,9 +718,18 @@ function daysToHuman(days) {
   const d = Math.max(0, Math.floor(days || 0));
   const years = Math.floor(d / 365);
   const rem1 = d % 365;
+  const d = Math.max(0, Math.floor(days || 0));
+  const years = Math.floor(d / 365);
+  const rem1 = d % 365;
   const months = Math.floor(rem1 / 30);
   const rem2 = rem1 % 30;
-  return `${years}y ${months}m ${rem2}d`;
+
+  const parts = [];
+  if (years > 0) parts.push(`${years} ${years === 1 ? "year" : "years"}`);
+  if (months > 0) parts.push(`${months} ${months === 1 ? "month" : "months"}`);
+  if (rem2 > 0 || parts.length === 0) parts.push(`${rem2} ${rem2 === 1 ? "day" : "days"}`);
+
+  return parts.join(" ");
 }
 
 function computeExpiry(expiryDate) {
@@ -1318,4 +1327,20 @@ c.emailsWrap?.addEventListener("click", (e) => {
   if (!btn) return;
   const row = btn.closest(".multiRow");
   const idx = Number(row?.dataset?.idx || -1);
-  if 
+  if (idx < 0) return;
+  const current = readCompanyEmails();
+  current.splice(idx, 1);
+  paintCompanyEmails(current);
+});
+
+// ---------- init ----------
+(async () => {
+  try {
+    paintRankDatalist();
+    await paintCompanyDatalist();
+    await loadProfile();
+  } catch (e) {
+    console.error("Profile load error:", e);
+    alert("Profile load failed: " + (e.message || "Unknown error"));
+  }
+})();
