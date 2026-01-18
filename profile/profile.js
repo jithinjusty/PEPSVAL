@@ -944,10 +944,15 @@ function renderSea(rows) {
         <tbody>
           ${list.map((r, idx) => {
     const d = daysBetween(r.signed_on, r.signed_off);
+    const ship = safeText(r.ship_name || r.vessel_name, "");
+    const imo = safeText(r.imo || r.vessel_imo, "");
+    // Hide dummy "0" if we saved it just to satisfy DB
+    const displayImo = imo === "0" || imo === 0 ? "" : imo;
+
     return `
               <tr data-id="${r.id || 'new'}" data-idx="${idx}">
-                <td><input class="input" name="ship_name" value="${escapeHtml(safeText(r.ship_name, ""))}" placeholder="Ship" /></td>
-                <td><input class="input" name="imo" value="${escapeHtml(safeText(r.imo, ""))}" placeholder="IMO" /></td>
+                <td><input class="input" name="ship_name" value="${escapeHtml(ship)}" placeholder="Ship" /></td>
+                <td><input class="input" name="imo" value="${escapeHtml(displayImo)}" placeholder="IMO" /></td>
                 <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" /></td>
                 <td><input class="input" name="signed_on" type="date" value="${escapeHtml(safeText(r.signed_on, ""))}" /></td>
                 <td><input class="input" name="signed_off" type="date" value="${escapeHtml(safeText(r.signed_off, ""))}" /></td>
@@ -1027,12 +1032,15 @@ seaWrap?.addEventListener("click", async (e) => {
       console.log("Scraped sea:", rows);
 
       for (const r of rows) {
+        // Handle strict numeric constraints on legacy columns
+        const safeImo = r.imo && r.imo.trim() !== "" ? r.imo : 0;
+
         const payload = {
           user_id: me.id,
           ship_name: r.ship_name,
-          vessel_name: r.ship_name, // Fallback for older schema
+          vessel_name: r.ship_name, // Legacy fallback
           imo: r.imo,
-          vessel_imo: r.imo, // Fallback for older schema (fixes "null value" error)
+          vessel_imo: safeImo, // Legacy fallback (0 if empty to valid Not Null)
           rank: r.rank,
           signed_on: r.signed_on || null,
           signed_off: r.signed_off || null,
