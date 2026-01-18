@@ -14,6 +14,9 @@ let currentUser = null;
 let currentConversationId = null;
 let subscriptions = [];
 
+const params = new URLSearchParams(window.location.search);
+const urlConvId = params.get("convId");
+
 // Tab switching
 tabCommunity.onclick = () => switchTab("community");
 tabMessages.onclick = () => switchTab("messages");
@@ -39,7 +42,7 @@ function cleanupSubscriptions() {
   subscriptions = [];
 }
 
-async function load() {
+async function initLoad() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.href = "/auth/login.html";
@@ -47,6 +50,20 @@ async function load() {
   }
   currentUser = user;
 
+  if (urlConvId) {
+    currentTab = "messages";
+    currentConversationId = urlConvId;
+    tabCommunity.classList.remove("active");
+    tabMessages.classList.add("active");
+    tabNotifications.classList.remove("active");
+    chatInputWrap.style.display = "flex";
+    loadPrivateChat(urlConvId);
+  } else {
+    load();
+  }
+}
+
+async function load() {
   if (currentTab === "community") loadCommunity();
   else if (currentTab === "messages") {
     if (currentConversationId) loadPrivateChat(currentConversationId);
@@ -75,18 +92,15 @@ async function loadCommunity() {
   // Real-time
   const sub = supabase.channel('community_chat_realtime')
     .on('postgres_changes', { event: 'INSERT', table: 'community_chat' }, async (payload) => {
-      // Fetch the full record with profile info
       const { data: newMsg } = await supabase
         .from("community_chat")
         .select(`*, profiles:profile_id (full_name, avatar_url)`)
         .eq("id", payload.new.id)
         .single();
 
-      if (newMsg) {
-        if (currentTab === "community") {
-          const div = createCommunityMsgEl(newMsg);
-          list.prepend(div); // Latest on top
-        }
+      if (newMsg && currentTab === "community") {
+        const div = createCommunityMsgEl(newMsg);
+        list.prepend(div);
       }
     })
     .subscribe();
@@ -133,9 +147,7 @@ async function loadConversations() {
     return;
   }
 
-  // This is a bit complex because we need the OTHER participant's info
   for (const conv of data) {
-    // Fetch all participants for this conversation to find the OTHER one
     const { data: allParts } = await supabase
       .from("conversation_participants")
       .select(`profiles:profile_id (id, full_name, avatar_url)`)
@@ -184,7 +196,6 @@ async function loadPrivateChat(convId, otherName = "Chat") {
     list.appendChild(div);
   });
 
-  // Real-time DM
   const sub = supabase.channel(`dm_${convId}`)
     .on('postgres_changes', { event: 'INSERT', table: 'private_messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
       const isMe = payload.new.sender_id === currentUser.id;
@@ -200,7 +211,6 @@ async function loadPrivateChat(convId, otherName = "Chat") {
     })
     .subscribe();
   subscriptions.push(sub);
-
   window.scrollTo(0, document.body.scrollHeight);
 }
 
@@ -250,9 +260,8 @@ sendBtn.onclick = async () => {
   }
 };
 
-// Enter key support
 chatInput.onkeydown = (e) => {
   if (e.key === "Enter") sendBtn.click();
 };
 
-load();
+initLoad();
