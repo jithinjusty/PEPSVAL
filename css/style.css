@@ -1,8 +1,34 @@
+:root {
+  --bg-body: #eaf6fb;
+  --bg-card: #ffffff;
+  --text-main: #0b1b22;
+  --text-muted: #52646d;
+  --stroke: rgba(10, 30, 40, .10);
+  --brand: #1f6f86;
+  --accent: #2aa7c7;
+  --danger: #b42318;
+  --ok: #067647;
+  --nav-bg: rgba(246, 251, 255, .92);
+  --nav-item-bg: #ffffff;
+  --nav-border: rgba(0, 0, 0, .06);
+}
+
+.dark-mode {
+  --bg-body: #061b22;
+  --bg-card: #0b2b34;
+  --text-main: #eaf6fb;
+  --text-muted: #aab8bf;
+  --stroke: rgba(255, 255, 255, .12);
+  --nav-bg: rgba(6, 27, 34, .95);
+  --nav-item-bg: #0b2b34;
+  --nav-border: rgba(255, 255, 255, .08);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Arial, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
 html,
@@ -12,7 +38,9 @@ body {
 }
 
 body {
-  background: #000;
+  background: var(--bg-body);
+  color: var(--text-main);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Splash container */
@@ -146,9 +174,9 @@ body {
   display: flex;
   gap: 8px;
   padding: 10px 12px 18px;
-  background: rgba(246, 251, 255, .92);
+  background: var(--nav-bg);
   backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0, 0, 0, .06);
+  border-top: 1px solid var(--nav-border);
 }
 
 .navItem {
@@ -156,12 +184,12 @@ body {
   text-align: center;
   padding: 12px 10px;
   border-radius: 18px;
-  border: 1px solid rgba(0, 0, 0, .08);
-  background: #fff;
+  border: 1px solid var(--stroke);
+  background: var(--nav-item-bg);
   font-weight: 900;
   font-size: 13px;
   text-decoration: none;
-  color: #111;
+  color: var(--text-main);
   transition: all .2s ease;
 }
 
@@ -183,8 +211,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: #fff;
-  border-bottom: 1px solid #e6e6e6;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--stroke);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -199,7 +227,7 @@ body {
 
 .brandTag {
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
   margin-top: 2px
 }
 
@@ -244,13 +272,13 @@ body {
 }
 
 .chip {
-  border: 1px solid #e6e6e6;
-  background: #f7f7f7;
+  border: 1px solid var(--stroke);
+  background: var(--bg-body);
   border-radius: 999px;
   padding: 8px 12px;
   font-weight: 700;
   font-size: 13px;
-  color: #111;
+  color: var(--text-main);
   text-decoration: none
 }
 
@@ -261,8 +289,8 @@ body {
 }
 
 .card {
-  background: #fff;
-  border: 1px solid #e6e6e6;
+  background: var(--bg-card);
+  border: 1px solid var(--stroke);
   border-radius: 16px;
   margin: 12px 0
 }
@@ -276,7 +304,7 @@ body {
 }
 
 .cardSub {
-  color: #666;
+  color: var(--text-muted);
   margin-top: 6px
 }
 
