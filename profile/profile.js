@@ -959,7 +959,7 @@ function renderSea(rows) {
     return `
               <tr data-id="${r.id || 'new'}" data-idx="${idx}">
                 <td><input class="input" name="ship_name" value="${escapeHtml(ship)}" placeholder="Ship" /></td>
-                <td><input class="input" name="imo" value="${escapeHtml(displayImo)}" placeholder="IMO" /></td>
+                <td><input class="input" name="imo" value="${escapeHtml(displayImo)}" placeholder="IMO (Number)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></td>
                 <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" /></td>
                 <td><input class="input" name="signed_on" type="date" value="${escapeHtml(displayOn)}" /></td>
                 <td><input class="input" name="signed_off" type="date" value="${escapeHtml(displayOff)}" /></td>
