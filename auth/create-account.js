@@ -4,6 +4,7 @@ const form = document.getElementById("createForm");
 const msg = document.getElementById("msg");
 
 const emailEl = document.getElementById("email");
+const accountTypeEl = document.getElementById("accountType");
 const pwEl = document.getElementById("password");
 const confirmEl = document.getElementById("confirm");
 
@@ -43,10 +44,12 @@ form.addEventListener("submit", async (e) => {
   clearMsg();
 
   const email = (emailEl.value || "").trim().toLowerCase();
+  const accountType = accountTypeEl?.value || "";
   const password = pwEl.value || "";
   const confirm = confirmEl.value || "";
 
   if (!email) return setMsg("err", "Please enter your email.");
+  if (!accountType) return setMsg("err", "Please select an Account Type.");
   if (!password || password.length < 6) return setMsg("err", "Password must be at least 6 characters.");
   if (password !== confirm) return setMsg("err", "Passwords do not match.");
 
@@ -59,7 +62,10 @@ form.addEventListener("submit", async (e) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo }
+      options: {
+        emailRedirectTo,
+        data: { account_type: accountType }
+      }
     });
 
     // Supabase behaviour:
