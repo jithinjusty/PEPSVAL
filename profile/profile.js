@@ -224,11 +224,11 @@ function buildTabs() {
 function setEditing(state) {
   editing = !!state;
 
-  // Toggle edit/save buttons
+  // Toggle edit/save buttons for About section only
   editBtn.classList.toggle("hidden", editing);
   saveBtn.classList.toggle("hidden", !editing);
 
-  // Enable/disable inputs based on account kind
+  // Enable/disable inputs based on account kind (About section only)
   const enable = (el, ok) => {
     if (!el) return;
     el.disabled = !ok;
@@ -261,6 +261,8 @@ function setEditing(state) {
   enable(p.position, editing);
   enable(p.bio, editing);
   // p.email always disabled
+
+  // Note: Docs, Sea, Jobs, Exp are now ALWAYS editable (independent of this toggle)
 }
 
 function paintHeader() {
@@ -659,7 +661,7 @@ async function loadPostsSafe() {
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
             <div style="font-weight:900;">${escapeHtml(profile?.full_name || profile?.company_name || "Me")}</div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <select data-action="postVis" data-id="${id}" ${editing ? "" : ""} style="border:1px solid rgba(0,0,0,.10);border-radius:999px;padding:6px 10px;font-weight:900;">
+              <select data-action="postVis" data-id="${id}" style="border:1px solid rgba(0,0,0,.10);border-radius:999px;padding:6px 10px;font-weight:900;">
                 <option value="public" ${vis === "public" ? "selected" : ""}>Public</option>
                 <option value="hide" ${vis === "hide" ? "selected" : ""}>Hide</option>
                 <option value="private" ${vis === "private" ? "selected" : ""}>Private</option>
@@ -762,12 +764,12 @@ function renderDocs(rows) {
     const ex = computeExpiry(r.expiry_date);
     return `
               <tr data-id="${r.id || 'new'}" data-idx="${idx}">
-                <td><input class="input" name="name" value="${escapeHtml(safeText(r.name, ""))}" placeholder="e.g. GOC" ${editing ? "" : "disabled"}></td>
-                <td><input class="input" name="issued_by" value="${escapeHtml(safeText(r.issued_by, ""))}" placeholder="Issuer" ${editing ? "" : "disabled"}></td>
-                <td><input class="input" name="issue_date" type="date" value="${escapeHtml(safeText(r.issue_date, ""))}" ${editing ? "" : "disabled"}></td>
-                <td><input class="input" name="expiry_date" type="date" value="${escapeHtml(safeText(r.expiry_date, ""))}" ${editing ? "" : "disabled"}></td>
+                <td><input class="input" name="name" value="${escapeHtml(safeText(r.name, ""))}" placeholder="e.g. GOC"></td>
+                <td><input class="input" name="issued_by" value="${escapeHtml(safeText(r.issued_by, ""))}" placeholder="Issuer"></td>
+                <td><input class="input" name="issue_date" type="date" value="${escapeHtml(safeText(r.issue_date, ""))}"></td>
+                <td><input class="input" name="expiry_date" type="date" value="${escapeHtml(safeText(r.expiry_date, ""))}"></td>
                 <td><span class="badPill">${escapeHtml(ex.label)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove" ${editing ? "" : "disabled"}>✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove">✕</button></td>
               </tr>
             `;
   }).join("")}
@@ -775,7 +777,7 @@ function renderDocs(rows) {
       </table>
     </div>
     
-    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveDocs">Save Documents</button></div>` : ""}
+    <div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveDocs">Save Documents</button></div>
   `;
   documentsWrap.innerHTML = table;
 }
@@ -930,14 +932,14 @@ function renderSea(rows) {
     const d = daysBetween(r.signed_on, r.signed_off);
     return `
               <tr data-id="${r.id || 'new'}" data-idx="${idx}">
-                <td><input class="input" name="ship_name" value="${escapeHtml(safeText(r.ship_name, ""))}" placeholder="Ship" ${editing ? "" : "disabled"} /></td>
-                <td><input class="input" name="imo" value="${escapeHtml(safeText(r.imo, ""))}" placeholder="IMO" ${editing ? "" : "disabled"} /></td>
-                <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" ${editing ? "" : "disabled"} /></td>
-                <td><input class="input" name="signed_on" type="date" value="${escapeHtml(safeText(r.signed_on, ""))}" ${editing ? "" : "disabled"} /></td>
-                <td><input class="input" name="signed_off" type="date" value="${escapeHtml(safeText(r.signed_off, ""))}" ${editing ? "" : "disabled"} /></td>
+                <td><input class="input" name="ship_name" value="${escapeHtml(safeText(r.ship_name, ""))}" placeholder="Ship" /></td>
+                <td><input class="input" name="imo" value="${escapeHtml(safeText(r.imo, ""))}" placeholder="IMO" /></td>
+                <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" /></td>
+                <td><input class="input" name="signed_on" type="date" value="${escapeHtml(safeText(r.signed_on, ""))}" /></td>
+                <td><input class="input" name="signed_off" type="date" value="${escapeHtml(safeText(r.signed_off, ""))}" /></td>
                 <td><span class="badPill">${d}</span></td>
                 <td><span class="badPill">${Number(r.peers_verified || 0)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove" ${editing ? "" : "disabled"}>✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove">✕</button></td>
               </tr>
             `;
   }).join("")}
@@ -950,7 +952,7 @@ function renderSea(rows) {
     </div>
     <div class="summaryRow">${rankChips || `<div class="muted">No rank breakdown yet.</div>`}</div>
     
-    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveSea">Save Sea Service</button></div>` : ""}
+    <div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveSea">Save Sea Service</button></div>
   `;
 }
 
@@ -1049,26 +1051,26 @@ function renderJobs(rows) {
       <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${j.id || 'new'}" data-idx="${idx}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <div style="font-weight:900;font-size:15px;">${escapeHtml(safeText(j.title, "Job title"))}</div>
-          <button class="iconBtn" type="button" data-action="removeJob" title="Remove" ${editing ? "" : "disabled"}>✕</button>
+          <button class="iconBtn" type="button" data-action="removeJob" title="Remove">✕</button>
         </div>
         <div class="aboutGrid" style="margin-top:10px;">
-           <div class="box span2"><div class="k">Job Title</div><input class="v input" name="title" value="${escapeHtml(safeText(j.title, ""))}" placeholder="Title" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Rank</div><input class="v input" name="rank" value="${escapeHtml(safeText(j.rank, ""))}" placeholder="Rank" list="rankList" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Vessel type</div><input class="v input" name="vessel_type" value="${escapeHtml(safeText(j.vessel_type, ""))}" placeholder="Bulk / Tanker..." ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Salary</div><input class="v input" name="salary" value="${escapeHtml(safeText(j.salary, ""))}" placeholder="e.g. USD 4500" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Contract</div><input class="v input" name="contract_duration" value="${escapeHtml(safeText(j.contract_duration, ""))}" placeholder="e.g. 6 months" ${editing ? "" : "disabled"}></div>
+           <div class="box span2"><div class="k">Job Title</div><input class="v input" name="title" value="${escapeHtml(safeText(j.title, ""))}" placeholder="Title"></div>
+          <div class="box"><div class="k">Rank</div><input class="v input" name="rank" value="${escapeHtml(safeText(j.rank, ""))}" placeholder="Rank" list="rankList"></div>
+          <div class="box"><div class="k">Vessel type</div><input class="v input" name="vessel_type" value="${escapeHtml(safeText(j.vessel_type, ""))}" placeholder="Bulk / Tanker..."></div>
+          <div class="box"><div class="k">Salary</div><input class="v input" name="salary" value="${escapeHtml(safeText(j.salary, ""))}" placeholder="e.g. USD 4500"></div>
+          <div class="box"><div class="k">Contract</div><input class="v input" name="contract_duration" value="${escapeHtml(safeText(j.contract_duration, ""))}" placeholder="e.g. 6 months"></div>
           
-          <div class="box"><div class="k">Location / Port</div><input class="v input" name="location" value="${escapeHtml(safeText(j.location, ""))}" placeholder="Joining port or region" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Joining Date</div><input class="v input" name="joining_date" type="date" value="${escapeHtml(safeText(j.joining_date, ""))}" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Location / Port</div><input class="v input" name="location" value="${escapeHtml(safeText(j.location, ""))}" placeholder="Joining port or region"></div>
+          <div class="box"><div class="k">Joining Date</div><input class="v input" name="joining_date" type="date" value="${escapeHtml(safeText(j.joining_date, ""))}"></div>
           
-          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="Job description..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.description, ""))}</textarea></div>
-          <div class="box span2"><div class="k">Requirements</div><textarea class="v input textarea" name="requirements" rows="2" placeholder="Certifications, Visa, Experience..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.requirements, ""))}</textarea></div>
-          <div class="box span2"><div class="k">Benefits</div><textarea class="v input textarea" name="benefits" rows="2" placeholder="Wifi, Gym, Flight included..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.benefits, ""))}</textarea></div>
+          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="Job description...">${escapeHtml(safeText(j.description, ""))}</textarea></div>
+          <div class="box span2"><div class="k">Requirements</div><textarea class="v input textarea" name="requirements" rows="2" placeholder="Certifications, Visa, Experience...">${escapeHtml(safeText(j.requirements, ""))}</textarea></div>
+          <div class="box span2"><div class="k">Benefits</div><textarea class="v input textarea" name="benefits" rows="2" placeholder="Wifi, Gym, Flight included...">${escapeHtml(safeText(j.benefits, ""))}</textarea></div>
         </div>
       </div>
     `).join("")}
     
-    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveJobs">Save Jobs</button></div>` : ""}
+    <div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveJobs">Save Jobs</button></div>
   `;
 }
 
@@ -1188,14 +1190,14 @@ function renderExperience(rows) {
       <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${x.id || 'new'}" data-idx="${idx}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <div style="font-weight:900;">${escapeHtml(safeText(x.company, "Company"))}</div>
-          <button class="iconBtn" type="button" data-action="removeExp" ${editing ? "" : "disabled"}>✕</button>
+          <button class="iconBtn" type="button" data-action="removeExp">✕</button>
         </div>
         <div class="aboutGrid" style="margin-top:10px;">
-          <div class="box"><div class="k">Company</div><input class="v input" name="company" value="${escapeHtml(safeText(x.company, ""))}" placeholder="Company" list="companyList" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">Role</div><input class="v input" name="role" value="${escapeHtml(safeText(x.role, ""))}" placeholder="Role" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">From</div><input class="v input" name="start_date" type="date" value="${escapeHtml(safeText(x.start_date, ""))}" ${editing ? "" : "disabled"}></div>
-          <div class="box"><div class="k">To</div><input class="v input" name="end_date" type="date" value="${escapeHtml(safeText(x.end_date, ""))}" ${editing ? "" : "disabled"}></div>
-          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="What did you do there?" ${editing ? "" : "disabled"}>${escapeHtml(safeText(x.description, ""))}</textarea></div>
+          <div class="box"><div class="k">Company</div><input class="v input" name="company" value="${escapeHtml(safeText(x.company, ""))}" placeholder="Company" list="companyList"></div>
+          <div class="box"><div class="k">Role</div><input class="v input" name="role" value="${escapeHtml(safeText(x.role, ""))}" placeholder="Role"></div>
+          <div class="box"><div class="k">From</div><input class="v input" name="start_date" type="date" value="${escapeHtml(safeText(x.start_date, ""))}"></div>
+          <div class="box"><div class="k">To</div><input class="v input" name="end_date" type="date" value="${escapeHtml(safeText(x.end_date, ""))}"></div>
+          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="What did you do there?">${escapeHtml(safeText(x.description, ""))}</textarea></div>
         </div>
       </div>
     `).join("")}
@@ -1204,7 +1206,7 @@ function renderExperience(rows) {
       <div class="muted">Add achievements / extra-curriculars inside descriptions for now.</div>
     </div>
     
-    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveExp">Save Experience</button></div>` : ""}
+    <div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveExp">Save Experience</button></div>
   `;
 }
 
