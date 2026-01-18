@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -20,12 +21,27 @@
 
   <main class="wrap">
     <section class="profileCard">
-      <div class="paneTitle">This page is coming next.</div>
-      <div class="muted" style="margin-top:8px;">
-        For now, this link is reserved so crewmate matches can open a profile view page.
-        Next we will build the full public profile view here.
+      <div class="profileHeader">
+        <div class="pfpWrap">
+          <img id="avatarImg" src="/assets/logo.webp" alt="Avatar" />
+        </div>
+        <div class="userMain">
+          <h1 id="fullName">Loading…</h1>
+          <p id="rank" class="muted">Rank/Job</p>
+          <button id="messageBtn" class="pv-btn" style="margin-top:12px;">Message</button>
+        </div>
       </div>
     </section>
   </main>
+
+  <nav class="bottomNav">
+    <a class="navItem" href="/feed/index.html">Feed</a>
+    <a class="navItem" href="/jobs/index.html">Jobs</a>
+    <a class="navItem" href="/messages/index.html">Messages</a>
+    <a class="navItem" href="/profile/home.html">Profile</a>
+  </nav>
+
+  <script type="module" src="/profile/user.js?v=20260118-user-v1"></script>
 </body>
+
 </html>
