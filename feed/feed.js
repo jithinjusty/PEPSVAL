@@ -1,4 +1,3 @@
-alert("FEED.JS LOADED");
 import { supabase, getCurrentUser } from "/js/supabase.js";
 
 /* =========================================================
