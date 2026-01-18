@@ -718,9 +718,6 @@ function daysToHuman(days) {
   const d = Math.max(0, Math.floor(days || 0));
   const years = Math.floor(d / 365);
   const rem1 = d % 365;
-  const d = Math.max(0, Math.floor(days || 0));
-  const years = Math.floor(d / 365);
-  const rem1 = d % 365;
   const months = Math.floor(rem1 / 30);
   const rem2 = rem1 % 30;
 
