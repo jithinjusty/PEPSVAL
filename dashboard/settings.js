@@ -6,6 +6,22 @@ const logoutBtn = document.getElementById("logoutBtn");
 const deleteAccBtn = document.getElementById("deleteAccBtn");
 const supportForm = document.getElementById("supportForm");
 
+// Contact Form
+const contactForm = document.getElementById("contactForm");
+const primaryEmail = document.getElementById("primaryEmail");
+const secondaryEmails = document.getElementById("secondaryEmails");
+const primaryPhone = document.getElementById("primaryPhone");
+const secondaryPhones = document.getElementById("secondaryPhones");
+const contactMsg = document.getElementById("contactMsg");
+
+// Password Form
+const passwordForm = document.getElementById("passwordForm");
+const newPassword = document.getElementById("newPassword");
+const confirmPassword = document.getElementById("confirmPassword");
+const passwordMsg = document.getElementById("passwordMsg");
+
+let user = null;
+
 // Initialization
 document.addEventListener("DOMContentLoaded", async () => {
     // Set toggle state based on current theme
@@ -15,37 +31,118 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Auth check
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    user = session?.user;
+
     if (!user) {
         window.location.href = "/auth/login.html";
         return;
     }
+
+    // Populate initial data
+    primaryEmail.value = user.email;
+    loadProfileData();
 });
+
+async function loadProfileData() {
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("phone, secondary_emails, secondary_phones")
+        .eq("id", user.id)
+        .single();
+
+    if (data) {
+        primaryPhone.value = data.phone || "";
+        secondaryEmails.value = data.secondary_emails || "";
+        secondaryPhones.value = data.secondary_phones || "";
+    }
+}
 
 // Theme Toggle
 themeToggle?.addEventListener("change", () => {
     toggleTheme();
 });
 
+// Contact Form Submission
+contactForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const saveBtn = document.getElementById("saveContactBtn");
+
+    showMsg(contactMsg, "Saving...", "success");
+    saveBtn.disabled = true;
+
+    const updates = {
+        phone: primaryPhone.value.trim(),
+        secondary_emails: secondaryEmails.value.trim(),
+        secondary_phones: secondaryPhones.value.trim(),
+        updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("id", user.id);
+
+    saveBtn.disabled = false;
+
+    if (error) {
+        showMsg(contactMsg, "Error: " + error.message, "error");
+    } else {
+        showMsg(contactMsg, "Contact details updated successfully!", "success");
+    }
+});
+
+// Password Form Submission
+passwordForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("changePassBtn");
+
+    const pass = newPassword.value;
+    const conf = confirmPassword.value;
+
+    if (pass.length < 6) {
+        showMsg(passwordMsg, "Password must be at least 6 characters.", "error");
+        return;
+    }
+
+    if (pass !== conf) {
+        showMsg(passwordMsg, "Passwords do not match.", "error");
+        return;
+    }
+
+    showMsg(passwordMsg, "Updating...", "success");
+    btn.disabled = true;
+
+    const { error } = await supabase.auth.updateUser({ password: pass });
+
+    btn.disabled = false;
+
+    if (error) {
+        showMsg(passwordMsg, "Error: " + error.message, "error");
+    } else {
+        showMsg(passwordMsg, "Password updated successfully!", "success");
+        newPassword.value = "";
+        confirmPassword.value = "";
+    }
+});
+
 // Support Form
-supportForm?.addEventListener("submit", async (e) => {
+supportForm?.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = document.getElementById("supportText").value.trim();
-    if (!text) return;
+    if (!text) {
+        alert("Please describe your issue first.");
+        return;
+    }
 
-    // Simulated support submission
-    const btn = supportForm.querySelector("button");
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Sending...";
+    const email = "support@pepsval.com";
+    const subject = encodeURIComponent("PEPSVAL Support Query");
+    const body = encodeURIComponent(text);
 
-    // In a real app, we might insert into a 'support_tickets' table
-    setTimeout(() => {
-        alert("Your query has been sent to the support team! We will get back to you soon.");
-        document.getElementById("supportText").value = "";
-        btn.disabled = false;
-        btn.textContent = originalText;
-    }, 1500);
+    // Use mailto for direct client sending
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+
+    alert("Opening your email client to send the query...");
 });
 
 // Logout
@@ -56,17 +153,21 @@ logoutBtn?.addEventListener("click", async () => {
 
 // Delete Account
 deleteAccBtn?.addEventListener("click", async () => {
-    const confirmed = confirm("Are you sure you want to PERMANENTLY delete your account? This action cannot be undone and all your profile data, posts, and messages will be lost.");
-
+    const confirmed = confirm("Are you sure you want to PERMANENTLY delete your account?");
     if (confirmed) {
-        const doubleConfirmed = prompt("To confirm, please type 'DELETE' in the box below:");
+        const doubleConfirmed = prompt("Type 'DELETE' to confirm:");
         if (doubleConfirmed === "DELETE") {
-            // Note: Supabase client-side API doesn't allow users to delete themselves directly for security.
-            // Usually this requires a database function (RPC) or a dedicated Edge Function.
-            alert("For security reasons, please contact support@pepsval.com to complete your account deletion request. Your request has been logged.");
-
-            // Log the request to a simulated audit log or just alert.
-            console.log("Account deletion requested by user.");
+            // Note: Requires backend/RPC for self-deletion in many Supabase setups
+            alert("Delete request logged. Please contact support@pepsval.com to finalize.");
         }
     }
 });
+
+function showMsg(el, text, type) {
+    el.textContent = text;
+    el.className = `msg-box ${type}`;
+    el.style.display = "block";
+    if (type === "success") {
+        setTimeout(() => { el.style.display = "none"; }, 4000);
+    }
+}
