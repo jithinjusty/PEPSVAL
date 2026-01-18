@@ -99,6 +99,10 @@ async function loadCommunity() {
         .single();
 
       if (newMsg && currentTab === "community") {
+        // Simple duplicate prevent: check if content exists lately
+        const already = [...list.querySelectorAll('.msg-bubble')].some(b => b.textContent === newMsg.content);
+        if (already) return;
+
         const div = createCommunityMsgEl(newMsg);
         list.prepend(div);
       }
@@ -207,7 +211,7 @@ async function loadPrivateChat(convId, otherName = "Chat") {
         <div class="msg-info"><span>${time}</span></div>
       `;
       list.appendChild(div);
-      window.scrollTo(0, document.body.scrollHeight);
+      list.scrollTop = list.scrollHeight;
     })
     .subscribe();
   subscriptions.push(sub);
@@ -241,13 +245,43 @@ sendBtn.onclick = async () => {
   if (!text || !currentUser) return;
 
   if (currentTab === "community") {
+    const tempMsg = {
+      profile_id: currentUser.id,
+      content: text,
+      created_at: new Date().toISOString(),
+      profiles: {
+        full_name: "You",
+        avatar_url: null
+      }
+    };
+
+    // Optimistic UI update
+    const div = createCommunityMsgEl(tempMsg);
+    div.id = "temp_sending_" + Date.now(); // identifier to check later if needed
+    list.prepend(div);
+    chatInput.value = "";
+
     const { error } = await supabase
       .from("community_chat")
       .insert({ profile_id: currentUser.id, content: text });
-    if (error) alert("Error posting: " + error.message);
-    else chatInput.value = "";
+
+    if (error) {
+      alert("Error posting: " + error.message);
+      div.remove(); // Rollback if failed
+    }
   }
-  else if (currentTab === "messages" && currentConversationId) {
+  else {
+    // Optimistic update for private
+    const tempDiv = document.createElement("div");
+    tempDiv.className = `msg-row me`;
+    tempDiv.innerHTML = `
+        <div class="msg-bubble">${text}</div>
+        <div class="msg-info"><span>Just now</span></div>
+      `;
+    list.appendChild(tempDiv);
+    list.scrollTop = list.scrollHeight;
+    chatInput.value = "";
+
     const { error } = await supabase
       .from("private_messages")
       .insert({
@@ -255,8 +289,10 @@ sendBtn.onclick = async () => {
         sender_id: currentUser.id,
         content: text
       });
-    if (error) alert("Error sending: " + error.message);
-    else chatInput.value = "";
+    if (error) {
+      alert("Error sending: " + error.message);
+      tempDiv.remove();
+    }
   }
 };
 
