@@ -1,137 +1,71 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Profile</title>
-
-  <link rel="stylesheet" href="/css/style.css?v=3001" />
-  <link rel="stylesheet" href="/profile/profile.css?v=20260117-final2" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .tabs{display:flex;gap:12px;border-bottom:1px solid #e2e8f0;margin-top:16px}
+    .tab{padding:10px 14px;cursor:pointer;border-radius:10px}
+    .tab.active{background:#1F6F86;color:#fff}
+    .section{display:none;padding:16px 0}
+    .section.active{display:block}
+    .avatar-edit{
+      position:absolute;bottom:6px;right:6px;
+      background:#1F6F86;color:#fff;
+      width:28px;height:28px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;cursor:pointer
+    }
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #e2e8f0;padding:8px;font-size:14px}
+    .fab{
+      position:fixed;bottom:80px;right:18px;
+      width:56px;height:56px;border-radius:50%;
+      background:#1F6F86;color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;cursor:pointer
+    }
+  </style>
 </head>
 
-<body>
-  <header class="topbar">
-    <a class="brand" href="/feed/index.html" aria-label="Go to feed">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </a>
+<body class="app-bg">
 
-    <a class="btnGhost" href="/feed/index.html">Back</a>
-  </header>
+<div class="container">
 
-  <main class="wrap">
-    <section class="profileCard" id="profileCard">
-      <div class="profileTop">
-        <button id="avatarBtn" class="avatarWrap avatarBtn" type="button" aria-label="Change profile photo">
-          <img id="avatarImg" class="avatar avatarImg hidden" alt="Profile photo" />
-          <div id="avatarFallback" class="avatarFallback">P</div>
-          <div class="avatarEditHint">Change</div>
-        </button>
+  <!-- PROFILE HEADER -->
+  <div style="display:flex;align-items:center;gap:16px;position:relative">
+    <div style="position:relative">
+      <img id="avatarImg" class="avatar" />
+      <div class="avatar-edit" id="avatarEditBtn">✏️</div>
+    </div>
+    <div>
+      <h2 id="profileName">—</h2>
+      <div id="profileSub">—</div>
+    </div>
+  </div>
 
-        <input id="avatarFile" type="file" accept="image/*" class="hidden" />
+  <!-- TABS -->
+  <div class="tabs" id="tabs"></div>
 
-        <div class="headerText">
-          <div class="nameRow">
-            <div class="name" id="profileName">Profile</div>
-            <span id="typeBadge" class="badge hidden">Seafarer</span>
-          </div>
+  <!-- SECTIONS -->
+  <div id="sections">
 
-          <div class="miniRow">
-            <div class="miniItem"><span id="miniLabel1">Rank</span>: <span id="miniRank">—</span></div>
-            <div class="miniItem"><span id="miniLabel2">Nationality</span>: <span id="miniNationality">—</span></div>
-          </div>
-        </div>
-      </div>
+    <div id="about" class="section"></div>
+    <div id="documents" class="section"></div>
+    <div id="seaService" class="section"></div>
+    <div id="posts" class="section"></div>
+    <div id="jobs" class="section"></div>
+    <div id="experience" class="section"></div>
 
-      <!-- Tabs -->
-      <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="about" type="button" id="tabBtn_about">About</button>
-        <button class="tab" data-tab="documents" type="button" id="tabBtn_documents">Documents</button>
-        <button class="tab" data-tab="posts" type="button" id="tabBtn_posts">Posts</button>
-        <button class="tab" data-tab="jobs" type="button" id="tabBtn_jobs">Jobs</button>
-        <button class="tab" data-tab="experience" type="button" id="tabBtn_experience">Experience</button>
-      </div>
+  </div>
 
-      <!-- Panes -->
-      <section id="tab_about" class="pane">
-        <div class="paneTitle" id="overviewTitle">Overview</div>
+</div>
 
-        <div class="btnRow">
-          <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
-          <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
-        </div>
+<div class="fab" id="addPostBtn">🛟+</div>
 
-        <p class="muted" id="overviewHint">
-          Your profile is your identity on Pepsval. Verified details increase trust and visibility.
-        </p>
-
-        <div class="aboutGrid">
-          <div class="box span2">
-            <div class="k" id="k_bio">Bio</div>
-            <div class="v bioText" id="bio">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k" id="k_fullName">Full Name</div>
-            <div class="v" id="fullName">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k" id="k_email">Email</div>
-            <div class="v" id="email">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k" id="k_rank">Rank</div>
-            <div class="v" id="rank">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k" id="k_nationality">Nationality</div>
-            <div class="v" id="nationality">—</div>
-          </div>
-
-          <div class="box" id="box_lastVessel">
-            <div class="k" id="k_lastVessel">Last Vessel / Company</div>
-            <div class="v" id="lastVessel">—</div>
-          </div>
-
-          <div class="box">
-            <div class="k" id="k_availability">Availability / Job Title</div>
-            <div class="v" id="availability">—</div>
-          </div>
-        </div>
-      </section>
-
-      <section id="tab_documents" class="pane hidden">
-        <div class="paneTitle" id="documentsTitle">Documents</div>
-        <div id="documentsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_posts" class="pane hidden">
-        <div class="paneTitle">Posts</div>
-        <div id="postsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_jobs" class="pane hidden">
-        <div class="paneTitle">Jobs</div>
-        <div id="jobsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_experience" class="pane hidden">
-        <div class="paneTitle" id="experienceTitle">Experience</div>
-        <div class="note" id="experienceNote">
-          Experience entries become <b>locked</b> once verified.
-        </div>
-        <div id="experienceWrap" class="muted">Loading…</div>
-      </section>
-    </section>
-  </main>
-
-  <div id="toast" class="toast" aria-live="polite"></div>
-
-  <script type="module" src="/profile/profile.js?v=20260117-final2"></script>
+<script src="/js/supabaseClient.js"></script>
+<script src="/profile/profile.js"></script>
 </body>
-
 </html>
