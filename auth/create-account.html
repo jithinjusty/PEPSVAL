@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -31,6 +32,17 @@
 
       <form id="createForm" class="form" novalidate>
         <label class="field">
+          <span>Account Type <span class="req">*</span></span>
+          <select id="accountType" required>
+            <option value="" selected disabled>Who are you?</option>
+            <option value="seafarer">Seafarer (Looking for work)</option>
+            <option value="employer">Company / Employer (Hiring)</option>
+            <option value="shore">Maritime Professional (Office)</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label class="field">
           <span>Email</span>
           <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
         </label>
@@ -38,7 +50,8 @@
         <label class="field">
           <span>Password</span>
           <div class="pwRow">
-            <input id="password" type="password" autocomplete="new-password" placeholder="Create a strong password" required />
+            <input id="password" type="password" autocomplete="new-password" placeholder="Create a strong password"
+              required />
             <button class="iconBtn" type="button" id="togglePw" aria-label="Show password">Show</button>
           </div>
           <small class="hint">Min 6 characters. Use letters + numbers for better security.</small>
@@ -77,4 +90,5 @@
 
   <script type="module" src="/auth/create-account.js"></script>
 </body>
+
 </html>
