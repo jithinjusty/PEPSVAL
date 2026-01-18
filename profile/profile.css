@@ -23,7 +23,8 @@
   overflow: hidden;
 }
 
-.profileTop {
+.profileTop,
+.profileHeader {
   display: flex;
   gap: 14px;
   align-items: center;
@@ -32,7 +33,8 @@
   background: linear-gradient(180deg, rgba(31, 111, 134, .06), rgba(255, 255, 255, 0));
 }
 
-.avatarWrap {
+.avatarWrap,
+.pfpWrap {
   width: 66px;
   height: 66px;
   flex: 0 0 66px;
@@ -44,6 +46,12 @@
   align-items: center;
   justify-content: center;
   position: relative;
+}
+
+.pfpWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Pen overlay (replaces the old "Change" word) */
@@ -93,9 +101,22 @@
   display: none !important;
 }
 
-.headerText {
+.headerText,
+.userMain {
   flex: 1;
   min-width: 0;
+}
+
+.userMain h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.userMain p {
+  margin: 2px 0 0;
+  font-size: 14px;
 }
 
 .nameRow {
@@ -777,4 +798,120 @@ input:checked+.slider:before {
 
 .navItem:active {
   transform: scale(0.96);
+}
+/* ========== Job Management Premium Styles ========== */
+.jobCard {
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: 20px;
+  padding: 18px;
+  margin: 16px 0;
+  background: #fff;
+  transition: all .2s ease;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(11, 27, 36, .03);
+}
+
+.jobCard:hover {
+  box-shadow: 0 8px 24px rgba(11, 27, 36, .08);
+  border-color: rgba(31, 111, 134, .25);
+}
+
+.jobHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jobTitleGroup {
+  flex: 1;
+}
+
+.jobTitleText {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--brand);
+  margin-bottom: 4px;
+}
+
+.jobSubText {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.jobBadge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: rgba(31, 111, 134, .08);
+  color: var(--brand);
+  border: 1px solid rgba(31, 111, 134, .15);
+}
+
+.jobBadge.urgent {
+  background: rgba(255, 69, 58, .10);
+  color: #ff453a;
+  border-color: rgba(255, 69, 58, .20);
+}
+
+.jobGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.03);
+}
+
+.jobItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.jobLabel {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  letter-spacing: .5px;
+}
+
+.jobValue {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.jobDescWrap {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.jobDescWrap .k {
+  font-weight: 900;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.jobActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, .05);
+  justify-content: flex-end;
 }
