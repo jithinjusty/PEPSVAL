@@ -42,15 +42,18 @@
 
       <form id="setupForm" class="form" novalidate>
 
-        <div class="field">
-          <label class="lbl">Account type <span class="req">*</span></label>
-          <select id="accountType" required>
-            <option value="" selected disabled>Select</option>
-            <option value="seafarer">Seafarer</option>
-            <option value="employer">Employer</option>
-            <option value="shore">Shore Staff</option>
-            <option value="other">Other</option>
-          </select>
+        <div class="setupStep" id="step1">
+          <div class="stepNum">Step 1</div>
+          <div class="field">
+            <label class="lbl">Choose your role <span class="req">*</span></label>
+            <select id="accountType" required>
+              <option value="" selected disabled>Who are you?</option>
+              <option value="seafarer">Seafarer (Looking for work at sea)</option>
+              <option value="employer">Company / Employer (Hiring for vessels)</option>
+              <option value="shore">Maritime Professional (Shore staff/Office)</option>
+              <option value="other">Other (Training / Agent / Manning)</option>
+            </select>
+          </div>
         </div>
 
         <div class="field hidden" id="accountTypeOtherWrap">
