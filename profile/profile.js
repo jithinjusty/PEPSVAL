@@ -1361,6 +1361,7 @@ const closeAvatarModal = document.getElementById("closeAvatarModal");
 const uploadAvatarBtn = document.getElementById("uploadAvatarBtn");
 const cancelAvatarBtn = document.getElementById("cancelAvatarBtn");
 
+const zoomSlider = document.getElementById("zoom");
 const brightnessSlider = document.getElementById("brightness");
 const contrastSlider = document.getElementById("contrast");
 const saturationSlider = document.getElementById("saturation");
@@ -1368,6 +1369,12 @@ const blurSlider = document.getElementById("blur");
 
 let originalImage = null;
 let ctx = null;
+let zoom = 1.0;
+let offsetX = 0;
+let offsetY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
 
 const filterPresets = {
   normal: { brightness: 100, contrast: 100, saturation: 100, blur: 0 },
@@ -1427,11 +1434,15 @@ avatarInput?.addEventListener("change", (e) => {
       avatarSelectView.classList.add("hidden");
       avatarEditView.classList.remove("hidden");
 
-      // Reset sliders
+      // Reset sliders and position
+      zoomSlider.value = 100;
       brightnessSlider.value = 100;
       contrastSlider.value = 100;
       saturationSlider.value = 100;
       blurSlider.value = 0;
+      zoom = 1.0;
+      offsetX = 0;
+      offsetY = 0;
 
       // Render initial image
       applyFilters();
@@ -1449,12 +1460,17 @@ function applyFilters() {
   // Clear canvas
   ctx.clearRect(0, 0, size, size);
 
-  // Calculate crop (center square)
-  const sx = (originalImage.width - size) / 2;
-  const sy = (originalImage.height - size) / 2;
+  // Calculate zoomed size
+  const scaledSize = size * zoom;
 
-  // Draw image
-  ctx.drawImage(originalImage, sx, sy, size, size, 0, 0, size, size);
+  // Calculate source crop (center of original image)
+  const sourceSize = Math.min(originalImage.width, originalImage.height);
+  const sx = (originalImage.width - sourceSize) / 2;
+  const sy = (originalImage.height - sourceSize) / 2;
+
+  // Calculate destination with zoom and offset
+  const dx = (size - scaledSize) / 2 + offsetX;
+  const dy = (size - scaledSize) / 2 + offsetY;
 
   // Apply CSS filters
   const brightness = brightnessSlider.value;
@@ -1464,24 +1480,88 @@ function applyFilters() {
 
   ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px)`;
 
-  // Re-draw with filters
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = size;
-  tempCanvas.height = size;
-  const tempCtx = tempCanvas.getContext("2d");
-  tempCtx.drawImage(originalImage, sx, sy, size, size, 0, 0, size, size);
-
-  ctx.clearRect(0, 0, size, size);
-  ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px)`;
-  ctx.drawImage(tempCanvas, 0, 0);
+  // Draw image with zoom and pan
+  ctx.drawImage(originalImage, sx, sy, sourceSize, sourceSize, dx, dy, scaledSize, scaledSize);
   ctx.filter = "none";
 }
 
-// Live filter updates
+// Live filter and zoom updates
+zoomSlider?.addEventListener("input", () => {
+  zoom = zoomSlider.value / 100;
+  applyFilters();
+});
 brightnessSlider?.addEventListener("input", applyFilters);
 contrastSlider?.addEventListener("input", applyFilters);
 saturationSlider?.addEventListener("input", applyFilters);
 blurSlider?.addEventListener("input", applyFilters);
+
+// Pan with mouse drag
+avatarCanvas?.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  dragStartX = e.offsetX;
+  dragStartY = e.offsetY;
+  avatarCanvas.style.cursor = "grabbing";
+});
+
+avatarCanvas?.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+
+  const dx = e.offsetX - dragStartX;
+  const dy = e.offsetY - dragStartY;
+
+  offsetX += dx;
+  offsetY += dy;
+
+  dragStartX = e.offsetX;
+  dragStartY = e.offsetY;
+
+  applyFilters();
+});
+
+avatarCanvas?.addEventListener("mouseup", () => {
+  isDragging = false;
+  avatarCanvas.style.cursor = "grab";
+});
+
+avatarCanvas?.addEventListener("mouseleave", () => {
+  isDragging = false;
+  avatarCanvas.style.cursor = "grab";
+});
+
+// Touch support for mobile
+avatarCanvas?.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = avatarCanvas.getBoundingClientRect();
+  isDragging = true;
+  dragStartX = touch.clientX - rect.left;
+  dragStartY = touch.clientY - rect.top;
+});
+
+avatarCanvas?.addEventListener("touchmove", (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+
+  const touch = e.touches[0];
+  const rect = avatarCanvas.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+
+  const dx = x - dragStartX;
+  const dy = y - dragStartY;
+
+  offsetX += dx;
+  offsetY += dy;
+
+  dragStartX = x;
+  dragStartY = y;
+
+  applyFilters();
+});
+
+avatarCanvas?.addEventListener("touchend", () => {
+  isDragging = false;
+});
 
 // Preset filters
 document.querySelectorAll(".filterBtn").forEach(btn => {
