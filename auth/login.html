@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -11,56 +12,72 @@
 <body>
   <div class="bgFX" aria-hidden="true"></div>
 
-  <main class="wrap">
-    <section class="card">
+  <div class="login-split-view">
+    <main class="wrap">
+      <section class="card">
 
-      <div class="brand">
-        <div class="name">PEPSVAL</div>
-        <div class="tag">connect, hire and grow</div>
+        <div class="brand">
+          <div class="name">PEPSVAL</div>
+          <div class="tag">connect, hire and grow</div>
+        </div>
+
+        <h1 class="title">Welcome back</h1>
+
+        <form id="loginForm" autocomplete="on" novalidate>
+
+          <div class="field">
+            <div class="label"><span>Email</span></div>
+            <div class="inputRow">
+              <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">
+              <span>Password</span>
+              <a href="/auth/forgot.html">Forgot?</a>
+            </div>
+
+            <div class="inputRow">
+              <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password"
+                required />
+              <button type="button" class="toggleBtn" id="togglePw">Show</button>
+            </div>
+          </div>
+
+          <button class="btn" id="loginBtn" type="submit">Log in</button>
+
+          <div id="errorBox" class="error"></div>
+
+          <div class="links">
+            <a href="/auth/create-account.html">Create account</a>
+            <a href="/legal/privacy.html">Privacy</a>
+          </div>
+
+          <div class="legal">
+            By continuing, you agree to our
+            <a href="/legal/terms.html">Terms</a>
+            and
+            <a href="/legal/privacy.html">Privacy Policy</a>.
+          </div>
+        </form>
+
+      </section>
+    </main>
+
+    <aside class="live-chat-panel">
+      <div class="stream-header">
+        <span class="live-dot"></span>
+        Community Live Stream
       </div>
-
-      <h1 class="title">Welcome back</h1>
-
-      <form id="loginForm" autocomplete="on" novalidate>
-
-        <div class="field">
-          <div class="label"><span>Email</span></div>
-          <div class="inputRow">
-            <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="label">
-            <span>Password</span>
-            <a href="/auth/forgot.html">Forgot?</a>
-          </div>
-
-          <div class="inputRow">
-            <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
-            <button type="button" class="toggleBtn" id="togglePw">Show</button>
-          </div>
-        </div>
-
-        <button class="btn" id="loginBtn" type="submit">Log in</button>
-
-        <div id="errorBox" class="error"></div>
-
-        <div class="links">
-          <a href="/auth/create-account.html">Create account</a>
-          <a href="/legal/privacy.html">Privacy</a>
-        </div>
-
-        <div class="legal">
-          By continuing, you agree to our
-          <a href="/legal/terms.html">Terms</a>
-          and
-          <a href="/legal/privacy.html">Privacy Policy</a>.
-        </div>
-      </form>
-
-    </section>
-  </main>
+      <div id="chatStream" class="stream-list">
+        <div class="loading-chat">Connecting to community…</div>
+      </div>
+      <div class="stream-footer">
+        Login to join the conversation
+      </div>
+    </aside>
+  </div>
 
   <script>
     const pw = document.getElementById("password");
@@ -73,5 +90,7 @@
   </script>
 
   <script type="module" src="/auth/login.js?v=4"></script>
+  <script type="module" src="/auth/login-chat.js?v=1"></script>
 </body>
+
 </html>
