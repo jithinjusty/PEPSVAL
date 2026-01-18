@@ -116,64 +116,62 @@ const ROLES = [
   "Other"
 ];
 
-function show(el){ el && el.classList.remove("hidden"); }
-function hide(el){ el && el.classList.add("hidden"); }
+function show(el) { el && el.classList.remove("hidden"); }
+function hide(el) { el && el.classList.add("hidden"); }
 
-function showList(listEl){
+function showList(listEl) {
   if (!listEl) return;
   listEl.classList.add("show");
   listEl.style.display = "block";
 }
-function hideList(listEl){
+function hideList(listEl) {
   if (!listEl) return;
   listEl.classList.remove("show");
   listEl.style.display = "";
 }
 
-function showError(msg){
+function showError(msg) {
   if (!els.errorBox) return;
   els.errorBox.style.display = "block";
   els.errorBox.textContent = msg || "Something went wrong.";
 }
-function clearError(){
+function clearError() {
   if (!els.errorBox) return;
   els.errorBox.style.display = "none";
   els.errorBox.textContent = "";
 }
 
-function isSeafarer(){ return (els.accountType?.value || "") === "seafarer"; }
-function isCompanyOrProfessional(){
+function isSeafarer() { return (els.accountType?.value || "") === "seafarer"; }
+function isCompanyOrProfessional() {
   const v = els.accountType?.value || "";
   return v === "employer" || v === "shore" || v === "other";
 }
 
-function normalizeAccountType(){
+function normalizeAccountType() {
   const v = els.accountType?.value || "";
   if (v === "other") {
     const other = (els.accountTypeOther?.value || "").trim();
-    return other ? other : "Other";
+    // For "other", we can return a custom label or just "other"
+    // The profile page will treat it as "other" if it doesn't recognized it.
+    return other ? other : "other";
   }
-  if (!v) return "";
-  if (v === "employer") return "Company / Institute";
-  if (v === "shore") return "Maritime Professional";
-  if (v === "seafarer") return "Seafarer";
-  return v.charAt(0).toUpperCase() + v.slice(1);
+  return v; // returns seafarer, employer, or shore
 }
 
-function getRank(){
+function getRank() {
   const v = (els.rankValue?.value || "").trim();
   if (v === "Other") return (els.rankOther?.value || "").trim();
   return v;
 }
-function getRole(){
+function getRole() {
   const v = (els.roleValue?.value || "").trim();
   if (v === "Other") return (els.roleOther?.value || "").trim();
   return v;
 }
 
-function getNationality(){ return (els.countryValue?.value || "").trim(); }
+function getNationality() { return (els.countryValue?.value || "").trim(); }
 
-function getPhone(){
+function getPhone() {
   const dial = (els.dialValue?.value || "").trim();
   const num = (els.phoneInput?.value || "").trim();
   if (!num) return "";
@@ -185,7 +183,7 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
   if (!inputEl || !listEl) return;
   const key = comboName;
 
-  function render(list){
+  function render(list) {
     listEl.innerHTML = "";
     if (!list.length) {
       const empty = document.createElement("div");
@@ -206,14 +204,14 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
     });
   }
 
-  function filterNow(){
+  function filterNow() {
     const q = (inputEl.value || "").toLowerCase().trim();
     const filtered = !q
       ? items.slice(0, 200)
       : items.filter((it) => {
-          const txt = (typeof it === "string" ? it : (it?.name || it?.dial_code || "")).toLowerCase();
-          return txt.includes(q);
-        }).slice(0, 200);
+        const txt = (typeof it === "string" ? it : (it?.name || it?.dial_code || "")).toLowerCase();
+        return txt.includes(q);
+      }).slice(0, 200);
 
     render(filtered);
     showList(listEl);
@@ -229,7 +227,7 @@ function makeCombo({ comboName, inputEl, listEl, items, label, onPick }) {
   render(items.slice(0, 120));
 }
 
-async function loadCountries(){
+async function loadCountries() {
   const res = await fetch("/data/countries.json", { cache: "no-store" });
   const json = await res.json();
   countries = (json || [])
@@ -241,7 +239,7 @@ async function loadCountries(){
     .filter(c => c.name);
 }
 
-function setAvatarPreviewFromUrl(url){
+function setAvatarPreviewFromUrl(url) {
   if (!els.avatarPreview) return;
   els.avatarPreview.innerHTML = "";
   els.avatarPreview.style.backgroundSize = "cover";
@@ -266,7 +264,7 @@ let lastX = 0, lastY = 0;
 let aspect = 1; // 1:1 default
 let pendingBlob = null;
 
-function ensureCropModal(){
+function ensureCropModal() {
   if (cropModal) return;
 
   const style = document.createElement("style");
@@ -479,7 +477,7 @@ function ensureCropModal(){
   cropCanvas.addEventListener("pointercancel", () => { dragging = false; });
 }
 
-function openCropWithFile(file){
+function openCropWithFile(file) {
   ensureCropModal();
 
   const url = URL.createObjectURL(file);
@@ -501,19 +499,19 @@ function openCropWithFile(file){
   img.src = url;
 }
 
-function closeCrop(){
+function closeCrop() {
   if (!cropModal) return;
   cropModal.classList.remove("show");
 }
 
-function pointerPos(ev){
+function pointerPos(ev) {
   const rect = cropCanvas.getBoundingClientRect();
   const x = (ev.clientX - rect.left) * (cropCanvas.width / rect.width);
   const y = (ev.clientY - rect.top) * (cropCanvas.height / rect.height);
   return { x, y };
 }
 
-function getFilterString(){
+function getFilterString() {
   const b = Number(document.getElementById("pvBright")?.value || 105);
   const c = Number(document.getElementById("pvContrast")?.value || 105);
   const s = Number(document.getElementById("pvSat")?.value || 110);
@@ -521,7 +519,7 @@ function getFilterString(){
 }
 
 /* ✅ FIXED: overlay is drawn as 4 rectangles (no clearRect that deletes image) */
-function drawCrop(){
+function drawCrop() {
   if (!cropCtx || !cropImg) return;
 
   const cw = cropCanvas.width;
@@ -574,7 +572,7 @@ function drawCrop(){
   cropCtx.restore();
 }
 
-async function exportCroppedWebpBlob(){
+async function exportCroppedWebpBlob() {
   if (!cropImg) throw new Error("No image");
 
   const outW = 720;
@@ -620,7 +618,7 @@ async function exportCroppedWebpBlob(){
 }
 
 /* ===================== VALIDATION + UI ===================== */
-function validate(){
+function validate() {
   clearError();
 
   const acct = els.accountType?.value || "";
@@ -640,7 +638,7 @@ function validate(){
   return ok;
 }
 
-function syncAccountUI(){
+function syncAccountUI() {
   const acct = els.accountType?.value || "";
 
   if (acct === "other") show(els.accountTypeOtherWrap);
@@ -660,7 +658,7 @@ function syncAccountUI(){
   validate();
 }
 
-async function uploadAvatarIfAny(){
+async function uploadAvatarIfAny() {
   if (!pendingBlob) return null;
   if (!currentUser?.id) return null;
 
@@ -677,7 +675,7 @@ async function uploadAvatarIfAny(){
   return path;
 }
 
-async function saveProfile(){
+async function saveProfile() {
   if (!validate()) {
     showError("Please complete the required fields (Account type, Nationality, Role).");
     return;
