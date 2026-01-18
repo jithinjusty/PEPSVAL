@@ -7,7 +7,7 @@
   <title>PEPSVAL — Profile</title>
 
   <link rel="stylesheet" href="/css/style.css?v=3001" />
-  <link rel="stylesheet" href="/profile/profile.css?v=20260118-avatar-v1-pro" />
+  <link rel="stylesheet" href="/profile/profile.css?v=20260118-avatar-v2" />
 </head>
 
 <body>
@@ -234,6 +234,10 @@
           <!-- Fine-tune Controls -->
           <div class="filterControls">
             <label>
+              <span>Zoom</span>
+              <input type="range" id="zoom" min="100" max="300" value="100">
+            </label>
+            <label>
               <span>Brightness</span>
               <input type="range" id="brightness" min="0" max="200" value="100">
             </label>
@@ -260,7 +264,7 @@
     </div>
   </main>
 
-  <script type="module" src="/profile/profile.js?v=20260118-avatar-v1"></script>
+  <script type="module" src="/profile/profile.js?v=20260118-avatar-v2"></script>
 </body>
 
 </html>
