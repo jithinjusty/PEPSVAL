@@ -53,8 +53,6 @@ const docsVisLabel = document.getElementById("docsVisLabel");
 
 // About fields
 const f = {
-  account_type: document.getElementById("f_account_type"),
-  account_type_help: document.getElementById("accountTypeHelp"),
   full_name: document.getElementById("f_full_name"),
   dob: document.getElementById("f_dob"),
   email: document.getElementById("f_email"),
@@ -239,12 +237,6 @@ function setEditing(state) {
   };
 
   // Seafarer
-  const hasAccountType = !!(profile?.account_type);
-  enable(f.account_type, editing && !hasAccountType);
-  if (f.account_type_help) {
-    if (editing && !hasAccountType) show(f.account_type_help);
-    else hide(f.account_type_help);
-  }
   enable(f.full_name, editing);
   enable(f.dob, editing);
   enable(f.phone, editing);
@@ -452,11 +444,6 @@ async function fetchProfile(userId) {
 }
 
 function paintAbout() {
-  // Populate type selector
-  if (f.account_type) {
-    f.account_type.value = profile?.account_type || "seafarer";
-  }
-
   // switch which about section to show
   if (accountKind === "seafarer") showAboutSection("seafarer");
   if (accountKind === "company") showAboutSection("company");
@@ -517,14 +504,12 @@ async function loadProfile() {
 async function saveProfile() {
   if (!me) return;
 
-  const typeFromUi = f.account_type?.value || "seafarer";
   const updates = {
-    updated_at: new Date().toISOString(),
-    account_type: typeFromUi
+    updated_at: new Date().toISOString()
   };
 
-  // We should respect the type set in UI even if the current accountKind is different (switching)
-  const logicalKind = getAccountKind(typeFromUi);
+  // Use the existing account KIND for logic
+  const logicalKind = accountKind;
 
   if (logicalKind === "seafarer") {
     updates.full_name = safeText(f.full_name.value, null);
