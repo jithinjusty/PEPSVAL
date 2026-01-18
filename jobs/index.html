@@ -15,28 +15,38 @@
 
 <body class="app-bg">
 
+  <!-- Top bar -->
   <header class="topbar">
-    <div class="topbar-left">
-      <img src="/assets/logo.webp" class="top-logo" alt="Pepsval" />
-      <span class="brand">Pepsval</span>
+    <div class="topLeft">
+      <img class="brandIcon" src="/assets/logo.webp" alt="Pepsval" />
+      <div class="brandName">Pepsval</div>
     </div>
-    <div class="topbar-right">
+
+    <div class="topSearch">
+      <input id="jobSearchInput" type="text" placeholder="Search jobs, ranks, locations…" autocomplete="off" />
+      <div id="jobSearchDrop" class="searchDrop" style="display:none;"></div>
+    </div>
+
+    <div class="topRight">
       <span id="jobsTitle" class="user-name">Jobs</span>
     </div>
   </header>
 
   <main class="feed-wrap">
-    <div id="jobsCard" class="postCard">
-      <div style="font-weight:900;font-size:18px;">Loading…</div>
-      <div class="muted" style="margin-top:6px;">Please wait</div>
+    <div id="jobsList" class="feedList">
+      <div id="jobsCard" class="postCard">
+        <div style="font-weight:900;font-size:18px;">Loading…</div>
+        <div class="muted" style="margin-top:6px;">Please wait</div>
+      </div>
     </div>
   </main>
 
-  <nav class="bottom-nav">
-    <a class="nav-item" href="/feed/index.html">Feed</a>
-    <a id="jobsNavLabel" class="nav-item active" href="/jobs/index.html">Jobs</a>
-    <a class="nav-item" href="/messages/index.html">Messages</a>
-    <a class="nav-item" href="/profile/home.html">Profile</a>
+  <!-- Bottom nav -->
+  <nav class="bottomNav">
+    <a class="navItem" href="/feed/index.html">Feed</a>
+    <a id="jobsNavLabel" class="navItem active" href="/jobs/index.html">Jobs</a>
+    <a class="navItem" href="/messages/index.html">Messages</a>
+    <a class="navItem" href="/profile/home.html">Profile</a>
   </nav>
 
 </body>
