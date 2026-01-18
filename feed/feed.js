@@ -357,7 +357,7 @@ function renderCommentRow(c, profMap, cLikeInfo) {
   return `
     <div class="pv-commentRow" data-comment-id="${esc(c.id)}">
       <div class="pv-commentAvatar">
-        ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<span>${esc(name.slice(0,1))}</span>`}
+        ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<span>${esc(name.slice(0, 1))}</span>`}
       </div>
       <div class="pv-commentBody">
         <div class="pv-commentTop">
@@ -409,7 +409,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
         <header class="pv-postHead">
           <div class="pv-user">
             <div class="pv-userAvatar">
-              ${avatar ? `<img src="${esc(avatar)}" alt="${esc(name)}">` : `<span>${esc(name.slice(0,1))}</span>`}
+              ${avatar ? `<img src="${esc(avatar)}" alt="${esc(name)}">` : `<span>${esc(name.slice(0, 1))}</span>`}
             </div>
             <div class="pv-userMeta">
               <div class="pv-userName">${esc(name)}</div>
@@ -721,4 +721,54 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindFeedEvents();
 
   await loadFeed();
+
+  // --- PROFILE SEARCH LOGIC ---
+  const searchInput = $("searchInput");
+  const searchDrop = $("searchDrop");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", async () => {
+      const q = searchInput.value.trim();
+      if (q.length < 2) {
+        if (searchDrop) searchDrop.style.display = "none";
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, rank")
+        .ilike("full_name", `%${q}%`)
+        .limit(10);
+
+      if (error) {
+        console.error("Profile search error:", error);
+        return;
+      }
+
+      if (searchDrop) {
+        if (!data || data.length === 0) {
+          searchDrop.innerHTML = `<div style="padding:10px; font-size:13px; color:#888;">No users found for "${q}"</div>`;
+        } else {
+          searchDrop.innerHTML = data.map(p => `
+            <div class="searchItem" onclick="window.location.href='/profile/user.html?id=${p.id}'" style="display:flex; gap:10px; padding:10px; border-bottom:1px solid #eee; cursor:pointer; align-items:center;">
+              <div class="sAv" style="width:34px; height:34px; border-radius:18px; overflow:hidden; border:1px solid #eee; background:#f0f2f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-weight:900; color:#1f6f86;">${(p.full_name || "U").slice(0, 1)}</span>`}
+              </div>
+              <div class="sMeta" style="min-width:0;">
+                <div class="sName" style="font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.full_name)}</div>
+                <div class="sSub" style="font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.rank || "Seafarer")}</div>
+              </div>
+            </div>
+          `).join("");
+        }
+        searchDrop.style.display = "block";
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (searchDrop && !searchInput.contains(e.target) && !searchDrop.contains(e.target)) {
+        searchDrop.style.display = "none";
+      }
+    });
+  }
 });
