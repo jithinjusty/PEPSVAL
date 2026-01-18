@@ -220,7 +220,7 @@ function setEditing(state) {
   editing = !!state;
 
   // Toggle edit/save buttons
-editBtn.classList.toggle("hidden", editing);
+  editBtn.classList.toggle("hidden", editing);
   saveBtn.classList.toggle("hidden", !editing);
 
   // Enable/disable inputs based on account kind
@@ -289,41 +289,44 @@ function showAboutSection(kind) {
 }
 
 // ---------- company dropdown (shared, safe) ----------
+// ---------- company dropdown (shared, supabase) ----------
 async function loadSeedCompanies() {
   try {
-    const res = await fetch("/data/companies_seed.json", { cache: "no-store" });
-    if (!res.ok) return [];
-    const j = await res.json();
-    if (Array.isArray(j)) return j.map(x => (typeof x === "string" ? x : x?.name)).filter(Boolean);
-    if (Array.isArray(j?.companies)) return j.companies.map(x => (typeof x === "string" ? x : x?.name)).filter(Boolean);
+    // 1. Load from DB
+    const { data, error } = await supabase
+      .from("companies")
+      .select("name")
+      .order("name", { ascending: true })
+      .limit(1000);
+
+    if (error) throw error;
+    if (data) return data.map(x => x.name).filter(Boolean);
     return [];
   } catch {
-    return [];
+    // 2. Fallback to seed json if DB fails (offline or no table yet)
+    try {
+      const res = await fetch("/data/companies_seed.json", { cache: "no-store" });
+      if (!res.ok) return [];
+      const j = await res.json();
+      if (Array.isArray(j)) return j.map(x => (typeof x === "string" ? x : x?.name)).filter(Boolean);
+      return [];
+    } catch { return []; }
   }
 }
 
-function readLocalCompanies() {
-  let local = [];
-  try { local = JSON.parse(localStorage.getItem(LOCAL_COMPANY_KEY) || "[]"); } catch { local = []; }
-  return Array.isArray(local) ? local : [];
-}
-
-function addCompanyToLocalDropdown(name) {
+async function addCompanyToDb(name) {
   const n = safeText(name, "");
   if (!n) return;
-  const local = readLocalCompanies();
-  if (local.some(x => (x || "").toLowerCase() === n.toLowerCase())) return;
-  local.unshift(n);
-  localStorage.setItem(LOCAL_COMPANY_KEY, JSON.stringify(local.slice(0, 600)));
-  paintCompanyDatalist(); // refresh UI immediately
+  // Fire and forget insert (if valid)
+  // We use insert ignore logic via "onConflict" if mapped or just let it fail if unique constraint
+  // Supabase "upsert" with ignoreDuplicates: true
+  try {
+    await supabase.from("companies").upsert({ name: n }, { onConflict: "name", ignoreDuplicates: true });
+  } catch (e) { console.error("Company add failed", e); }
 }
 
 async function paintCompanyDatalist() {
-  const seed = await loadSeedCompanies();
-  const local = readLocalCompanies();
-  const all = [...seed, ...local]
-    .map(x => safeText(x, ""))
-    .filter(Boolean);
+  const all = await loadSeedCompanies();
 
   // unique (case-insensitive)
   const seen = new Set();
@@ -364,6 +367,14 @@ const RANKS_ALL = [
   "Hotel Director",
   // Other
   "Other",
+  "Cook",
+  "Bosun",
+  "AB",
+  "OS",
+  "Fitter",
+  "Oiler",
+  "Wiper",
+  "Steward"
 ];
 
 function paintRankDatalist() {
@@ -383,7 +394,7 @@ function readLocalExtra(kind) {
 function writeLocalExtra(kind, obj) {
   try {
     localStorage.setItem(localExtraKey(kind), JSON.stringify(obj || {}));
-  } catch {}
+  } catch { }
 }
 
 // ---------- Supabase profile ----------
@@ -485,7 +496,7 @@ async function saveProfile() {
     updates.rank = safeText(f.rank.value, null);
     updates.company_name = safeText(f.company_working.value, null);
     updates.bio = safeText(f.bio.value, null);
-    if (updates.company_name) addCompanyToLocalDropdown(updates.company_name);
+    if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
   if (accountKind === "company") {
@@ -496,7 +507,7 @@ async function saveProfile() {
       about: safeText(c.about.value, ""),
       vision: safeText(c.vision.value, ""),
     });
-    if (updates.company_name) addCompanyToLocalDropdown(updates.company_name);
+    if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
   if (accountKind === "professional") {
@@ -506,7 +517,7 @@ async function saveProfile() {
     updates.company_name = safeText(p.current_company.value, null);
     updates.role = safeText(p.position.value, null);
     updates.bio = safeText(p.bio.value, null);
-    if (updates.company_name) addCompanyToLocalDropdown(updates.company_name);
+    if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
   Object.keys(updates).forEach(k => {
@@ -570,7 +581,7 @@ function getLocalPostVisibility(postId) {
 }
 
 function setLocalPostVisibility(postId, v) {
-  try { localStorage.setItem(postVisibilityKey(postId), v); } catch {}
+  try { localStorage.setItem(postVisibilityKey(postId), v); } catch { }
 }
 
 async function loadPostsSafe() {
@@ -671,26 +682,14 @@ postsWrap?.addEventListener("click", async (e) => {
   }
 });
 
-// ---------- DOCUMENTS (safe, local first; can be connected later) ----------
-const DOCS_LOCAL_KEY = () => `pepsval_docs_${me?.id || "me"}_v1`;
+// ---------- DOCUMENTS (Supabase) ----------
 const DOCS_VIS_KEY = () => `pepsval_docs_vis_${me?.id || "me"}_v1`;
-
-function readDocsLocal() {
-  try {
-    const j = JSON.parse(localStorage.getItem(DOCS_LOCAL_KEY()) || "[]");
-    return Array.isArray(j) ? j : [];
-  } catch { return []; }
-}
-
-function writeDocsLocal(rows) {
-  try { localStorage.setItem(DOCS_LOCAL_KEY(), JSON.stringify(rows || [])); } catch {}
-}
 
 function readDocsVisibility() {
   try { return localStorage.getItem(DOCS_VIS_KEY()) || "public"; } catch { return "public"; }
 }
 function writeDocsVisibility(v) {
-  try { localStorage.setItem(DOCS_VIS_KEY(), v); } catch {}
+  try { localStorage.setItem(DOCS_VIS_KEY(), v); } catch { }
 }
 
 function daysToHuman(days) {
@@ -714,10 +713,7 @@ function renderDocs(rows) {
   const list = Array.isArray(rows) ? rows : [];
   const table = `
     <div class="tableActions">
-      <div class="rowBtns">
-        <button class="miniBtn" type="button" data-action="addDoc">+ Add row</button>
-        <button class="miniBtn" type="button" data-action="saveDocs">Save</button>
-      </div>
+      <button class="miniBtn" type="button" data-action="addDoc">+ Add document</button>
       <span class="badPill">${list.length} documents</span>
     </div>
 
@@ -735,21 +731,23 @@ function renderDocs(rows) {
         </thead>
         <tbody>
           ${list.map((r, idx) => {
-            const ex = computeExpiry(r.expiry_date);
-            return `
-              <tr data-idx="${idx}">
-                <td><input class="input" value="${escapeHtml(safeText(r.name,""))}" placeholder="e.g. GOC" ${editing ? "" : ""}></td>
-                <td><input class="input" value="${escapeHtml(safeText(r.issued_by,""))}" placeholder="Issuer" ${editing ? "" : ""}></td>
-                <td><input class="input" type="date" value="${escapeHtml(safeText(r.issue_date,""))}" ${editing ? "" : ""}></td>
-                <td><input class="input" type="date" value="${escapeHtml(safeText(r.expiry_date,""))}" ${editing ? "" : ""}></td>
+    const ex = computeExpiry(r.expiry_date);
+    return `
+              <tr data-id="${r.id || 'new'}" data-idx="${idx}">
+                <td><input class="input" name="name" value="${escapeHtml(safeText(r.name, ""))}" placeholder="e.g. GOC" ${editing ? "" : "disabled"}></td>
+                <td><input class="input" name="issued_by" value="${escapeHtml(safeText(r.issued_by, ""))}" placeholder="Issuer" ${editing ? "" : "disabled"}></td>
+                <td><input class="input" name="issue_date" type="date" value="${escapeHtml(safeText(r.issue_date, ""))}" ${editing ? "" : "disabled"}></td>
+                <td><input class="input" name="expiry_date" type="date" value="${escapeHtml(safeText(r.expiry_date, ""))}" ${editing ? "" : "disabled"}></td>
                 <td><span class="badPill">${escapeHtml(ex.label)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove">✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove" ${editing ? "" : "disabled"}>✕</button></td>
               </tr>
             `;
-          }).join("")}
+  }).join("")}
         </tbody>
       </table>
     </div>
+    
+    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveDocs">Save Documents</button></div>` : ""}
   `;
   documentsWrap.innerHTML = table;
 }
@@ -762,48 +760,83 @@ async function loadDocumentsSafe() {
   docsVisibleToggle.checked = vis !== "private";
   docsVisLabel.textContent = vis === "private" ? "Private" : "Public";
 
-  // local data (safe default)
-  const rows = readDocsLocal();
-  renderDocs(rows);
+  documentsWrap.innerHTML = "Loading...";
+
+  const { data, error } = await supabase.from("documents").select("*").eq("user_id", me.id).order("id");
+  if (error) {
+    console.error(error);
+    documentsWrap.innerHTML = "Error loading documents.";
+    return;
+  }
+  renderDocs(data || []);
 }
 
-documentsWrap?.addEventListener("click", (e) => {
+documentsWrap?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
   if (action === "addDoc") {
-    const rows = readDocsLocal();
-    rows.push({ name: "", issued_by: "", issue_date: "", expiry_date: "" });
-    writeDocsLocal(rows);
-    renderDocs(rows);
+    const current = scrapeDocsFromDOM();
+    current.push({ id: null, name: "", issued_by: "", issue_date: "", expiry_date: "" });
+    renderDocs(current);
   }
 
   if (action === "removeDoc") {
-    const tr = btn.closest("tr[data-idx]");
-    const idx = Number(tr?.dataset?.idx || -1);
-    if (idx < 0) return;
-    const rows = readDocsLocal();
-    rows.splice(idx, 1);
-    writeDocsLocal(rows);
-    renderDocs(rows);
+    const tr = btn.closest("tr");
+    if (!tr) return;
+    const id = tr.dataset.id;
+
+    if (id && id !== "new" && id !== "null") {
+      if (!confirm("Delete this document?")) return;
+      await supabase.from("documents").delete().eq("id", id).eq("user_id", me.id);
+    }
+    // simple refresh if we deleted real ID, or just re-render if it was blank row
+    if (id && id !== "new" && id !== "null") loadDocumentsSafe();
+    else {
+      const idx = Number(tr.dataset.idx);
+      const current = scrapeDocsFromDOM();
+      current.splice(idx, 1);
+      renderDocs(current);
+    }
   }
 
   if (action === "saveDocs") {
-    const rows = Array.from(documentsWrap.querySelectorAll("tbody tr")).map(tr => {
-      const inputs = tr.querySelectorAll("input");
-      return {
-        name: safeText(inputs[0]?.value, ""),
-        issued_by: safeText(inputs[1]?.value, ""),
-        issue_date: safeText(inputs[2]?.value, ""),
-        expiry_date: safeText(inputs[3]?.value, ""),
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const rows = scrapeDocsFromDOM();
+
+    for (const r of rows) {
+      const payload = {
+        user_id: me.id,
+        name: r.name,
+        issued_by: r.issued_by, // Allow empty for incomplete rows?
+        issue_date: r.issue_date || null,
+        expiry_date: r.expiry_date || null
       };
-    });
-    writeDocsLocal(rows);
-    alert("Documents saved.");
-    renderDocs(rows);
+      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+      // Upsert
+      await supabase.from("documents").upsert(payload);
+    }
+
+    await loadDocumentsSafe();
   }
 });
+
+function scrapeDocsFromDOM() {
+  return Array.from(documentsWrap.querySelectorAll("tbody tr")).map(tr => {
+    const inputs = tr.querySelectorAll("input");
+    return {
+      id: tr.dataset.id === "new" ? null : tr.dataset.id,
+      name: safeText(inputs[0]?.value, ""),
+      issued_by: safeText(inputs[1]?.value, ""),
+      issue_date: safeText(inputs[2]?.value, ""),
+      expiry_date: safeText(inputs[3]?.value, ""),
+    };
+  });
+}
 
 docsVisibleToggle?.addEventListener("change", () => {
   const v = docsVisibleToggle.checked ? "public" : "private";
@@ -811,19 +844,7 @@ docsVisibleToggle?.addEventListener("change", () => {
   docsVisLabel.textContent = v === "private" ? "Private" : "Public";
 });
 
-// ---------- SEA SERVICE (safe, local first) ----------
-const SEA_LOCAL_KEY = () => `pepsval_sea_${me?.id || "me"}_v1`;
-
-function readSeaLocal() {
-  try {
-    const j = JSON.parse(localStorage.getItem(SEA_LOCAL_KEY()) || "[]");
-    return Array.isArray(j) ? j : [];
-  } catch { return []; }
-}
-function writeSeaLocal(rows) {
-  try { localStorage.setItem(SEA_LOCAL_KEY(), JSON.stringify(rows || [])); } catch {}
-}
-
+// ---------- SEA SERVICE (Supabase) ----------
 function daysBetween(d1, d2) {
   if (!d1 || !d2) return 0;
   const a = new Date(d1);
@@ -858,10 +879,7 @@ function renderSea(rows) {
 
   seaWrap.innerHTML = `
     <div class="tableActions">
-      <div class="rowBtns">
-        <button class="miniBtn" type="button" data-action="addSea">+ Add contract</button>
-        <button class="miniBtn" type="button" data-action="saveSea">Save</button>
-      </div>
+      <button class="miniBtn" type="button" data-action="addSea">+ Add contract</button>
       <span class="badPill">${list.length} contracts</span>
     </div>
 
@@ -881,20 +899,20 @@ function renderSea(rows) {
         </thead>
         <tbody>
           ${list.map((r, idx) => {
-            const d = daysBetween(r.signed_on, r.signed_off);
-            return `
-              <tr data-idx="${idx}">
-                <td><input class="input" value="${escapeHtml(safeText(r.ship_name,\"\"))}" placeholder="Ship" /></td>
-                <td><input class="input" value="${escapeHtml(safeText(r.imo,\"\"))}" placeholder="IMO" /></td>
-                <td><input class="input" value="${escapeHtml(safeText(r.rank,\"\"))}" placeholder="Rank" list="rankList" /></td>
-                <td><input class="input" type="date" value="${escapeHtml(safeText(r.signed_on,\"\"))}" /></td>
-                <td><input class="input" type="date" value="${escapeHtml(safeText(r.signed_off,\"\"))}" /></td>
+    const d = daysBetween(r.signed_on, r.signed_off);
+    return `
+              <tr data-id="${r.id || 'new'}" data-idx="${idx}">
+                <td><input class="input" name="ship_name" value="${escapeHtml(safeText(r.ship_name, ""))}" placeholder="Ship" ${editing ? "" : "disabled"} /></td>
+                <td><input class="input" name="imo" value="${escapeHtml(safeText(r.imo, ""))}" placeholder="IMO" ${editing ? "" : "disabled"} /></td>
+                <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" ${editing ? "" : "disabled"} /></td>
+                <td><input class="input" name="signed_on" type="date" value="${escapeHtml(safeText(r.signed_on, ""))}" ${editing ? "" : "disabled"} /></td>
+                <td><input class="input" name="signed_off" type="date" value="${escapeHtml(safeText(r.signed_off, ""))}" ${editing ? "" : "disabled"} /></td>
                 <td><span class="badPill">${d}</span></td>
                 <td><span class="badPill">${Number(r.peers_verified || 0)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove">✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove" ${editing ? "" : "disabled"}>✕</button></td>
               </tr>
             `;
-          }).join("")}
+  }).join("")}
         </tbody>
       </table>
     </div>
@@ -903,236 +921,322 @@ function renderSea(rows) {
       <div class="summaryChip">Total sea service: ${monthsFromDays(totalDays)} months (${totalDays} days)</div>
     </div>
     <div class="summaryRow">${rankChips || `<div class="muted">No rank breakdown yet.</div>`}</div>
+    
+    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveSea">Save Sea Service</button></div>` : ""}
   `;
 }
 
 async function loadSeaSafe() {
   if (!seaWrap) return;
-  const rows = readSeaLocal();
-  renderSea(rows);
+  seaWrap.innerHTML = "Loading...";
+
+  const { data, error } = await supabase.from("sea_service").select("*").eq("user_id", me.id).order("id");
+  if (error) {
+    console.error(error);
+    seaWrap.innerHTML = "Error loading sea service.";
+    return;
+  }
+  renderSea(data || []);
 }
 
-seaWrap?.addEventListener("click", (e) => {
+seaWrap?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
 
   if (action === "addSea") {
-    const rows = readSeaLocal();
-    rows.push({ ship_name: "", imo: "", rank: "", signed_on: "", signed_off: "", peers_verified: 0 });
-    writeSeaLocal(rows);
-    renderSea(rows);
+    const current = scrapeSeaFromDOM();
+    current.push({ id: null, ship_name: "", imo: "", rank: "", signed_on: "", signed_off: "", peers_verified: 0 });
+    renderSea(current);
   }
 
   if (action === "removeSea") {
-    const tr = btn.closest("tr[data-idx]");
-    const idx = Number(tr?.dataset?.idx || -1);
-    if (idx < 0) return;
-    const rows = readSeaLocal();
-    rows.splice(idx, 1);
-    writeSeaLocal(rows);
-    renderSea(rows);
+    const tr = btn.closest("tr");
+    if (!tr) return;
+    const id = tr.dataset.id;
+
+    if (id && id !== "new" && id !== "null") {
+      if (!confirm("Delete this contract?")) return;
+      await supabase.from("sea_service").delete().eq("id", id).eq("user_id", me.id);
+    }
+
+    if (id && id !== "new" && id !== "null") loadSeaSafe();
+    else {
+      const idx = Number(tr.dataset.idx);
+      const current = scrapeSeaFromDOM();
+      current.splice(idx, 1);
+      renderSea(current);
+    }
   }
 
   if (action === "saveSea") {
-    const rows = Array.from(seaWrap.querySelectorAll("tbody tr")).map(tr => {
-      const inputs = tr.querySelectorAll("input");
-      return {
-        ship_name: safeText(inputs[0]?.value, ""),
-        imo: safeText(inputs[1]?.value, ""),
-        rank: safeText(inputs[2]?.value, ""),
-        signed_on: safeText(inputs[3]?.value, ""),
-        signed_off: safeText(inputs[4]?.value, ""),
-        peers_verified: 0,
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const rows = scrapeSeaFromDOM();
+
+    for (const r of rows) {
+      const payload = {
+        user_id: me.id,
+        ship_name: r.ship_name,
+        imo: r.imo,
+        rank: r.rank,
+        signed_on: r.signed_on || null,
+        signed_off: r.signed_off || null,
       };
-    });
-    writeSeaLocal(rows);
-    alert("Sea service saved.");
-    renderSea(rows);
+      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+      await supabase.from("sea_service").upsert(payload);
+    }
+
+    await loadSeaSafe();
   }
 });
 
-// ---------- JOBS (company) ----------
-const JOBS_LOCAL_KEY = () => `pepsval_jobs_${me?.id || "me"}_v1`;
-
-function readJobsLocal() {
-  try { return JSON.parse(localStorage.getItem(JOBS_LOCAL_KEY()) || "[]"); } catch { return []; }
+function scrapeSeaFromDOM() {
+  return Array.from(seaWrap.querySelectorAll("tbody tr")).map(tr => {
+    const inputs = tr.querySelectorAll("input");
+    return {
+      id: tr.dataset.id === "new" ? null : tr.dataset.id,
+      ship_name: safeText(inputs[0]?.value, ""),
+      imo: safeText(inputs[1]?.value, ""),
+      rank: safeText(inputs[2]?.value, ""),
+      signed_on: safeText(inputs[3]?.value, ""),
+      signed_off: safeText(inputs[4]?.value, ""),
+      peers_verified: 0
+    };
+  });
 }
-function writeJobsLocal(rows) {
-  try { localStorage.setItem(JOBS_LOCAL_KEY(), JSON.stringify(rows || [])); } catch {}
-}
 
+// ---------- JOBS (Supabase) ----------
 function renderJobs(rows) {
   const list = Array.isArray(rows) ? rows : [];
   jobsWrap.innerHTML = `
     <div class="tableActions">
-      <div class="rowBtns">
-        <button class="miniBtn" type="button" data-action="addJob">+ New job</button>
-        <button class="miniBtn" type="button" data-action="saveJobs">Save</button>
-      </div>
+      <button class="miniBtn" type="button" data-action="addJob">+ New job</button>
       <span class="badPill">${list.length} jobs</span>
     </div>
 
     ${list.map((j, idx) => `
-      <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-idx="${idx}">
+      <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${j.id || 'new'}" data-idx="${idx}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
-          <div style="font-weight:900;font-size:15px;">${escapeHtml(safeText(j.title,"Job title"))}</div>
-          <button class="iconBtn" type="button" data-action="removeJob" title="Remove">✕</button>
+          <div style="font-weight:900;font-size:15px;">${escapeHtml(safeText(j.title, "Job title"))}</div>
+          <button class="iconBtn" type="button" data-action="removeJob" title="Remove" ${editing ? "" : "disabled"}>✕</button>
         </div>
         <div class="aboutGrid" style="margin-top:10px;">
-          <div class="box"><div class="k">Rank</div><input class="v input" value="${escapeHtml(safeText(j.rank,\"\"))}" placeholder="Rank" list="rankList"></div>
-          <div class="box"><div class="k">Vessel type</div><input class="v input" value="${escapeHtml(safeText(j.vessel,\"\"))}" placeholder="Bulk / Tanker / Offshore…"></div>
-          <div class="box"><div class="k">Salary</div><input class="v input" value="${escapeHtml(safeText(j.salary,\"\"))}" placeholder="e.g. USD 4500"></div>
-          <div class="box"><div class="k">Contract</div><input class="v input" value="${escapeHtml(safeText(j.contract,\"\"))}" placeholder="e.g. 6 months"></div>
-          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" rows="3" placeholder="Job description…">${escapeHtml(safeText(j.desc,\"\"))}</textarea></div>
+           <div class="box span2"><div class="k">Job Title</div><input class="v input" name="title" value="${escapeHtml(safeText(j.title, ""))}" placeholder="Title" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Rank</div><input class="v input" name="rank" value="${escapeHtml(safeText(j.rank, ""))}" placeholder="Rank" list="rankList" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Vessel type</div><input class="v input" name="vessel_type" value="${escapeHtml(safeText(j.vessel_type, ""))}" placeholder="Bulk / Tanker..." ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Salary</div><input class="v input" name="salary" value="${escapeHtml(safeText(j.salary, ""))}" placeholder="e.g. USD 4500" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Contract</div><input class="v input" name="contract_duration" value="${escapeHtml(safeText(j.contract_duration, ""))}" placeholder="e.g. 6 months" ${editing ? "" : "disabled"}></div>
+          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="Job description..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.description, ""))}</textarea></div>
         </div>
       </div>
     `).join("")}
+    
+    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveJobs">Save Jobs</button></div>` : ""}
   `;
 }
 
 async function loadJobsSafe() {
   if (!jobsWrap) return;
-  const rows = readJobsLocal();
-  renderJobs(rows);
+  jobsWrap.innerHTML = "Loading...";
+  const { data, error } = await supabase.from("jobs").select("*").eq("user_id", me.id).order("id");
+  if (error) {
+    console.error(error);
+    jobsWrap.innerHTML = "Error loading jobs.";
+    return;
+  }
+  renderJobs(data || []);
 }
 
-jobsWrap?.addEventListener("click", (e) => {
+jobsWrap?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
 
   if (action === "addJob") {
-    const rows = readJobsLocal();
-    rows.unshift({ title: "New Job", rank: "", vessel: "", salary: "", contract: "", desc: "" });
-    writeJobsLocal(rows);
-    renderJobs(rows);
+    const current = scrapeJobsFromDOM();
+    current.unshift({ id: null, title: "New Job", rank: "", vessel_type: "", salary: "", contract_duration: "", description: "" });
+    renderJobs(current);
   }
 
   if (action === "removeJob") {
-    const card = btn.closest("[data-idx]");
-    const idx = Number(card?.dataset?.idx || -1);
-    if (idx < 0) return;
-    const rows = readJobsLocal();
-    rows.splice(idx, 1);
-    writeJobsLocal(rows);
-    renderJobs(rows);
+    const card = btn.closest("[data-id]");
+    if (!card) return;
+    const id = card.dataset.id;
+
+    if (id && id !== "new" && id !== "null") {
+      if (!confirm("Delete this job?")) return;
+      await supabase.from("jobs").delete().eq("id", id).eq("user_id", me.id);
+    }
+
+    if (id && id !== "new" && id !== "null") loadJobsSafe();
+    else {
+      const idx = Number(card.dataset.idx);
+      const current = scrapeJobsFromDOM();
+      current.splice(idx, 1);
+      renderJobs(current);
+    }
   }
 
   if (action === "saveJobs") {
-    const cards = Array.from(jobsWrap.querySelectorAll("[data-idx]"));
-    const rows = cards.map(card => {
-      const title = safeText(card.querySelector("div[style*='font-weight:900']")?.textContent, "Job");
-      const inputs = card.querySelectorAll("input");
-      const ta = card.querySelector("textarea");
-      return {
-        title,
-        rank: safeText(inputs[0]?.value, ""),
-        vessel: safeText(inputs[1]?.value, ""),
-        salary: safeText(inputs[2]?.value, ""),
-        contract: safeText(inputs[3]?.value, ""),
-        desc: safeText(ta?.value, ""),
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const rows = scrapeJobsFromDOM();
+
+    for (const r of rows) {
+      const payload = {
+        user_id: me.id,
+        title: r.title,
+        rank: r.rank,
+        vessel_type: r.vessel_type,
+        salary: r.salary,
+        contract_duration: r.contract_duration,
+        description: r.description
       };
-    });
-    writeJobsLocal(rows);
-    alert("Jobs saved.");
-    renderJobs(rows);
+      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+      await supabase.from("jobs").upsert(payload);
+    }
+    await loadJobsSafe();
   }
 });
 
-// ---------- EXPERIENCE (professional) ----------
-const EXP_LOCAL_KEY = () => `pepsval_exp_${me?.id || "me"}_v1`;
-
-function readExpLocal() {
-  try { return JSON.parse(localStorage.getItem(EXP_LOCAL_KEY()) || "[]"); } catch { return []; }
+function scrapeJobsFromDOM() {
+  const cards = Array.from(jobsWrap.querySelectorAll("[data-id]"));
+  return cards.map(card => {
+    // We scrape direct inputs by name
+    const getVal = (name) => safeText(card.querySelector(`[name="${name}"]`)?.value, "");
+    return {
+      id: card.dataset.id === "new" ? null : card.dataset.id,
+      title: getVal("title") || "Job",
+      rank: getVal("rank"),
+      vessel_type: getVal("vessel_type"),
+      salary: getVal("salary"),
+      contract_duration: getVal("contract_duration"),
+      description: getVal("description"),
+    };
+  });
 }
-function writeExpLocal(rows) {
-  try { localStorage.setItem(EXP_LOCAL_KEY(), JSON.stringify(rows || [])); } catch {}
-}
 
+// ---------- EXPERIENCE (Supabase) ----------
 function renderExperience(rows) {
   const list = Array.isArray(rows) ? rows : [];
   expWrap.innerHTML = `
     <div class="tableActions">
-      <div class="rowBtns">
-        <button class="miniBtn" type="button" data-action="addExp">+ Add experience</button>
-        <button class="miniBtn" type="button" data-action="saveExp">Save</button>
-      </div>
+      <button class="miniBtn" type="button" data-action="addExp">+ Add experience</button>
       <span class="badPill">${list.length} items</span>
     </div>
 
     ${list.map((x, idx) => `
-      <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-idx="${idx}">
+      <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${x.id || 'new'}" data-idx="${idx}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
-          <div style="font-weight:900;">${escapeHtml(safeText(x.company,\"Company\"))}</div>
-          <button class="iconBtn" type="button" data-action="removeExp">✕</button>
+          <div style="font-weight:900;">${escapeHtml(safeText(x.company, "Company"))}</div>
+          <button class="iconBtn" type="button" data-action="removeExp" ${editing ? "" : "disabled"}>✕</button>
         </div>
         <div class="aboutGrid" style="margin-top:10px;">
-          <div class="box"><div class="k">Company</div><input class="v input" value="${escapeHtml(safeText(x.company,\"\"))}" placeholder="Company" list="companyList"></div>
-          <div class="box"><div class="k">Role</div><input class="v input" value="${escapeHtml(safeText(x.role,\"\"))}" placeholder="Role"></div>
-          <div class="box"><div class="k">From</div><input class="v input" type="date" value="${escapeHtml(safeText(x.from,\"\"))}"></div>
-          <div class="box"><div class="k">To</div><input class="v input" type="date" value="${escapeHtml(safeText(x.to,\"\"))}"></div>
-          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" rows="3" placeholder="What did you do there?">${escapeHtml(safeText(x.desc,\"\"))}</textarea></div>
+          <div class="box"><div class="k">Company</div><input class="v input" name="company" value="${escapeHtml(safeText(x.company, ""))}" placeholder="Company" list="companyList" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Role</div><input class="v input" name="role" value="${escapeHtml(safeText(x.role, ""))}" placeholder="Role" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">From</div><input class="v input" name="start_date" type="date" value="${escapeHtml(safeText(x.start_date, ""))}" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">To</div><input class="v input" name="end_date" type="date" value="${escapeHtml(safeText(x.end_date, ""))}" ${editing ? "" : "disabled"}></div>
+          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="What did you do there?" ${editing ? "" : "disabled"}>${escapeHtml(safeText(x.description, ""))}</textarea></div>
         </div>
       </div>
     `).join("")}
-
+    
     <div class="summaryRow">
-      <div class="muted">Add achievements / extra-curriculars inside descriptions for now (next we can add a dedicated section).</div>
+      <div class="muted">Add achievements / extra-curriculars inside descriptions for now.</div>
     </div>
+    
+    ${editing ? `<div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveExp">Save Experience</button></div>` : ""}
   `;
 }
 
 async function loadExperienceSafe() {
   if (!expWrap) return;
-  const rows = readExpLocal();
-  renderExperience(rows);
+  expWrap.innerHTML = "Loading...";
+  const { data, error } = await supabase.from("experience").select("*").eq("user_id", me.id).order("id");
+  if (error) {
+    console.error(error);
+    expWrap.innerHTML = "Error loading experience.";
+    return;
+  }
+  renderExperience(data || []);
 }
 
-expWrap?.addEventListener("click", (e) => {
+expWrap?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
 
   if (action === "addExp") {
-    const rows = readExpLocal();
-    rows.unshift({ company: "", role: "", from: "", to: "", desc: "" });
-    writeExpLocal(rows);
-    renderExperience(rows);
+    const current = scrapeExpFromDOM();
+    current.unshift({ id: null, company: "", role: "", start_date: "", end_date: "", description: "" });
+    renderExperience(current);
   }
 
   if (action === "removeExp") {
-    const card = btn.closest("[data-idx]");
-    const idx = Number(card?.dataset?.idx || -1);
-    if (idx < 0) return;
-    const rows = readExpLocal();
-    rows.splice(idx, 1);
-    writeExpLocal(rows);
-    renderExperience(rows);
+    const card = btn.closest("[data-id]");
+    if (!card) return;
+    const id = card.dataset.id;
+
+    if (id && id !== "new" && id !== "null") {
+      if (!confirm("Delete this experience?")) return;
+      await supabase.from("experience").delete().eq("id", id).eq("user_id", me.id);
+    }
+
+    if (id && id !== "new" && id !== "null") loadExperienceSafe();
+    else {
+      const idx = Number(card.dataset.idx);
+      const current = scrapeExpFromDOM();
+      current.splice(idx, 1);
+      renderExperience(current);
+    }
   }
 
   if (action === "saveExp") {
-    const cards = Array.from(expWrap.querySelectorAll("[data-idx]"));
-    const rows = cards.map(card => {
-      const inputs = card.querySelectorAll("input");
-      const ta = card.querySelector("textarea");
-      return {
-        company: safeText(inputs[0]?.value, ""),
-        role: safeText(inputs[1]?.value, ""),
-        from: safeText(inputs[2]?.value, ""),
-        to: safeText(inputs[3]?.value, ""),
-        desc: safeText(ta?.value, ""),
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const rows = scrapeExpFromDOM();
+
+    for (const r of rows) {
+      const payload = {
+        user_id: me.id,
+        company: r.company,
+        role: r.role,
+        start_date: r.start_date || null,
+        end_date: r.end_date || null,
+        description: r.description
       };
-    });
-    rows.forEach(r => { if (r.company) addCompanyToLocalDropdown(r.company); });
-    writeExpLocal(rows);
-    alert("Experience saved.");
-    renderExperience(rows);
+      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
+
+      await supabase.from("experience").upsert(payload);
+
+      // Also update shared company list
+      if (r.company) addCompanyToDb(r.company);
+    }
+
+    await loadExperienceSafe();
   }
 });
+
+function scrapeExpFromDOM() {
+  const cards = Array.from(expWrap.querySelectorAll("[data-id]"));
+  return cards.map(card => {
+    const getVal = (name) => safeText(card.querySelector(`[name="${name}"]`)?.value, "");
+    return {
+      id: card.dataset.id === "new" ? null : card.dataset.id,
+      company: getVal("company"),
+      role: getVal("role"),
+      start_date: getVal("start_date"),
+      end_date: getVal("end_date"),
+      description: getVal("description"),
+    };
+  });
+}
 
 // ---------- avatar edit button (UI only) ----------
 avatarEditBtn?.addEventListener("click", () => {
