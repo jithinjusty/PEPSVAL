@@ -136,35 +136,43 @@ body {
 }
 
 /* Shared UI */
+/* ---------- Bottom nav ---------- */
 .bottomNav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 60px;
-  background: #fff;
-  border-top: 1px solid #e6e6e6;
+  z-index: 55;
   display: flex;
-  gap: 6px;
-  justify-content: space-around;
-  align-items: center;
-  padding: 6px 10px;
-  z-index: 50
+  gap: 8px;
+  padding: 10px 12px 18px;
+  background: rgba(246, 251, 255, .92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, .06);
 }
 
-.bnItem {
+.navItem {
   flex: 1;
   text-align: center;
+  padding: 12px 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, .08);
+  background: #fff;
+  font-weight: 900;
+  font-size: 13px;
   text-decoration: none;
   color: #111;
-  font-weight: 700;
-  font-size: 13px;
-  padding: 10px 6px;
-  border-radius: 12px
+  transition: all .2s ease;
 }
 
-.bnItem.active {
-  background: #f0f2f5
+.navItem.active {
+  background: rgba(31, 111, 134, .10);
+  border-color: rgba(31, 111, 134, .35);
+  color: var(--brand, #1f6f86);
+}
+
+.navItem:active {
+  transform: scale(.97);
 }
 
 .wrap {
