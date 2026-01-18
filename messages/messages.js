@@ -99,8 +99,8 @@ async function loadCommunity() {
         .single();
 
       if (newMsg && currentTab === "community") {
-        // Simple duplicate prevent: check if content exists lately
-        const already = [...list.querySelectorAll('.msg-bubble')].some(b => b.textContent === newMsg.content);
+        // Prevent double-showing if optimistic UI already added it
+        const already = document.getElementById(`msg_${newMsg.id}`);
         if (already) return;
 
         const div = createCommunityMsgEl(newMsg);
@@ -131,6 +131,7 @@ function createCommunityMsgEl(m) {
     <div class="msg-bubble">${m.content}</div>
     <div class="msg-info"><span>${time}</span></div>
   `;
+  if (m.id) div.id = `msg_${m.id}`;
   return div;
 }
 
@@ -202,9 +203,10 @@ async function loadPrivateChat(convId, otherName = "Chat") {
 
   const sub = supabase.channel(`dm_${convId}`)
     .on('postgres_changes', { event: 'INSERT', table: 'private_messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
-      const isMe = payload.new.sender_id === currentUser.id;
+      if (payload.new.sender_id === currentUser.id) return;
+
       const div = document.createElement("div");
-      div.className = `msg-row ${isMe ? 'me' : ''}`;
+      div.className = `msg-row`;
       const time = new Date(payload.new.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       div.innerHTML = `
         <div class="msg-bubble">${payload.new.content}</div>
@@ -257,17 +259,20 @@ sendBtn.onclick = async () => {
 
     // Optimistic UI update
     const div = createCommunityMsgEl(tempMsg);
-    div.id = "temp_sending_" + Date.now(); // identifier to check later if needed
     list.prepend(div);
     chatInput.value = "";
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("community_chat")
-      .insert({ profile_id: currentUser.id, content: text });
+      .insert({ profile_id: currentUser.id, content: text })
+      .select()
+      .single();
 
     if (error) {
       alert("Error posting: " + error.message);
-      div.remove(); // Rollback if failed
+      div.remove();
+    } else if (data) {
+      div.id = `msg_${data.id}`;
     }
   }
   else {
