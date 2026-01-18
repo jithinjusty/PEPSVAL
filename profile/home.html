@@ -8,6 +8,12 @@
 
   <link rel="stylesheet" href="/css/style.css?v=3001" />
   <link rel="stylesheet" href="/profile/profile.css?v=20260118-bottomnav-v2" />
+  <script>
+    (function () {
+      const theme = localStorage.getItem('theme') || 'light';
+      if (theme === 'dark') document.documentElement.classList.add('dark-mode');
+    })();
+  </script>
 </head>
 
 <body>
