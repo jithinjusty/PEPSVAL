@@ -54,6 +54,7 @@ const docsVisLabel = document.getElementById("docsVisLabel");
 // About fields
 const f = {
   account_type: document.getElementById("f_account_type"),
+  account_type_help: document.getElementById("accountTypeHelp"),
   full_name: document.getElementById("f_full_name"),
   dob: document.getElementById("f_dob"),
   email: document.getElementById("f_email"),
@@ -238,7 +239,12 @@ function setEditing(state) {
   };
 
   // Seafarer
-  enable(f.account_type, editing);
+  const hasAccountType = !!(profile?.account_type);
+  enable(f.account_type, editing && !hasAccountType);
+  if (f.account_type_help) {
+    if (editing && !hasAccountType) show(f.account_type_help);
+    else hide(f.account_type_help);
+  }
   enable(f.full_name, editing);
   enable(f.dob, editing);
   enable(f.phone, editing);
