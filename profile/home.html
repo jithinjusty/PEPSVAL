@@ -2,70 +2,202 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PEPSVAL — Profile</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="/css/style.css" />
-  <style>
-    .tabs{display:flex;gap:12px;border-bottom:1px solid #e2e8f0;margin-top:16px}
-    .tab{padding:10px 14px;cursor:pointer;border-radius:10px}
-    .tab.active{background:#1F6F86;color:#fff}
-    .section{display:none;padding:16px 0}
-    .section.active{display:block}
-    .avatar-edit{
-      position:absolute;bottom:6px;right:6px;
-      background:#1F6F86;color:#fff;
-      width:28px;height:28px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:14px;cursor:pointer
-    }
-    table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid #e2e8f0;padding:8px;font-size:14px}
-    .fab{
-      position:fixed;bottom:80px;right:18px;
-      width:56px;height:56px;border-radius:50%;
-      background:#1F6F86;color:#fff;
-      display:flex;align-items:center;justify-content:center;
-      font-size:24px;cursor:pointer
-    }
-  </style>
+  <title>PEPSVAL — Profile</title>
+
+  <link rel="stylesheet" href="/css/style.css?v=3001" />
+  <link rel="stylesheet" href="/profile/profile.css?v=20260114-ui1" />
 </head>
 
-<body class="app-bg">
+<body>
+  <header class="topbar">
+    <a class="brand" href="/feed/index.html" aria-label="Go to feed">
+      <div class="brandWord">PEPSVAL</div>
+      <div class="brandTag">connect, hire and grow</div>
+    </a>
 
-<div class="container">
+    <a class="btnGhost" href="/feed/index.html">Back</a>
+  </header>
 
-  <!-- PROFILE HEADER -->
-  <div style="display:flex;align-items:center;gap:16px;position:relative">
-    <div style="position:relative">
-      <img id="avatarImg" class="avatar" />
-      <div class="avatar-edit" id="avatarEditBtn">✏️</div>
-    </div>
-    <div>
-      <h2 id="profileName">—</h2>
-      <div id="profileSub">—</div>
-    </div>
-  </div>
+  <main class="wrap">
+    <section class="profileCard">
+      <div class="profileTop">
+        <div class="avatarWrap" id="avatarWrap">
+          <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
+          <div id="avatarFallback" class="avatarFallback hidden">P</div>
 
-  <!-- TABS -->
-  <div class="tabs" id="tabs"></div>
+          <!-- UI only: replaces the old "Change" word with a pen icon overlay -->
+          <button id="avatarEditBtn" class="avatarEditBtn" type="button" aria-label="Edit profile photo" title="Edit photo">
+            ✎
+          </button>
+        </div>
 
-  <!-- SECTIONS -->
-  <div id="sections">
+        <div class="headerText">
+          <div class="nameRow">
+            <div class="name" id="profileName">Profile</div>
+            <span id="typeBadge" class="badge hidden">Seafarer</span>
+          </div>
 
-    <div id="about" class="section"></div>
-    <div id="documents" class="section"></div>
-    <div id="seaService" class="section"></div>
-    <div id="posts" class="section"></div>
-    <div id="jobs" class="section"></div>
-    <div id="experience" class="section"></div>
+          <div class="miniRow">
+            <div class="miniItem">Rank: <span id="miniRank">—</span></div>
+            <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
+          </div>
+        </div>
+      </div>
 
-  </div>
+      <!-- Tabs (built dynamically based on account type) -->
+      <div id="tabs" class="tabs"></div>
 
-</div>
+      <!-- Panes -->
+      <section id="tab_about" class="pane">
+        <div class="paneTitle" id="aboutTitle">About</div>
 
-<div class="fab" id="addPostBtn">🛟+</div>
+        <div class="btnRow">
+          <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
+          <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
+        </div>
 
-<script src="/js/supabaseClient.js"></script>
-<script src="/profile/profile.js"></script>
+        <p class="muted" id="aboutHint">
+          Keep your profile complete. Verified details increase trust and visibility.
+        </p>
+
+        <form id="aboutForm" class="aboutForm" autocomplete="off">
+          <!-- Seafarer -->
+          <div class="aboutGrid" data-about="seafarer">
+            <div class="box">
+              <div class="k">Name</div>
+              <input class="v input" id="f_full_name" placeholder="Your full name" />
+            </div>
+            <div class="box">
+              <div class="k">Date of Birth</div>
+              <input class="v input" id="f_dob" type="date" />
+            </div>
+            <div class="box">
+              <div class="k">Email</div>
+              <input class="v input" id="f_email" type="email" disabled />
+            </div>
+            <div class="box">
+              <div class="k">Mobile number</div>
+              <input class="v input" id="f_phone" placeholder="+91 …" />
+            </div>
+            <div class="box">
+              <div class="k">Rank onboard</div>
+              <input class="v input" id="f_rank" placeholder="Select / type rank" list="rankList" />
+              <datalist id="rankList"></datalist>
+            </div>
+            <div class="box">
+              <div class="k">Shipping company working in</div>
+              <input class="v input" id="f_company_working" placeholder="Start typing company…" list="companyList" />
+              <datalist id="companyList"></datalist>
+            </div>
+            <div class="box span2">
+              <div class="k">About yourself</div>
+              <textarea class="v input textarea" id="f_bio" rows="4" placeholder="Write about yourself…"></textarea>
+            </div>
+          </div>
+
+          <!-- Company (Employer) -->
+          <div class="aboutGrid hidden" data-about="company">
+            <div class="box">
+              <div class="k">Company name</div>
+              <input class="v input" id="c_company_name" placeholder="Company name" />
+            </div>
+            <div class="box">
+              <div class="k">Contact number</div>
+              <input class="v input" id="c_phone" placeholder="Phone" />
+            </div>
+            <div class="box span2">
+              <div class="k">Emails</div>
+              <div id="c_emails" class="multiList"></div>
+              <button id="c_add_email" class="miniBtn" type="button">+ Add email</button>
+              <div class="muted" style="margin-top:6px;">Add multiple emails and tag purpose (Career / Support etc.)</div>
+            </div>
+            <div class="box span2">
+              <div class="k">About company</div>
+              <textarea class="v input textarea" id="c_about" rows="4" placeholder="Services, achievements, data…"></textarea>
+            </div>
+            <div class="box span2">
+              <div class="k">Vision & Mission</div>
+              <textarea class="v input textarea" id="c_vision" rows="4" placeholder="Vision and mission…"></textarea>
+            </div>
+          </div>
+
+          <!-- Maritime Professional (Shore) -->
+          <div class="aboutGrid hidden" data-about="professional">
+            <div class="box">
+              <div class="k">Name</div>
+              <input class="v input" id="p_full_name" placeholder="Your full name" />
+            </div>
+            <div class="box">
+              <div class="k">Date of Birth</div>
+              <input class="v input" id="p_dob" type="date" />
+            </div>
+            <div class="box">
+              <div class="k">Email</div>
+              <input class="v input" id="p_email" type="email" disabled />
+            </div>
+            <div class="box">
+              <div class="k">Contact</div>
+              <input class="v input" id="p_phone" placeholder="Phone" />
+            </div>
+            <div class="box">
+              <div class="k">Currently working at</div>
+              <input class="v input" id="p_current_company" placeholder="Company" list="companyList" />
+            </div>
+            <div class="box">
+              <div class="k">Position</div>
+              <input class="v input" id="p_position" placeholder="Position / role" />
+            </div>
+            <div class="box span2">
+              <div class="k">About</div>
+              <textarea class="v input textarea" id="p_bio" rows="4" placeholder="Write about yourself…"></textarea>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section id="tab_posts" class="pane hidden">
+        <div class="paneTop">
+          <div class="paneTitle">Posts</div>
+          <div id="postCounts" class="postCounts">0 posts</div>
+        </div>
+        <div id="postsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_documents" class="pane hidden">
+        <div class="paneTitle">Documents</div>
+        <div class="paneSub">
+          <label class="switch">
+            <input id="docsVisibleToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <div class="muted">Documents visibility: <span id="docsVisLabel">Public</span></div>
+        </div>
+        <div id="documentsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_sea" class="pane hidden">
+        <div class="paneTitle">Sea Service</div>
+        <div id="seaWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_jobs" class="pane hidden">
+        <div class="paneTitle">Jobs</div>
+        <div id="jobsWrap" class="muted">Loading…</div>
+      </section>
+
+      <section id="tab_experience" class="pane hidden">
+        <div class="paneTitle">Experience</div>
+        <div id="expWrap" class="muted">Loading…</div>
+      </section>
+    </section>
+
+    <!-- Floating add (+ in lifebuoy) -->
+    <a id="addPostFab" class="addPostFab" href="/feed/index.html" aria-label="Add post" title="Add post">
+      <span class="lifebuoy">+</span>
+    </a>
+  </main>
+
+  <script type="module" src="/profile/profile.js?v=20260118-final-all"></script>
 </body>
 </html>
