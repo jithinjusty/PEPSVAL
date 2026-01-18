@@ -7,6 +7,12 @@
   <title>Pepsval — Feed</title>
 
   <link rel="stylesheet" href="/feed/feed.css?v=2002" />
+  <script>
+    (function () {
+      const theme = localStorage.getItem('theme') || 'light';
+      if (theme === 'dark') document.documentElement.classList.add('dark-mode');
+    })();
+  </script>
 </head>
 
 <body class="app-bg">
