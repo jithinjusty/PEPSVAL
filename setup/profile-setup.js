@@ -730,6 +730,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadCountries();
 
+  // Check if account type was set during signup
+  const metaType = currentUser.user_metadata?.account_type;
+  if (metaType && els.accountType) {
+    els.accountType.value = metaType;
+    els.accountType.disabled = true; // Lock it
+
+    // Hide the container entirely so user doesn't even see the choice
+    const s1 = document.getElementById("step1");
+    if (s1) s1.style.display = "none";
+
+    syncAccountUI(); // Show correct fields (Rank vs Role)
+  }
+
   makeCombo({
     comboName: "rank",
     inputEl: els.rankSearch,
