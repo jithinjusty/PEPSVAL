@@ -154,8 +154,10 @@ function setAccountTypeBadge(account_type) {
 function getAccountKind(account_type) {
   const t = (account_type || "").toString().toLowerCase().trim();
   if (t === "seafarer") return "seafarer";
-  if (t === "employer") return "company";
-  if (t === "shore") return "professional";
+  if (t === "employer" || t === "company") return "company"; // tolerate 'company' DB value
+  if (t === "shore" || t === "professional") return "professional";
+  // Default to seafarer if empty or unknown (most common user)
+  if (!t) return "seafarer";
   return "other";
 }
 
@@ -417,7 +419,8 @@ async function ensureProfileRow(user) {
       full_name:
         (user.user_metadata && user.user_metadata.full_name) ||
         user.email?.split("@")[0] ||
-        null
+        null,
+      account_type: "seafarer" // Default for new users
     };
 
     const { error: insErr } = await supabase.from("profiles").insert(insertPayload);
@@ -441,7 +444,10 @@ function paintAbout() {
   if (accountKind === "seafarer") showAboutSection("seafarer");
   if (accountKind === "company") showAboutSection("company");
   if (accountKind === "professional") showAboutSection("professional");
-  if (accountKind === "other") showAboutSection("seafarer"); // fallback
+  if (accountKind === "professional") showAboutSection("professional");
+  // Default fallback -> show Seafarer inputs. This matches getAccountKind() default.
+  // Ideally this line is rarely hit now that we default aggressively.
+  if (accountKind === "other" || accountKind === "seafarer") showAboutSection("seafarer");
 
   // Seafarer fields
   if (f.full_name) f.full_name.value = safeText(profile?.full_name, "");
@@ -502,6 +508,10 @@ async function saveProfile() {
     updates.rank = safeText(f.rank.value, null);
     updates.company_name = safeText(f.company_working.value, null);
     updates.bio = safeText(f.bio.value, null);
+
+    // Ensure we claim the role if not set
+    updates.account_type = "seafarer";
+
     if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
@@ -513,6 +523,9 @@ async function saveProfile() {
       about: safeText(c.about.value, ""),
       vision: safeText(c.vision.value, ""),
     });
+
+    updates.account_type = "employer"; // DB uses 'employer' or 'company' depending on strictness, staying consistent with initial code (employer)
+
     if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
@@ -523,6 +536,9 @@ async function saveProfile() {
     updates.company_name = safeText(p.current_company.value, null);
     updates.role = safeText(p.position.value, null);
     updates.bio = safeText(p.bio.value, null);
+
+    updates.account_type = "shore"; // DB uses 'shore'
+
     if (updates.company_name) addCompanyToDb(updates.company_name);
   }
 
@@ -1302,20 +1318,4 @@ c.emailsWrap?.addEventListener("click", (e) => {
   if (!btn) return;
   const row = btn.closest(".multiRow");
   const idx = Number(row?.dataset?.idx || -1);
-  if (idx < 0) return;
-  const current = readCompanyEmails();
-  current.splice(idx, 1);
-  paintCompanyEmails(current);
-});
-
-// ---------- init ----------
-(async () => {
-  try {
-    paintRankDatalist();
-    await paintCompanyDatalist();
-    await loadProfile();
-  } catch (e) {
-    console.error("Profile load error:", e);
-    alert("Profile load failed: " + (e.message || "Unknown error"));
-  }
-})();
+  if 
