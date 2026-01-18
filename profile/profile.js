@@ -1029,7 +1029,13 @@ function renderJobs(rows) {
           <div class="box"><div class="k">Vessel type</div><input class="v input" name="vessel_type" value="${escapeHtml(safeText(j.vessel_type, ""))}" placeholder="Bulk / Tanker..." ${editing ? "" : "disabled"}></div>
           <div class="box"><div class="k">Salary</div><input class="v input" name="salary" value="${escapeHtml(safeText(j.salary, ""))}" placeholder="e.g. USD 4500" ${editing ? "" : "disabled"}></div>
           <div class="box"><div class="k">Contract</div><input class="v input" name="contract_duration" value="${escapeHtml(safeText(j.contract_duration, ""))}" placeholder="e.g. 6 months" ${editing ? "" : "disabled"}></div>
+          
+          <div class="box"><div class="k">Location / Port</div><input class="v input" name="location" value="${escapeHtml(safeText(j.location, ""))}" placeholder="Joining port or region" ${editing ? "" : "disabled"}></div>
+          <div class="box"><div class="k">Joining Date</div><input class="v input" name="joining_date" type="date" value="${escapeHtml(safeText(j.joining_date, ""))}" ${editing ? "" : "disabled"}></div>
+          
           <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="Job description..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.description, ""))}</textarea></div>
+          <div class="box span2"><div class="k">Requirements</div><textarea class="v input textarea" name="requirements" rows="2" placeholder="Certifications, Visa, Experience..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.requirements, ""))}</textarea></div>
+          <div class="box span2"><div class="k">Benefits</div><textarea class="v input textarea" name="benefits" rows="2" placeholder="Wifi, Gym, Flight included..." ${editing ? "" : "disabled"}>${escapeHtml(safeText(j.benefits, ""))}</textarea></div>
         </div>
       </div>
     `).join("")}
@@ -1041,7 +1047,7 @@ function renderJobs(rows) {
 async function loadJobsSafe() {
   if (!jobsWrap) return;
   jobsWrap.innerHTML = "Loading...";
-  const { data, error } = await supabase.from("jobs").select("*").eq("user_id", me.id).order("id");
+  const { data, error } = await supabase.from("jobs").select("*").eq("poster_id", me.id).order("id");
   if (error) {
     console.error(error);
     jobsWrap.innerHTML = "Error loading jobs.";
@@ -1058,7 +1064,19 @@ jobsWrap?.addEventListener("click", async (e) => {
 
   if (action === "addJob") {
     const current = scrapeJobsFromDOM();
-    current.unshift({ id: null, title: "New Job", rank: "", vessel_type: "", salary: "", contract_duration: "", description: "" });
+    current.unshift({
+      id: null,
+      title: "New Job",
+      rank: "",
+      vessel_type: "",
+      salary: "",
+      contract_duration: "",
+      location: "",
+      joining_date: "",
+      description: "",
+      requirements: "",
+      benefits: ""
+    });
     renderJobs(current);
   }
 
@@ -1069,7 +1087,7 @@ jobsWrap?.addEventListener("click", async (e) => {
 
     if (id && id !== "new" && id !== "null") {
       if (!confirm("Delete this job?")) return;
-      await supabase.from("jobs").delete().eq("id", id).eq("user_id", me.id);
+      await supabase.from("jobs").delete().eq("id", id).eq("poster_id", me.id);
     }
 
     if (id && id !== "new" && id !== "null") loadJobsSafe();
@@ -1088,13 +1106,17 @@ jobsWrap?.addEventListener("click", async (e) => {
 
     for (const r of rows) {
       const payload = {
-        user_id: me.id,
+        poster_id: me.id,
         title: r.title,
         rank: r.rank,
         vessel_type: r.vessel_type,
         salary: r.salary,
         contract_duration: r.contract_duration,
-        description: r.description
+        location: r.location,
+        joining_date: r.joining_date || null,
+        description: r.description,
+        requirements: r.requirements,
+        benefits: r.benefits
       };
       if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
 
@@ -1116,7 +1138,11 @@ function scrapeJobsFromDOM() {
       vessel_type: getVal("vessel_type"),
       salary: getVal("salary"),
       contract_duration: getVal("contract_duration"),
+      location: getVal("location"),
+      joining_date: getVal("joining_date"),
       description: getVal("description"),
+      requirements: getVal("requirements"),
+      benefits: getVal("benefits"),
     };
   });
 }
