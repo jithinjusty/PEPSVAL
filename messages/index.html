@@ -1,38 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Messages • Pepsval</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="icon" href="/assets/logo.webp" />
-<link rel="stylesheet" href="/css/style.css?v=3001">
-<link rel="stylesheet" href="/messages/messages.css?v=3001">
+<head>
+  <meta charset="UTF-8">
+  <title>Messages • Pepsval</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" href="/assets/logo.webp" />
+  <link rel="stylesheet" href="/css/style.css?v=3001">
+  <link rel="stylesheet" href="/messages/messages.css?v=3001">
 </head>
 
 <body>
-<div class="app">
+  <div class="app">
 
-<header class="top">
-  <div class="toggle">
-    <button id="tabMessages" class="active">Messages <span id="msgCount">0</span></button>
-    <button id="tabNotifications">Notifications <span id="notifCount">0</span></button>
+    <header class="top">
+      <div class="toggle">
+        <button id="tabCommunity" class="active">Community</button>
+        <button id="tabMessages">Messages</button>
+        <button id="tabNotifications">Notifications <span id="notifCount">0</span></button>
+      </div>
+    </header>
+
+    <main id="list" class="list"></main>
+
+    <!-- Chat Input (Hidden initially) -->
+    <div id="chatInputWrap" class="chatInputWrap" style="display:none;">
+      <input id="chatInput" placeholder="Write a message…" />
+      <button id="sendBtn">Send</button>
+    </div>
+
   </div>
-</header>
 
-<main id="list" class="list"></main>
+  <script type="module" src="/messages/messages.js?v=20260118-chat-v1"></script>
 
-</div>
-
-<script type="module" src="/messages/messages.js?v=3001"></script>
-
-<nav class="bottomNav">
-  <a class="bnItem" href="/dashboard/index.html">Dashboard</a>
-  <a class="bnItem" href="/feed/index.html">Feed</a>
-  <a class="bnItem" href="/jobs/index.html">Jobs</a>
-  <a class="bnItem active" href="/messages/index.html">Messages</a>
-  <a class="bnItem" href="/profile/home.html">Profile</a>
-</nav>
+  <nav class="bottomNav">
+    <a class="navItem" href="/feed/index.html">Feed</a>
+    <a class="navItem" href="/jobs/index.html">Jobs</a>
+    <a class="navItem active" href="/messages/index.html">Messages</a>
+    <a class="navItem" href="/profile/home.html">Profile</a>
+  </nav>
 
 </body>
+
 </html>
