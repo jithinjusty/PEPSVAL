@@ -1350,11 +1350,210 @@ function scrapeExpFromDOM() {
   });
 }
 
-// ---------- avatar edit button (UI only) ----------
-avatarEditBtn?.addEventListener("click", () => {
-  // We do NOT change upload/crop logic here.
-  // This is only the icon replacement. You can connect this to your existing avatar editor if needed.
-  alert("Avatar editor is handled in your existing upload/crop flow. (No changes made to that system.)");
+// ---------- Avatar Upload with Filters ----------
+const avatarModal = document.getElementById("avatarModal");
+const avatarInput = document.getElementById("avatarInput");
+const selectImageBtn = document.getElementById("selectImageBtn");
+const avatarSelectView = document.getElementById("avatarSelectView");
+const avatarEditView = document.getElementById("avatarEditView");
+const avatarCanvas = document.getElementById("avatarCanvas");
+const closeAvatarModal = document.getElementById("closeAvatarModal");
+const uploadAvatarBtn = document.getElementById("uploadAvatarBtn");
+const cancelAvatarBtn = document.getElementById("cancelAvatarBtn");
+
+const brightnessSlider = document.getElementById("brightness");
+const contrastSlider = document.getElementById("contrast");
+const saturationSlider = document.getElementById("saturation");
+const blurSlider = document.getElementById("blur");
+
+let originalImage = null;
+let ctx = null;
+
+const filterPresets = {
+  normal: { brightness: 100, contrast: 100, saturation: 100, blur: 0 },
+  grayscale: { brightness: 100, contrast: 110, saturation: 0, blur: 0 },
+  sepia: { brightness: 110, contrast: 90, saturation: 80, blur: 0, sepia: true },
+  vintage: { brightness: 105, contrast: 120, saturation: 70, blur: 1 },
+  cool: { brightness: 95, contrast: 105, saturation: 110, blur: 0, cool: true },
+  warm: { brightness: 105, contrast: 100, saturation: 115, blur: 0, warm: true }
+};
+
+function openAvatarModal() {
+  avatarModal.classList.remove("hidden");
+  avatarSelectView.classList.remove("hidden");
+  avatarEditView.classList.add("hidden");
+}
+
+function closeAvatarModalFn() {
+  avatarModal.classList.add("hidden");
+  originalImage = null;
+  if (avatarInput) avatarInput.value = "";
+}
+
+avatarEditBtn?.addEventListener("click", openAvatarModal);
+closeAvatarModal?.addEventListener("click", closeAvatarModalFn);
+cancelAvatarBtn?.addEventListener("click", closeAvatarModalFn);
+
+// Click overlay to close
+avatarModal?.querySelector(".modalOverlay")?.addEventListener("click", closeAvatarModalFn);
+
+selectImageBtn?.addEventListener("click", () => {
+  avatarInput?.click();
+});
+
+avatarInput?.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Check file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Image too large. Please select an image under 5MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+
+      // Set canvas size (square, max 500px)
+      const size = Math.min(img.width, img.height, 500);
+      avatarCanvas.width = size;
+      avatarCanvas.height = size;
+      ctx = avatarCanvas.getContext("2d");
+
+      // Show edit view
+      avatarSelectView.classList.add("hidden");
+      avatarEditView.classList.remove("hidden");
+
+      // Reset sliders
+      brightnessSlider.value = 100;
+      contrastSlider.value = 100;
+      saturationSlider.value = 100;
+      blurSlider.value = 0;
+
+      // Render initial image
+      applyFilters();
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function applyFilters() {
+  if (!originalImage || !ctx) return;
+
+  const size = avatarCanvas.width;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, size, size);
+
+  // Calculate crop (center square)
+  const sx = (originalImage.width - size) / 2;
+  const sy = (originalImage.height - size) / 2;
+
+  // Draw image
+  ctx.drawImage(originalImage, sx, sy, size, size, 0, 0, size, size);
+
+  // Apply CSS filters
+  const brightness = brightnessSlider.value;
+  const contrast = contrastSlider.value;
+  const saturation = saturationSlider.value;
+  const blur = blurSlider.value;
+
+  ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px)`;
+
+  // Re-draw with filters
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = size;
+  tempCanvas.height = size;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(originalImage, sx, sy, size, size, 0, 0, size, size);
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px)`;
+  ctx.drawImage(tempCanvas, 0, 0);
+  ctx.filter = "none";
+}
+
+// Live filter updates
+brightnessSlider?.addEventListener("input", applyFilters);
+contrastSlider?.addEventListener("input", applyFilters);
+saturationSlider?.addEventListener("input", applyFilters);
+blurSlider?.addEventListener("input", applyFilters);
+
+// Preset filters
+document.querySelectorAll(".filterBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const filter = btn.dataset.filter;
+    const preset = filterPresets[filter];
+
+    if (preset) {
+      brightnessSlider.value = preset.brightness;
+      contrastSlider.value = preset.contrast;
+      saturationSlider.value = preset.saturation;
+      blurSlider.value = preset.blur || 0;
+      applyFilters();
+    }
+
+    // Update active state
+    document.querySelectorAll(".filterBtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+uploadAvatarBtn?.addEventListener("click", async () => {
+  if (!me || !avatarCanvas) return;
+
+  uploadAvatarBtn.disabled = true;
+  uploadAvatarBtn.textContent = "Uploading...";
+
+  try {
+    // Convert canvas to blob
+    const blob = await new Promise(resolve => avatarCanvas.toBlob(resolve, "image/jpeg", 0.9));
+
+    // Generate unique filename
+    const fileName = `${me.id}/${Date.now()}.jpg`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, blob, {
+        cacheControl: "3600",
+        upsert: true
+      });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(fileName);
+
+    const avatarUrl = urlData.publicUrl;
+
+    // Update profile
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", me.id);
+
+    if (updateError) throw updateError;
+
+    // Update UI
+    setAvatar(avatarUrl, profile?.full_name || profile?.company_name || "User");
+
+    alert("Profile photo updated!");
+    closeAvatarModalFn();
+
+  } catch (err) {
+    console.error("Upload failed:", err);
+    alert("Upload failed: " + err.message);
+  } finally {
+    uploadAvatarBtn.disabled = false;
+    uploadAvatarBtn.textContent = "Upload & Save";
+  }
 });
 
 // ---------- main events ----------
