@@ -6,9 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PEPSVAL — Settings</title>
   <link rel="icon" href="/assets/logo.webp" />
-  <link rel="stylesheet" href="/css/style.css?v=3002" />
+  <link rel="stylesheet" href="/css/style.css?v=3003" />
   <script>
-    // Prevent theme flickering
     (function () {
       const theme = localStorage.getItem('theme') || 'light';
       if (theme === 'dark') document.documentElement.classList.add('dark-mode');
@@ -21,11 +20,14 @@
       padding: 10px;
     }
 
-    .setting-item {
+    .cardTitle {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+    }
+
+    .setting-item {
+      padding: 16px 0;
       border-bottom: 1px solid var(--stroke);
     }
 
@@ -39,9 +41,37 @@
     }
 
     .setting-info p {
-      margin: 4px 0 0;
+      margin: 4px 0 10px;
       font-size: 13px;
       color: var(--text-muted);
+    }
+
+    .input-group {
+      margin-top: 10px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .input-group input,
+    .support-form textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--stroke);
+      background: var(--bg-body);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--brand);
     }
 
     /* Switch styling */
@@ -87,18 +117,6 @@
       transform: translateX(22px);
     }
 
-    .support-form textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid var(--stroke);
-      background: var(--bg-body);
-      color: var(--text-main);
-      margin-top: 10px;
-      font-size: 14px;
-      resize: vertical;
-    }
-
     .btn-block {
       display: block;
       width: 100%;
@@ -108,14 +126,38 @@
       background: var(--brand);
       color: #fff;
       font-weight: 800;
-      margin-top: 12px;
+      margin-top: 14px;
       cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-block:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .btn-block.ghost {
       background: transparent;
       border: 1px solid var(--stroke);
       color: var(--text-main);
+    }
+
+    .msg-box {
+      margin-top: 10px;
+      font-size: 13px;
+      padding: 8px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .msg-box.success {
+      background: rgba(6, 118, 71, 0.1);
+      color: var(--ok);
+    }
+
+    .msg-box.error {
+      background: rgba(180, 35, 24, 0.1);
+      color: var(--danger);
     }
   </style>
 </head>
@@ -139,10 +181,10 @@
       <section class="card">
         <div class="cardBody">
           <div class="cardTitle">Appearance</div>
-          <div class="setting-item">
-            <div class="setting-info">
+          <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="setting-info" style="margin-bottom: 0;">
               <h4>Dark Mode</h4>
-              <p>Switch between day and night themes.</p>
+              <p style="margin-bottom: 0;">Switch between day and night themes.</p>
             </div>
             <label class="switch">
               <input type="checkbox" id="themeToggle">
@@ -152,24 +194,53 @@
         </div>
       </section>
 
-      <!-- Account -->
+      <!-- Contact Info -->
       <section class="card">
         <div class="cardBody">
-          <div class="cardTitle">Account</div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <h4>Profile Details</h4>
-              <p>Update your basic information and rank.</p>
+          <div class="cardTitle">Contact Information</div>
+          <p class="cardSub">Manage your primary and additional contact methods.</p>
+
+          <form id="contactForm">
+            <div class="input-group">
+              <label>Primary Email</label>
+              <input type="email" id="primaryEmail" disabled>
             </div>
-            <a href="/setup/profile-setup.html" class="chip">Edit</a>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <h4>Security</h4>
-              <p>Change password or manage active sessions.</p>
+            <div class="input-group">
+              <label>Additional Emails (comma separated)</label>
+              <input type="text" id="secondaryEmails" placeholder="e.g. alt@mail.com, office@mail.com">
             </div>
-            <span class="chip" style="opacity: 0.5; cursor: not-allowed;">Coming soon</span>
-          </div>
+            <div class="input-group" style="margin-top: 20px;">
+              <label>Primary Phone</label>
+              <input type="tel" id="primaryPhone" placeholder="+1 234 567 890">
+            </div>
+            <div class="input-group">
+              <label>Additional Phones (comma separated)</label>
+              <input type="text" id="secondaryPhones" placeholder="e.g. +1..., +2...">
+            </div>
+            <button type="submit" class="btn-block" id="saveContactBtn">Save Contact Details</button>
+            <div id="contactMsg" class="msg-box"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Security -->
+      <section class="card">
+        <div class="cardBody">
+          <div class="cardTitle">Security</div>
+          <p class="cardSub">Update your password to keep your account secure.</p>
+
+          <form id="passwordForm">
+            <div class="input-group">
+              <label>New Password</label>
+              <input type="password" id="newPassword" placeholder="Minimum 6 characters">
+            </div>
+            <div class="input-group">
+              <label>Confirm New Password</label>
+              <input type="password" id="confirmPassword" placeholder="Repeat new password">
+            </div>
+            <button type="submit" class="btn-block" id="changePassBtn">Update Password</button>
+            <div id="passwordMsg" class="msg-box"></div>
+          </form>
         </div>
       </section>
 
@@ -178,17 +249,20 @@
         <div class="cardBody">
           <div class="cardTitle">Help & Support</div>
           <form class="support-form" id="supportForm">
-            <p class="cardSub">Send your query to our maritime support team.</p>
+            <p class="cardSub">Send your query to our maritime support team (support@pepsval.com).</p>
             <textarea id="supportText" rows="3" placeholder="Describe your issue or suggestion..."></textarea>
-            <button type="submit" class="btn-block">Send Query</button>
+            <button type="submit" class="btn-block">Open Support Email</button>
           </form>
         </div>
       </section>
 
-      <!-- Legal -->
+      <!-- Other Settings -->
       <section class="card">
         <div class="cardBody">
-          <div class="cardTitle">Legal</div>
+          <div class="cardTitle">Other Links</div>
+          <div class="setting-item">
+            <a href="/setup/profile-setup.html" class="linkCard">Full Profile Setup (Rank, Photo, etc.)</a>
+          </div>
           <div class="setting-item">
             <a href="/legal/privacy.html" class="linkCard">Privacy Policy</a>
           </div>
