@@ -152,7 +152,7 @@ function setAccountTypeBadge(account_type) {
 }
 
 function getAccountKind(account_type) {
-  const t = (account_type || "").toLowerCase();
+  const t = (account_type || "").toString().toLowerCase().trim();
   if (t === "seafarer") return "seafarer";
   if (t === "employer") return "company";
   if (t === "shore") return "professional";
@@ -184,6 +184,8 @@ function buildTabs() {
   // About always
   tabs.push({ key: "about", label: "About" });
 
+  console.log("Building tabs for accountKind:", accountKind);
+
   if (accountKind === "seafarer") {
     tabs.push({ key: "documents", label: "Documents" });
     tabs.push({ key: "sea", label: "Sea Service" });
@@ -195,6 +197,7 @@ function buildTabs() {
     tabs.push({ key: "posts", label: "Posts" });
     tabs.push({ key: "experience", label: "Experience" });
   } else {
+    // default / other
     tabs.push({ key: "posts", label: "Posts" });
   }
 
@@ -476,6 +479,9 @@ async function loadProfile() {
   profile = await fetchProfile(me.id);
 
   accountKind = getAccountKind(profile?.account_type);
+  console.log("Loaded Profile:", profile);
+  console.log("Determined Account Kind:", accountKind);
+
   paintHeader();
   buildTabs();
   paintAbout();
