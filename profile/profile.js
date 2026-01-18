@@ -943,7 +943,14 @@ function renderSea(rows) {
         </thead>
         <tbody>
           ${list.map((r, idx) => {
-    const d = daysBetween(r.signed_on, r.signed_off);
+    const sOn = safeText(r.signed_on || r.sign_on, "");
+    const sOff = safeText(r.signed_off || r.sign_off, "");
+    // Hide dummy dates
+    const displayOn = sOn === "1970-01-01" ? "" : sOn;
+    const displayOff = sOff === "1970-01-01" ? "" : sOff;
+
+    // We compute duration using the best available dates
+    const d = daysBetween(displayOn, displayOff);
     const ship = safeText(r.ship_name || r.vessel_name, "");
     const imo = safeText(r.imo || r.vessel_imo, "");
     // Hide dummy "0" if we saved it just to satisfy DB
@@ -954,8 +961,8 @@ function renderSea(rows) {
                 <td><input class="input" name="ship_name" value="${escapeHtml(ship)}" placeholder="Ship" /></td>
                 <td><input class="input" name="imo" value="${escapeHtml(displayImo)}" placeholder="IMO" /></td>
                 <td><input class="input" name="rank" value="${escapeHtml(safeText(r.rank, ""))}" placeholder="Rank" list="rankList" /></td>
-                <td><input class="input" name="signed_on" type="date" value="${escapeHtml(safeText(r.signed_on, ""))}" /></td>
-                <td><input class="input" name="signed_off" type="date" value="${escapeHtml(safeText(r.signed_off, ""))}" /></td>
+                <td><input class="input" name="signed_on" type="date" value="${escapeHtml(displayOn)}" /></td>
+                <td><input class="input" name="signed_off" type="date" value="${escapeHtml(displayOff)}" /></td>
                 <td><span class="badPill">${d}</span></td>
                 <td><span class="badPill">${Number(r.peers_verified || 0)}</span></td>
                 <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove">✕</button></td>
@@ -1035,15 +1042,24 @@ seaWrap?.addEventListener("click", async (e) => {
         // Handle strict numeric constraints on legacy columns
         const safeImo = r.imo && r.imo.trim() !== "" ? r.imo : 0;
 
+        // Handle strict date constraints (some legacy DBs are Not Null)
+        const safeDate = (dt) => (dt && dt !== "") ? dt : "1970-01-01";
+
         const payload = {
           user_id: me.id,
           ship_name: r.ship_name,
-          vessel_name: r.ship_name, // Legacy fallback
+          vessel_name: r.ship_name,
           imo: r.imo,
-          vessel_imo: safeImo, // Legacy fallback (0 if empty to valid Not Null)
+          vessel_imo: safeImo,
           rank: r.rank,
+
+          // Modern columns (can be null)
           signed_on: r.signed_on || null,
           signed_off: r.signed_off || null,
+
+          // Legacy columns (strict Not Null)
+          sign_on: safeDate(r.signed_on),
+          sign_off: safeDate(r.signed_off)
         };
         if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
 
