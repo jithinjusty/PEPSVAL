@@ -8,6 +8,12 @@
 
   <link rel="stylesheet" href="/feed/feed.css?v=7001" />
   <link rel="stylesheet" href="/jobs/jobs.css?v=7001" />
+  <script>
+    (function () {
+      const theme = localStorage.getItem('theme') || 'light';
+      if (theme === 'dark') document.documentElement.classList.add('dark-mode');
+    })();
+  </script>
 
   <script type="module" src="/js/guard.js"></script>
   <script type="module" src="/jobs/jobs.js?v=7001"></script>
