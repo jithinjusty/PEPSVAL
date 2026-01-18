@@ -54,6 +54,18 @@
       <section id="tab_about" class="pane">
         <div class="paneTitle" id="aboutTitle">About</div>
 
+        <div class="accountTypeRow"
+          style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,.04);">
+          <div class="miniLabel">Account Type</div>
+          <select id="f_account_type" class="input" style="width:100%; max-width:300px; margin-top:4px;" disabled>
+            <option value="seafarer">Seafarer</option>
+            <option value="employer">Company / Employer</option>
+            <option value="shore">Maritime Professional (Shore)</option>
+          </select>
+          <div class="muted" style="font-size:11px; margin-top:4px;">Changing this will update your profile layout and
+            available tabs.</div>
+        </div>
+
         <div class="btnRow">
           <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
           <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
