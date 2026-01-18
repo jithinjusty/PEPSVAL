@@ -28,6 +28,8 @@ const elMenuProfile = document.getElementById("menuProfile");
 const elMenuSettings = document.getElementById("menuSettings");
 const elMenuLogout = document.getElementById("menuLogout");
 
+const elMeAvatarImg = elMeAvatarBtn ? elMeAvatarBtn.querySelector("img.avatar") : null;
+
 const elSearchInput = document.getElementById("searchInput");
 const elSearchDrop = document.getElementById("searchDrop");
 
@@ -91,6 +93,96 @@ function setFileUI(file) {
 
   elFileInfo.style.display = "flex";
   elFileName.textContent = selectedFile.name || "Attachment";
+}
+
+/* ---------------- Avatar menu ---------------- */
+function setMenuOpen(open) {
+  if (!elMeMenu) return;
+  elMeMenu.style.display = open ? "block" : "none";
+}
+
+function isMenuOpen() {
+  return !!elMeMenu && elMeMenu.style.display === "block";
+}
+
+function bindAvatarMenu() {
+  if (!elMeAvatarBtn || !elMeMenu) return;
+
+  // Toggle on avatar click
+  elMeAvatarBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setMenuOpen(!isMenuOpen());
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!isMenuOpen()) return;
+    const within = e.target && (elMeMenu.contains(e.target) || elMeAvatarBtn.contains(e.target));
+    if (!within) setMenuOpen(false);
+  });
+
+  // Close on ESC
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setMenuOpen(false);
+  });
+
+  // Profile
+  if (elMenuProfile) {
+    elMenuProfile.addEventListener("click", () => {
+      setMenuOpen(false);
+      window.location.href = "/profile/home.html";
+    });
+  }
+
+  // Settings
+  if (elMenuSettings) {
+    elMenuSettings.addEventListener("click", () => {
+      setMenuOpen(false);
+      window.location.href = "/dashboard/settings.html";
+    });
+  }
+
+  // Logout
+  if (elMenuLogout) {
+    elMenuLogout.addEventListener("click", async () => {
+      try {
+        setMenuOpen(false);
+        setStatus("Logging out…");
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = "/auth/login.html";
+      } catch (err) {
+        showFatal(err);
+      }
+    });
+  }
+}
+
+async function loadMyAvatar() {
+  if (!me || !elMeAvatarImg) return;
+
+  // Default fallback (logo) is already set in HTML.
+  // Try to fetch user's avatar_url from profiles.
+  try {
+    let res = await supabase
+      .from("profiles")
+      .select("id, avatar_url, full_name")
+      .eq("id", me.id)
+      .maybeSingle();
+
+    if (res.error) throw res.error;
+    const p = res.data || {};
+
+    if (p.avatar_url) {
+      elMeAvatarImg.src = p.avatar_url;
+    }
+
+    // Improve alt text
+    if (p.full_name) elMeAvatarImg.alt = p.full_name;
+  } catch (e) {
+    // Don't crash feed if avatar isn't available
+    console.warn("Avatar load failed:", e?.message || e);
+  }
 }
 
 /* Show ANY JS error directly on screen */
@@ -464,6 +556,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!ok) return;
 
     await supabaseSelfTest();
+
+    // Fixes requested: avatar not showing + menu (settings/logout) not working
+    bindAvatarMenu();
+    await loadMyAvatar();
 
     if (elList) {
       elList.addEventListener("click", async (e) => {
