@@ -1030,7 +1030,9 @@ seaWrap?.addEventListener("click", async (e) => {
         const payload = {
           user_id: me.id,
           ship_name: r.ship_name,
+          vessel_name: r.ship_name, // Fallback for older schema
           imo: r.imo,
+          vessel_imo: r.imo, // Fallback for older schema (fixes "null value" error)
           rank: r.rank,
           signed_on: r.signed_on || null,
           signed_off: r.signed_off || null,
