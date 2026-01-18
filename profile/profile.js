@@ -67,8 +67,10 @@ const c = {
   phone: document.getElementById("c_phone"),
   emailsWrap: document.getElementById("c_emails"),
   addEmailBtn: document.getElementById("c_add_email"),
-  about: document.getElementById("c_about"),
+  services: document.getElementById("c_services"),
+  achievements: document.getElementById("c_achievements"),
   vision: document.getElementById("c_vision"),
+  mission: document.getElementById("c_mission"),
 };
 
 const p = {
@@ -433,7 +435,7 @@ async function ensureProfileRow(user) {
 async function fetchProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, rank, nationality, bio, email, avatar_url, account_type, dob, phone, company_name, role")
+    .select("id, full_name, rank, nationality, bio, email, avatar_url, account_type, dob, phone, company_name, role, vision, mission, services, achievements, company_emails")
     .eq("id", userId)
     .maybeSingle();
 
@@ -463,10 +465,11 @@ function paintAbout() {
   // Company fields (minimal in DB + extras in local)
   if (c.company_name) c.company_name.value = safeText(profile?.company_name, "");
   if (c.phone) c.phone.value = safeText(profile?.phone, "");
-  const companyExtra = readLocalExtra("company");
-  if (c.about) c.about.value = safeText(companyExtra?.about, "");
-  if (c.vision) c.vision.value = safeText(companyExtra?.vision, "");
-  paintCompanyEmails(companyExtra?.emails || []);
+  if (c.services) c.services.value = safeText(profile?.services, "");
+  if (c.achievements) c.achievements.value = safeText(profile?.achievements, "");
+  if (c.vision) c.vision.value = safeText(profile?.vision, "");
+  if (c.mission) c.mission.value = safeText(profile?.mission, "");
+  paintCompanyEmails(profile?.company_emails || []);
 
   // Professional fields
   if (p.full_name) p.full_name.value = safeText(profile?.full_name, "");
@@ -520,11 +523,11 @@ async function saveProfile() {
   if (accountKind === "company") {
     updates.company_name = safeText(c.company_name.value, null);
     updates.phone = safeText(c.phone.value, null);
-    writeLocalExtra("company", {
-      emails: readCompanyEmails(),
-      about: safeText(c.about.value, ""),
-      vision: safeText(c.vision.value, ""),
-    });
+    updates.services = safeText(c.services.value, null);
+    updates.achievements = safeText(c.achievements.value, null);
+    updates.vision = safeText(c.vision.value, null);
+    updates.mission = safeText(c.mission.value, null);
+    updates.company_emails = readCompanyEmails();
 
     updates.account_type = "employer"; // DB uses 'employer' or 'company' depending on strictness, staying consistent with initial code (employer)
 
@@ -1095,120 +1098,181 @@ function scrapeSeaFromDOM() {
 }
 
 // ---------- JOBS (Supabase) ----------
+// ---------- JOBS (Supabase) ----------
 function renderJobs(rows) {
   const list = Array.isArray(rows) ? rows : [];
   jobsWrap.innerHTML = `
     <div class="tableActions">
-      <button class="miniBtn" type="button" data-action="addJob">+ New job</button>
-      <span class="badPill">${list.length} jobs</span>
+      <button class="miniBtn" type="button" data-action="addJob">+ Create New Job Post</button>
+      <span class="badPill">${list.length} active posts</span>
     </div>
 
-    ${list.map((j, idx) => `
-      <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${j.id || 'new'}" data-idx="${idx}">
-        <div style="display:flex;justify-content:space-between;gap:10px;">
-          <div style="font-weight:900;font-size:15px;">${escapeHtml(safeText(j.title, "Job title"))}</div>
-          <button class="iconBtn" type="button" data-action="removeJob" title="Remove">✕</button>
+    ${list.map((j, idx) => {
+    const tags = Array.isArray(j.tags) ? j.tags : (j.tags ? j.tags.split(",") : []);
+    const isUrgent = tags.some(t => t.trim().toUpperCase() === "URGENT");
+
+    return `
+      <div class="jobCard" data-id="${j.id}" data-idx="${idx}">
+        <div class="jobHeader">
+          <div class="jobTitleGroup">
+            <div class="jobTitleText">${escapeHtml(j.title)}</div>
+            <div class="jobSubText">
+              <span>${escapeHtml(j.rank || "Any Rank")}</span>
+              ${j.vessel_type ? `• <span>${escapeHtml(j.vessel_type)}</span>` : ""}
+            </div>
+          </div>
+          <div class="jobBadge ${isUrgent ? 'urgent' : ''}">${isUrgent ? 'Urgent' : 'Active'}</div>
         </div>
-        <div class="aboutGrid" style="margin-top:10px;">
-           <div class="box span2"><div class="k">Job Title</div><input class="v input" name="title" value="${escapeHtml(safeText(j.title, ""))}" placeholder="Title"></div>
-          <div class="box"><div class="k">Rank</div><input class="v input" name="rank" value="${escapeHtml(safeText(j.rank, ""))}" placeholder="Rank" list="rankList"></div>
-          <div class="box"><div class="k">Vessel type</div><input class="v input" name="vessel_type" value="${escapeHtml(safeText(j.vessel_type, ""))}" placeholder="Bulk / Tanker..."></div>
-          <div class="box"><div class="k">Salary</div><input class="v input" name="salary" value="${escapeHtml(safeText(j.salary, ""))}" placeholder="e.g. USD 4500"></div>
-          <div class="box"><div class="k">Contract</div><input class="v input" name="contract_duration" value="${escapeHtml(safeText(j.contract_duration, ""))}" placeholder="e.g. 6 months"></div>
-          
-          <div class="box"><div class="k">Location / Port</div><input class="v input" name="location" value="${escapeHtml(safeText(j.location, ""))}" placeholder="Joining port or region"></div>
-          <div class="box"><div class="k">Joining Date</div><input class="v input" name="joining_date" type="date" value="${escapeHtml(safeText(j.joining_date, ""))}"></div>
-          
-          <div class="box span2"><div class="k">Description</div><textarea class="v input textarea" name="description" rows="3" placeholder="Job description...">${escapeHtml(safeText(j.description, ""))}</textarea></div>
-          <div class="box span2"><div class="k">Requirements</div><textarea class="v input textarea" name="requirements" rows="2" placeholder="Certifications, Visa, Experience...">${escapeHtml(safeText(j.requirements, ""))}</textarea></div>
-          <div class="box span2"><div class="k">Benefits</div><textarea class="v input textarea" name="benefits" rows="2" placeholder="Wifi, Gym, Flight included...">${escapeHtml(safeText(j.benefits, ""))}</textarea></div>
+
+        <div class="jobGrid">
+          <div class="jobItem"><div class="jobLabel">Salary</div><div class="jobValue">${escapeHtml(j.salary || "Not specified")}</div></div>
+          <div class="jobItem"><div class="jobLabel">Duration</div><div class="jobValue">${escapeHtml(j.contract_duration || "Not specified")}</div></div>
+          <div class="jobItem"><div class="jobLabel">Location</div><div class="jobValue">${escapeHtml(j.location || "Anywhere")}</div></div>
+          <div class="jobItem"><div class="jobLabel">Joining</div><div class="jobValue">${j.joining_date ? escapeHtml(j.joining_date) : "TBA"}</div></div>
+        </div>
+
+        ${j.description ? `
+        <div class="jobDescWrap">
+          <div class="k">Brief Description</div>
+          <div style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;opacity:.8;">${escapeHtml(j.description)}</div>
+        </div>
+        ` : ""}
+
+        <div class="jobActions">
+          <button class="btnGhost" type="button" data-action="editJob">Edit Post</button>
+          <button class="iconBtn" type="button" data-action="removeJob" title="Delete">✕</button>
         </div>
       </div>
-    `).join("")}
+      `;
+  }).join("")}
     
-    <div style="margin-top:12px;text-align:right;"><button class="btnPrimary" type="button" data-action="saveJobs">Save Jobs</button></div>
+    ${list.length === 0 ? `<div class="muted" style="padding:20px;text-align:center;border:1px dashed var(--line);border-radius:20px;">No jobs posted yet. Click "+ Create New Job Post" to start.</div>` : ""}
   `;
 }
 
+// Global cached jobs for easy access during edit
+let currentJobs = [];
+
 async function loadJobsSafe() {
   if (!jobsWrap) return;
-  jobsWrap.innerHTML = "Loading...";
-  const { data, error } = await supabase.from("jobs").select("*").eq("poster_id", me.id).order("id");
+  jobsWrap.innerHTML = "<div class='muted' style='padding:20px;'>Loading jobs...</div>";
+  const { data, error } = await supabase.from("jobs").select("*").eq("poster_id", me.id).order("created_at", { ascending: false });
   if (error) {
     console.error(error);
     jobsWrap.innerHTML = "Error loading jobs.";
     return;
   }
-  renderJobs(data || []);
+  currentJobs = data || [];
+  renderJobs(currentJobs);
 }
+
+// Modal Elements
+const jobModal = document.getElementById("jobModal");
+const jobForm = document.getElementById("jobForm");
+
+function openJobModal(job = null) {
+  if (!jobModal || !jobForm) return;
+
+  // Reset form
+  jobForm.reset();
+  document.getElementById("j_id").value = job?.id || "";
+  document.getElementById("j_title").value = job?.title || "";
+  document.getElementById("j_rank").value = job?.rank || "";
+  document.getElementById("j_vessel_name").value = job?.vessel_name || "";
+  document.getElementById("j_vessel_type").value = job?.vessel_type || "";
+  document.getElementById("j_contract_type").value = job?.contract_type || "Temporary";
+  document.getElementById("j_salary").value = job?.salary || "";
+  document.getElementById("j_duration").value = job?.contract_duration || "";
+  document.getElementById("j_location").value = job?.location || "";
+  document.getElementById("j_joining_date").value = job?.joining_date || "";
+  document.getElementById("j_description").value = job?.description || "";
+  document.getElementById("j_requirements").value = job?.requirements || "";
+  document.getElementById("j_benefits").value = job?.benefits || "";
+  document.getElementById("j_tags").value = Array.isArray(job?.tags) ? job.tags.join(", ") : (job?.tags || "");
+
+  document.getElementById("jobModalTitle").textContent = job ? "Edit Job Post" : "Create New Job Post";
+  document.getElementById("saveJobBtn").textContent = job ? "Update Job Post" : "Publish Job Post";
+
+  jobModal.classList.remove("hidden");
+}
+
+function closeJobModal() {
+  jobModal.classList.add("hidden");
+}
+
+document.getElementById("closeJobModal")?.addEventListener("click", closeJobModal);
+document.getElementById("cancelJobBtn")?.addEventListener("click", closeJobModal);
+
+jobForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("saveJobBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  const jobId = document.getElementById("j_id").value;
+  const payload = {
+    poster_id: me.id,
+    title: document.getElementById("j_title").value,
+    rank: document.getElementById("j_rank").value,
+    vessel_name: document.getElementById("j_vessel_name").value,
+    vessel_type: document.getElementById("j_vessel_type").value,
+    contract_type: document.getElementById("j_contract_type").value,
+    salary: document.getElementById("j_salary").value,
+    contract_duration: document.getElementById("j_duration").value,
+    location: document.getElementById("j_location").value,
+    joining_date: document.getElementById("j_joining_date").value || null,
+    description: document.getElementById("j_description").value,
+    requirements: document.getElementById("j_requirements").value,
+    benefits: document.getElementById("j_benefits").value,
+    tags: document.getElementById("j_tags").value.split(",").map(s => s.trim()).filter(Boolean),
+  };
+
+  try {
+    if (jobId) {
+      const { error } = await supabase.from("jobs").update(payload).eq("id", jobId).eq("poster_id", me.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("jobs").insert([payload]);
+      if (error) throw error;
+    }
+    closeJobModal();
+    loadJobsSafe();
+  } catch (err) {
+    alert("Error saving job: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = jobId ? "Update Job Post" : "Publish Job Post";
+  }
+});
 
 jobsWrap?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
+  const card = btn.closest("[data-id]");
+  const jobId = card?.dataset.id;
+  const jobIdx = card?.dataset.idx;
 
   if (action === "addJob") {
-    const current = scrapeJobsFromDOM();
-    current.unshift({
-      id: null,
-      title: "New Job",
-      rank: "",
-      vessel_type: "",
-      salary: "",
-      contract_duration: "",
-      location: "",
-      joining_date: "",
-      description: "",
-      requirements: "",
-      benefits: ""
-    });
-    renderJobs(current);
+    openJobModal();
+  }
+
+  if (action === "editJob") {
+    const job = currentJobs[jobIdx];
+    if (job) openJobModal(job);
   }
 
   if (action === "removeJob") {
-    const card = btn.closest("[data-id]");
-    if (!card) return;
-    const id = card.dataset.id;
-
-    if (id && id !== "new" && id !== "null") {
-      if (!confirm("Delete this job?")) return;
-      await supabase.from("jobs").delete().eq("id", id).eq("poster_id", me.id);
+    if (!jobId) return;
+    if (!confirm("Delete this job post permanently?")) return;
+    try {
+      const { error } = await supabase.from("jobs").delete().eq("id", jobId).eq("poster_id", me.id);
+      if (error) throw error;
+      loadJobsSafe();
+    } catch (err) {
+      alert("Error deleting job: " + err.message);
     }
-
-    if (id && id !== "new" && id !== "null") loadJobsSafe();
-    else {
-      const idx = Number(card.dataset.idx);
-      const current = scrapeJobsFromDOM();
-      current.splice(idx, 1);
-      renderJobs(current);
-    }
-  }
-
-  if (action === "saveJobs") {
-    btn.disabled = true;
-    btn.textContent = "Saving...";
-    const rows = scrapeJobsFromDOM();
-
-    for (const r of rows) {
-      const payload = {
-        poster_id: me.id,
-        title: r.title,
-        rank: r.rank,
-        vessel_type: r.vessel_type,
-        salary: r.salary,
-        contract_duration: r.contract_duration,
-        location: r.location,
-        joining_date: r.joining_date || null,
-        description: r.description,
-        requirements: r.requirements,
-        benefits: r.benefits
-      };
-      if (r.id && r.id !== "new" && r.id !== "null") payload.id = r.id;
-
-      await supabase.from("jobs").upsert(payload);
-    }
-    await loadJobsSafe();
   }
 });
 
