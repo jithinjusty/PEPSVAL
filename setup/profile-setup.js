@@ -12,6 +12,8 @@ const els = {
   accountTypeOther: $("accountTypeOther"),
 
   fullName: $("fullName"),
+  username: $("username"),
+  email: $("email"),
   dob: $("dob"),
 
   rankWrap: $("rankWrap"),
@@ -45,6 +47,14 @@ const els = {
   photoInput: $("photoInput"),
   removePhotoBtn: $("removePhotoBtn"),
   avatarPreview: $("avatarPreview"),
+
+  companyExtraSection: $("companyExtraSection"),
+  secondaryPhone: $("secondaryPhone"),
+  secondaryEmails: $("secondaryEmails"),
+  services: $("services"),
+  achievements: $("achievements"),
+  vision: $("vision"),
+  mission: $("mission"),
 };
 
 let currentUser = null;
@@ -633,7 +643,10 @@ function validate() {
   const roleOk = !isCompanyOrProfessional() || getRole().length > 1;
   const roleOtherOk = !(isCompanyOrProfessional() && (els.roleValue?.value === "Other")) || ((els.roleOther?.value || "").trim().length > 1);
 
-  const ok = acctOk && otherOk && nationalityOk && rankOk && rankOtherOk && roleOk && roleOtherOk;
+  const username = (els.username?.value || "").trim().toLowerCase();
+  const usernameOk = /^[a-z][a-z0-9._]{2,19}$/.test(username);
+
+  const ok = acctOk && otherOk && nationalityOk && rankOk && rankOtherOk && roleOk && roleOtherOk && usernameOk;
   if (els.saveBtn) els.saveBtn.disabled = !ok;
   return ok;
 }
@@ -650,9 +663,16 @@ function syncAccountUI() {
   if (acct === "employer" || acct === "shore" || acct === "other") {
     show(els.roleWrap);
     show(els.companyWrap);
+    // Show extra section only for employers or based on user choice
+    if (acct === "employer") {
+      show(els.companyExtraSection);
+    } else {
+      hide(els.companyExtraSection);
+    }
   } else {
     hide(els.roleWrap);
     hide(els.companyWrap);
+    hide(els.companyExtraSection);
   }
 
   validate();
@@ -690,7 +710,9 @@ async function saveProfile() {
     const payload = {
       id: currentUser.id,
       account_type: normalizeAccountType(),
+      username: (els.username?.value || "").trim().toLowerCase(),
       full_name: (els.fullName?.value || "").trim(),
+      email: els.email?.value || currentUser.email,
       dob: els.dob?.value || null,
 
       rank: isSeafarer() ? getRank() : null,
@@ -704,13 +726,21 @@ async function saveProfile() {
 
       avatar_url: avatarPath,
       setup_complete: true,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+
+      // Extra Company Fields
+      secondary_phones: isCompanyOrProfessional() ? (els.secondaryPhone?.value || "").trim() : null,
+      secondary_emails: isCompanyOrProfessional() ? (els.secondaryEmails?.value || "").trim() : null,
+      services: isCompanyOrProfessional() ? (els.services?.value || "").trim() : null,
+      achievements: isCompanyOrProfessional() ? (els.achievements?.value || "").trim() : null,
+      vision: isCompanyOrProfessional() ? (els.vision?.value || "").trim() : null,
+      mission: isCompanyOrProfessional() ? (els.mission?.value || "").trim() : null
     };
 
     const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
     if (error) throw error;
 
-    window.location.href = "/dashboard/index.html";
+    window.location.href = "/feed/index.html";
   } catch (e) {
     console.error("SAVE ERROR:", e);
     showError(`Save failed: ${e.message || "Unknown error"}`);
@@ -729,6 +759,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await loadCountries();
+
+  if (els.email) els.email.value = currentUser.email || "";
 
   // Check if account type was set during signup
   const metaType = currentUser.user_metadata?.account_type;
@@ -827,6 +859,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   els.phoneInput?.addEventListener("input", validate);
   els.bio?.addEventListener("input", validate);
+  els.username?.addEventListener("input", validate);
   els.fullName?.addEventListener("input", validate);
   els.dob?.addEventListener("change", validate);
 

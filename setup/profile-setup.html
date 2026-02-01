@@ -62,8 +62,20 @@
         </div>
 
         <div class="field">
+          <label class="lbl">Username <span class="req">*</span></label>
+          <input id="username" type="text" placeholder="e.g. ship_pro123" />
+          <div class="help">Short, unique ID (lowercase, numbers, dots/underscores only).</div>
+        </div>
+
+        <div class="field">
           <label class="lbl">Full name</label>
           <input id="fullName" type="text" placeholder="Your full name" />
+        </div>
+
+        <div class="field">
+          <label class="lbl">Email address</label>
+          <input id="email" type="email" placeholder="Email address" readonly style="background: rgba(0,0,0,.03);" />
+          <div class="help">Login email (cannot be changed here).</div>
         </div>
 
         <div class="field">
@@ -140,10 +152,45 @@
           <div class="help">Select a country to auto-fill the code (you can change it).</div>
         </div>
 
-        <!-- Bio -->
         <div class="field">
           <label class="lbl">Bio <span class="muted">(optional)</span></label>
           <textarea id="bio" rows="4" placeholder="Write a short bio… (experience, vessel types, goals)"></textarea>
+        </div>
+
+        <!-- Extra Company Details (Only for Employers) -->
+        <div id="companyExtraSection" class="hidden">
+          <div class="divLine"></div>
+          <h2 class="subTitle">Company Details</h2>
+
+          <div class="field">
+            <label class="lbl">Secondary Phone / Contact</label>
+            <input id="secondaryPhone" type="text" placeholder="Additional contact number" />
+          </div>
+
+          <div class="field">
+            <label class="lbl">Secondary Emails</label>
+            <input id="secondaryEmails" type="text" placeholder="Separate by comma" />
+          </div>
+
+          <div class="field">
+            <label class="lbl">Services Offered</label>
+            <textarea id="services" rows="3" placeholder="What services does your company provide?"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Achievements</label>
+            <textarea id="achievements" rows="3" placeholder="Key achievements or awards…"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Vision</label>
+            <textarea id="vision" rows="2" placeholder="Company vision statement"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Mission</label>
+            <textarea id="mission" rows="2" placeholder="Company mission statement"></textarea>
+          </div>
         </div>
 
         <div id="errorBox" class="error" style="display:none;"></div>
