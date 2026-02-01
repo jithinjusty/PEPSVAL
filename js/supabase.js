@@ -36,6 +36,7 @@ export async function getCurrentUser() {
  */
 export async function sendNotification(userId, title, body, data = {}, type = "alert") {
   try {
+    console.log(`Sending notification to ${userId}: ${title}`);
     const { error } = await supabase
       .from("notifications")
       .insert({
@@ -48,7 +49,10 @@ export async function sendNotification(userId, title, body, data = {}, type = "a
         read: false,
         created_at: new Date().toISOString()
       });
-    if (error) throw error;
+    if (error) {
+      console.error("Notification insert error:", error);
+      throw error;
+    }
   } catch (err) {
     console.warn("Notification failed:", err.message);
   }
