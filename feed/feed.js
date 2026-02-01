@@ -292,8 +292,9 @@ async function fetchLikes(postIds) {
   if (error) throw error;
 
   for (const l of (data || [])) {
-    counts.set(l.post_id, (counts.get(l.post_id) || 0) + 1);
-    if (l.user_id === me.id) mine.add(l.post_id);
+    const pid = String(l.post_id);
+    counts.set(pid, (counts.get(pid) || 0) + 1);
+    if (l.user_id === me.id) mine.add(pid);
   }
   return { counts, mine };
 }
@@ -305,17 +306,18 @@ async function fetchComments(postIds) {
 
   const { data, error } = await supabase
     .from("post_comments")
-    .select("id, post_id, user_id, body, content, created_at")
+    .select("id, post_id, user_id, body, content, parent_id, created_at")
     .in("post_id", postIds)
     .order("created_at", { ascending: true });
 
   if (error) throw error;
 
   for (const c of (data || [])) {
-    counts.set(c.post_id, (counts.get(c.post_id) || 0) + 1);
-    const arr = byPost.get(c.post_id) || [];
+    const pid = String(c.post_id);
+    counts.set(pid, (counts.get(pid) || 0) + 1);
+    const arr = byPost.get(pid) || [];
     arr.push(c);
-    byPost.set(c.post_id, arr);
+    byPost.set(pid, arr);
   }
   return { counts, byPost };
 }
@@ -337,8 +339,9 @@ async function fetchCommentLikes(commentIds) {
   }
 
   for (const l of (data || [])) {
-    counts.set(l.comment_id, (counts.get(l.comment_id) || 0) + 1);
-    if (l.user_id === me.id) mine.add(l.comment_id);
+    const cid = String(l.comment_id);
+    counts.set(cid, (counts.get(cid) || 0) + 1);
+    if (l.user_id === me.id) mine.add(cid);
   }
   return { counts, mine, available: true };
 }
@@ -361,8 +364,9 @@ function renderCommentRow(c, profMap, cLikeInfo) {
   const text = c.body || c.content || "";
   const mine = uid === me.id;
 
-  const clCount = cLikeInfo.counts.get(c.id) || 0;
-  const clMine = cLikeInfo.mine.has(c.id);
+  const cid = String(c.id);
+  const clCount = cLikeInfo.counts.get(cid) || 0;
+  const clMine = cLikeInfo.mine.has(cid);
   const clAvail = cLikeInfo.available;
 
   const isReply = c.parent_id ? 'pv-commentReply' : '';
@@ -411,11 +415,11 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const media = getPostMedia(p, ks);
     const created = getPostCreated(p, ks);
 
-    const likes = likeInfo.counts.get(pid) || 0;
-    const iLiked = likeInfo.mine.has(pid);
+    const likes = likeInfo.counts.get(String(pid)) || 0;
+    const iLiked = likeInfo.mine.has(String(pid));
 
-    const commCount = commentInfo.counts.get(pid) || 0;
-    const comments = commentInfo.byPost.get(pid) || [];
+    const commCount = commentInfo.counts.get(String(pid)) || 0;
+    const comments = commentInfo.byPost.get(String(pid)) || [];
 
     const isMine = (uid === me.id);
 
@@ -622,18 +626,20 @@ async function sendComment(postId, postEl) {
       created_at: new Date().toISOString()
     }]);
 
-    if (res.error) {
-      res = await supabase.from("post_comments").insert([{
-        post_id: postId,
+    if (error) {
+      // fallback for older schema
+      const { error: fallbackErr } = await supabase.from("post_comments").insert([{
+        post_id: pid,
         user_id: me.id,
         content: txt
       }]);
+      if (fallbackErr) throw fallbackErr;
     }
 
-    if (res.error) throw res.error;
-
     if (ownerId && ownerId !== me.id) {
-      await sendNotification(ownerId, "New Comment", `${me.profile?.full_name || 'Someone'} commented on your post.`, { postId });
+      // Use me.full_name or similar if available
+      const senderName = me.profile?.full_name || "Someone";
+      await sendNotification(ownerId, "New Comment", `${senderName} commented on your post.`, { postId: pid });
     }
 
   } catch (e) {
@@ -796,7 +802,15 @@ async function loadFeed() {
         if (list) {
           // If we don't have the profile in profMap yet, fetch it
           const { data: prof } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", c.user_id).single();
-          const rowHtml = renderCommentRow(c, prof?.full_name || "User", prof?.avatar_url, c.user_id === me.id);
+
+          // Re-create a temporary Map for this single row to satisfy renderCommentRow's expectations
+          const tempMap = new Map();
+          if (prof) tempMap.set(c.user_id, prof);
+
+          // Mock cLikeInfo for instant display
+          const mockCLikes = { counts: new Map(), mine: new Set(), available: true };
+
+          const rowHtml = renderCommentRow(c, tempMap, mockCLikes);
           list.insertAdjacentHTML('beforeend', rowHtml);
         }
       })
