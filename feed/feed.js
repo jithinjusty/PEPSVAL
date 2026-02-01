@@ -1,4 +1,4 @@
-import { supabase, getCurrentUser } from "/js/supabase.js";
+import { supabase, getCurrentUser, sendNotification } from "/js/supabase.js";
 
 /* =========================================================
    PEPSVAL FEED — FINAL BUG-FIX BUILD
@@ -405,7 +405,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const isMine = (uid === me.id);
 
     return `
-      <article class="pv-post" data-post-id="${esc(pid)}">
+      <article class="pv-post" data-post-id="${esc(pid)}" data-user-id="${esc(uid)}">
         <header class="pv-postHead">
           <div class="pv-user">
             <div class="pv-userAvatar">
@@ -519,6 +519,7 @@ async function toggleLike(postId, postEl) {
   const btn = postEl.querySelector('[data-action="toggleLike"]');
   const countEl = postEl.querySelector("[data-like-count]");
   if (!btn || !countEl) return;
+  const ownerId = postEl.getAttribute("data-user-id");
 
   const currentlyLiked = btn.textContent.trim().toLowerCase().startsWith("unlike");
   let count = Number(countEl.textContent || "0");
@@ -537,6 +538,9 @@ async function toggleLike(postId, postEl) {
       // insert (if duplicate happens, policy/table should have unique; if not, this still works mostly)
       const { error } = await supabase.from("post_likes").insert([{ post_id: postId, user_id: me.id }]);
       if (error) throw error;
+      if (ownerId && ownerId !== me.id) {
+        await sendNotification(ownerId, "New Like", `${me.profile?.full_name || 'Someone'} liked your post.`, { postId });
+      }
     }
   } catch (e) {
     // rollback UI
@@ -552,6 +556,7 @@ async function sendComment(postId, postEl) {
   const input = wrap?.querySelector("[data-comment-input]");
   const list = wrap?.querySelector(".pv-commentsList");
   const countEl = postEl.querySelector("[data-comment-count]");
+  const ownerId = postEl.getAttribute("data-user-id");
 
   const txt = (input?.value || "").trim();
   if (!txt) return;
@@ -582,6 +587,10 @@ async function sendComment(postId, postEl) {
     }
 
     if (res.error) throw res.error;
+
+    if (ownerId && ownerId !== me.id) {
+      await sendNotification(ownerId, "New Comment", `${me.profile?.full_name || 'Someone'} commented on your post.`, { postId });
+    }
 
   } catch (e) {
     // rollback optimistic UI
