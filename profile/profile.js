@@ -1750,6 +1750,20 @@ c.emailsWrap?.addEventListener("click", (e) => {
   paintCompanyEmails(current);
 });
 
+// ---------- logout ----------
+const sidebarLogoutBtn = document.getElementById("sidebarLogout");
+sidebarLogoutBtn?.addEventListener("click", async () => {
+  try {
+    sidebarLogoutBtn.disabled = true;
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    window.location.href = "/auth/login.html";
+  } catch (err) {
+    alert("Logout failed: " + err.message);
+    sidebarLogoutBtn.disabled = false;
+  }
+});
+
 // ---------- init ----------
 (async () => {
   try {

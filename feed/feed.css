@@ -1,9 +1,36 @@
 @import url('/css/style.css');
 
 .feed-container {
-  max-width: 600px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 0 100px;
+}
+
+.feed-main {
+  width: 100%;
+}
+
+.feed-side {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .feed-side {
+    display: block;
+    position: sticky;
+    top: 32px;
+    height: fit-content;
+  }
+}
+
+.trend-item {
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.trend-item:hover {
+  background: var(--brand-soft);
 }
 
 /* ---------- Top bar (Enhanced) ---------- */

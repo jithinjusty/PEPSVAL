@@ -132,7 +132,7 @@ function bindAvatarMenu() {
     window.location.href = "/dashboard/settings.html";
   });
 
-  elMenuLogout?.addEventListener("click", async () => {
+  const logoutFn = async () => {
     try {
       setMenuOpen(false);
       setStatus("Logging out…");
@@ -143,7 +143,10 @@ function bindAvatarMenu() {
       showDbError("Logout failed", err);
       setStatus("");
     }
-  });
+  };
+
+  elMenuLogout?.addEventListener("click", logoutFn);
+  document.getElementById("sidebarLogout")?.addEventListener("click", logoutFn);
 }
 
 /* ---------- Avatar load (top-right) ---------- */

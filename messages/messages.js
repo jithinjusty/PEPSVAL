@@ -378,9 +378,18 @@ sendBtn.onclick = async () => {
   }
 };
 
-chatInput.onkeydown = (e) => {
-  if (e.key === "Enter") sendBtn.click();
-};
+// Sidebar logout logic
+const sidebarLogoutBtn = document.getElementById("sidebarLogout");
+sidebarLogoutBtn?.addEventListener("click", async () => {
+  try {
+    sidebarLogoutBtn.disabled = true;
+    await supabase.auth.signOut();
+    window.location.href = "/auth/login.html";
+  } catch (err) {
+    alert("Logout failed: " + err.message);
+    sidebarLogoutBtn.disabled = false;
+  }
+});
 
 initLoad();
 

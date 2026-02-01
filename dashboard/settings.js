@@ -146,10 +146,12 @@ supportForm?.addEventListener("submit", (e) => {
 });
 
 // Logout
-logoutBtn?.addEventListener("click", async () => {
+const logoutFn = async () => {
     await supabase.auth.signOut();
     window.location.href = "/auth/login.html";
-});
+};
+logoutBtn?.addEventListener("click", logoutFn);
+document.getElementById("sidebarLogout")?.addEventListener("click", logoutFn);
 
 // Delete Account
 deleteAccBtn?.addEventListener("click", async () => {

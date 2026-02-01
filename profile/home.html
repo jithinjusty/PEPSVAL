@@ -16,388 +16,423 @@
   </script>
 </head>
 
-<body>
-  <header class="topbar">
-    <div class="topLeft">
-      <a href="/feed/index.html" style="text-decoration:none">
-        <div class="brandName">Pepsval</div>
+<div class="app-container">
+  <!-- Sidebar (Desktop) -->
+  <aside class="sidebar">
+    <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
+
+    <nav style="display: flex; flex-direction: column; gap: 4px;">
+      <a class="navItem" href="/feed/index.html">
+        <span>🏠</span>
+        <span>Feed</span>
       </a>
+      <a class="navItem" href="/jobs/index.html">
+        <span>⚓</span>
+        <span>Jobs</span>
+      </a>
+      <a class="navItem" href="/messages/index.html">
+        <span>💬</span>
+        <span>Chats</span>
+      </a>
+      <a class="navItem active" href="/profile/home.html">
+        <span>👤</span>
+        <span>Profile</span>
+      </a>
+      <a class="navItem" href="/dashboard/settings.html">
+        <span>⚙️</span>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div style="margin-top: auto; padding: 12px;">
+      <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
+        style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
     </div>
+  </aside>
 
-    <div class="topRight">
-      <a class="pv-btn pv-btn-ghost" href="/feed/index.html">Back to Feed</a>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <section class="profileCard">
-      <div class="profileTop">
-        <div class="avatarWrap" id="avatarWrap">
-          <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
-          <div id="avatarFallback" class="avatarFallback hidden">P</div>
-
-          <!-- UI only: replaces the old "Change" word with a pen icon overlay -->
-          <button id="avatarEditBtn" class="avatarEditBtn" type="button" aria-label="Edit profile photo"
-            title="Edit photo">
-            ✎
-          </button>
-        </div>
-
-        <div class="headerText">
-          <div class="nameRow">
-            <div class="name" id="profileName">Profile</div>
-            <span id="typeBadge" class="badge hidden">Seafarer</span>
-          </div>
-
-          <div class="miniRow">
-            <div class="miniItem">Rank: <span id="miniRank">—</span></div>
-            <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
-          </div>
-        </div>
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topLeft">
+        <a href="/feed/index.html" style="text-decoration:none">
+          <div class="brandName">Pepsval</div>
+        </a>
       </div>
 
-      <!-- Tabs (built dynamically based on account type) -->
-      <div id="tabs" class="tabs"></div>
+      <div class="topRight">
+        <a class="pv-btn pv-btn-ghost" href="/feed/index.html">Back to Feed</a>
+      </div>
+    </header>
 
-      <!-- Panes -->
-      <section id="tab_about" class="pane">
-        <div class="paneTitle" id="aboutTitle">About</div>
+    <main class="wrap">
+      <section class="profileCard">
+        <div class="profileTop">
+          <div class="avatarWrap" id="avatarWrap">
+            <img id="avatarImg" class="avatar avatarImg" alt="Profile photo" />
+            <div id="avatarFallback" class="avatarFallback hidden">P</div>
 
-
-        <div class="btnRow">
-          <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
-          <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
-        </div>
-
-        <p class="muted" id="aboutHint">
-          Keep your profile complete. Verified details increase trust and visibility.
-        </p>
-
-        <form id="aboutForm" class="aboutForm" autocomplete="off">
-          <!-- Seafarer -->
-          <div class="aboutGrid" data-about="seafarer">
-            <div class="box">
-              <div class="k">Name</div>
-              <input class="v input" id="f_full_name" placeholder="Your full name" />
-            </div>
-            <div class="box">
-              <div class="k">Date of Birth</div>
-              <input class="v input" id="f_dob" type="date" />
-            </div>
-            <div class="box">
-              <div class="k">Email</div>
-              <input class="v input" id="f_email" type="email" disabled />
-            </div>
-            <div class="box">
-              <div class="k">Mobile number</div>
-              <input class="v input" id="f_phone" placeholder="+91 …" />
-            </div>
-            <div class="box">
-              <div class="k">Rank onboard</div>
-              <input class="v input" id="f_rank" placeholder="Select / type rank" list="rankList" />
-              <datalist id="rankList"></datalist>
-            </div>
-            <div class="box">
-              <div class="k">Shipping company working in</div>
-              <input class="v input" id="f_company_working" placeholder="Start typing company…" list="companyList" />
-              <datalist id="companyList"></datalist>
-            </div>
-            <div class="box span2">
-              <div class="k">About yourself</div>
-              <textarea class="v input textarea" id="f_bio" rows="4" placeholder="Write about yourself…"></textarea>
-            </div>
+            <!-- UI only: replaces the old "Change" word with a pen icon overlay -->
+            <button id="avatarEditBtn" class="avatarEditBtn" type="button" aria-label="Edit profile photo"
+              title="Edit photo">
+              ✎
+            </button>
           </div>
 
-          <!-- Company (Employer) -->
-          <div class="aboutGrid hidden" data-about="company">
-            <div class="box">
-              <div class="k">Company name</div>
-              <input class="v input" id="c_company_name" placeholder="Company name" />
+          <div class="headerText">
+            <div class="nameRow">
+              <div class="name" id="profileName">Profile</div>
+              <span id="typeBadge" class="badge hidden">Seafarer</span>
             </div>
-            <div class="box">
-              <div class="k">Contact number</div>
-              <input class="v input" id="c_phone" placeholder="Phone" />
+
+            <div class="miniRow">
+              <div class="miniItem">Rank: <span id="miniRank">—</span></div>
+              <div class="miniItem">Nationality: <span id="miniNationality">—</span></div>
             </div>
-            <div class="box span2">
-              <div class="k">Emails</div>
-              <div id="c_emails" class="multiList"></div>
-              <button id="c_add_email" class="miniBtn" type="button">+ Add email</button>
-              <div class="muted" style="margin-top:6px;">Add multiple emails and tag purpose (Career / Support etc.)
+          </div>
+        </div>
+
+        <!-- Tabs (built dynamically based on account type) -->
+        <div id="tabs" class="tabs"></div>
+
+        <!-- Panes -->
+        <section id="tab_about" class="pane">
+          <div class="paneTitle" id="aboutTitle">About</div>
+
+
+          <div class="btnRow">
+            <button id="editProfileBtn" class="btnGhost" type="button">Edit</button>
+            <button id="saveProfileBtn" class="btnPrimary hidden" type="button">Save</button>
+          </div>
+
+          <p class="muted" id="aboutHint">
+            Keep your profile complete. Verified details increase trust and visibility.
+          </p>
+
+          <form id="aboutForm" class="aboutForm" autocomplete="off">
+            <!-- Seafarer -->
+            <div class="aboutGrid" data-about="seafarer">
+              <div class="box">
+                <div class="k">Name</div>
+                <input class="v input" id="f_full_name" placeholder="Your full name" />
+              </div>
+              <div class="box">
+                <div class="k">Date of Birth</div>
+                <input class="v input" id="f_dob" type="date" />
+              </div>
+              <div class="box">
+                <div class="k">Email</div>
+                <input class="v input" id="f_email" type="email" disabled />
+              </div>
+              <div class="box">
+                <div class="k">Mobile number</div>
+                <input class="v input" id="f_phone" placeholder="+91 …" />
+              </div>
+              <div class="box">
+                <div class="k">Rank onboard</div>
+                <input class="v input" id="f_rank" placeholder="Select / type rank" list="rankList" />
+                <datalist id="rankList"></datalist>
+              </div>
+              <div class="box">
+                <div class="k">Shipping company working in</div>
+                <input class="v input" id="f_company_working" placeholder="Start typing company…" list="companyList" />
+                <datalist id="companyList"></datalist>
+              </div>
+              <div class="box span2">
+                <div class="k">About yourself</div>
+                <textarea class="v input textarea" id="f_bio" rows="4" placeholder="Write about yourself…"></textarea>
               </div>
             </div>
-            <div class="box span2">
-              <div class="k">Type of Services Provided</div>
-              <textarea class="v input textarea" id="c_services" rows="3"
-                placeholder="List your core services…"></textarea>
+
+            <!-- Company (Employer) -->
+            <div class="aboutGrid hidden" data-about="company">
+              <div class="box">
+                <div class="k">Company name</div>
+                <input class="v input" id="c_company_name" placeholder="Company name" />
+              </div>
+              <div class="box">
+                <div class="k">Contact number</div>
+                <input class="v input" id="c_phone" placeholder="Phone" />
+              </div>
+              <div class="box span2">
+                <div class="k">Emails</div>
+                <div id="c_emails" class="multiList"></div>
+                <button id="c_add_email" class="miniBtn" type="button">+ Add email</button>
+                <div class="muted" style="margin-top:6px;">Add multiple emails and tag purpose (Career / Support etc.)
+                </div>
+              </div>
+              <div class="box span2">
+                <div class="k">Type of Services Provided</div>
+                <textarea class="v input textarea" id="c_services" rows="3"
+                  placeholder="List your core services…"></textarea>
+              </div>
+              <div class="box span2">
+                <div class="k">Achievements & Data</div>
+                <textarea class="v input textarea" id="c_achievements" rows="3"
+                  placeholder="Key milestones, fleet size, etc…"></textarea>
+              </div>
+              <div class="box">
+                <div class="k">Vision</div>
+                <textarea class="v input textarea" id="c_vision" rows="3" placeholder="Company vision…"></textarea>
+              </div>
+              <div class="box">
+                <div class="k">Mission</div>
+                <textarea class="v input textarea" id="c_mission" rows="3" placeholder="Company mission…"></textarea>
+              </div>
             </div>
-            <div class="box span2">
-              <div class="k">Achievements & Data</div>
-              <textarea class="v input textarea" id="c_achievements" rows="3"
-                placeholder="Key milestones, fleet size, etc…"></textarea>
+
+            <!-- Maritime Professional (Shore) -->
+            <div class="aboutGrid hidden" data-about="professional">
+              <div class="box">
+                <div class="k">Name</div>
+                <input class="v input" id="p_full_name" placeholder="Your full name" />
+              </div>
+              <div class="box">
+                <div class="k">Date of Birth</div>
+                <input class="v input" id="p_dob" type="date" />
+              </div>
+              <div class="box">
+                <div class="k">Email</div>
+                <input class="v input" id="p_email" type="email" disabled />
+              </div>
+              <div class="box">
+                <div class="k">Contact</div>
+                <input class="v input" id="p_phone" placeholder="Phone" />
+              </div>
+              <div class="box">
+                <div class="k">Currently working at</div>
+                <input class="v input" id="p_current_company" placeholder="Company" list="companyList" />
+              </div>
+              <div class="box">
+                <div class="k">Position</div>
+                <input class="v input" id="p_position" placeholder="Position / role" />
+              </div>
+              <div class="box span2">
+                <div class="k">About</div>
+                <textarea class="v input textarea" id="p_bio" rows="4" placeholder="Write about yourself…"></textarea>
+              </div>
             </div>
-            <div class="box">
-              <div class="k">Vision</div>
-              <textarea class="v input textarea" id="c_vision" rows="3" placeholder="Company vision…"></textarea>
-            </div>
-            <div class="box">
-              <div class="k">Mission</div>
-              <textarea class="v input textarea" id="c_mission" rows="3" placeholder="Company mission…"></textarea>
-            </div>
+          </form>
+        </section>
+
+        <section id="tab_posts" class="pane hidden">
+          <div class="paneTop">
+            <div class="paneTitle">Posts</div>
+            <div id="postCounts" class="postCounts">0 posts</div>
+          </div>
+          <div id="postsWrap" class="muted">Loading…</div>
+        </section>
+
+        <section id="tab_documents" class="pane hidden">
+          <div class="paneTitle">Documents</div>
+          <div class="paneSub">
+            <label class="switch">
+              <input id="docsVisibleToggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+            <div class="muted">Documents visibility: <span id="docsVisLabel">Public</span></div>
+          </div>
+          <div id="documentsWrap" class="muted">Loading…</div>
+        </section>
+
+        <section id="tab_sea" class="pane hidden">
+          <div class="paneTitle">Sea Service</div>
+          <div id="seaWrap" class="muted">Loading…</div>
+        </section>
+
+        <section id="tab_jobs" class="pane hidden">
+          <div class="paneTitle">Jobs</div>
+          <div id="jobsWrap" class="muted">Loading…</div>
+        </section>
+
+        <section id="tab_experience" class="pane hidden">
+          <div class="paneTitle">Experience</div>
+          <div id="expWrap" class="muted">Loading…</div>
+        </section>
+      </section>
+
+      <!-- Floating add (+ in lifebuoy) -->
+      <a id="addPostFab" class="addPostFab" href="/feed/index.html" aria-label="Add post" title="Add post">
+        <span class="lifebuoy">+</span>
+      </a>
+
+      <!-- Avatar Upload Modal -->
+      <div id="avatarModal" class="modal hidden">
+        <div class="modalOverlay"></div>
+        <div class="modalContent">
+          <div class="modalHeader">
+            <h2>Upload Profile Photo</h2>
+            <button id="closeAvatarModal" class="iconBtn" aria-label="Close">&times;</button>
           </div>
 
-          <!-- Maritime Professional (Shore) -->
-          <div class="aboutGrid hidden" data-about="professional">
-            <div class="box">
-              <div class="k">Name</div>
-              <input class="v input" id="p_full_name" placeholder="Your full name" />
-            </div>
-            <div class="box">
-              <div class="k">Date of Birth</div>
-              <input class="v input" id="p_dob" type="date" />
-            </div>
-            <div class="box">
-              <div class="k">Email</div>
-              <input class="v input" id="p_email" type="email" disabled />
-            </div>
-            <div class="box">
-              <div class="k">Contact</div>
-              <input class="v input" id="p_phone" placeholder="Phone" />
-            </div>
-            <div class="box">
-              <div class="k">Currently working at</div>
-              <input class="v input" id="p_current_company" placeholder="Company" list="companyList" />
-            </div>
-            <div class="box">
-              <div class="k">Position</div>
-              <input class="v input" id="p_position" placeholder="Position / role" />
-            </div>
-            <div class="box span2">
-              <div class="k">About</div>
-              <textarea class="v input textarea" id="p_bio" rows="4" placeholder="Write about yourself…"></textarea>
-            </div>
-          </div>
-        </form>
-      </section>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none">
 
-      <section id="tab_posts" class="pane hidden">
-        <div class="paneTop">
-          <div class="paneTitle">Posts</div>
-          <div id="postCounts" class="postCounts">0 posts</div>
-        </div>
-        <div id="postsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_documents" class="pane hidden">
-        <div class="paneTitle">Documents</div>
-        <div class="paneSub">
-          <label class="switch">
-            <input id="docsVisibleToggle" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-          <div class="muted">Documents visibility: <span id="docsVisLabel">Public</span></div>
-        </div>
-        <div id="documentsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_sea" class="pane hidden">
-        <div class="paneTitle">Sea Service</div>
-        <div id="seaWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_jobs" class="pane hidden">
-        <div class="paneTitle">Jobs</div>
-        <div id="jobsWrap" class="muted">Loading…</div>
-      </section>
-
-      <section id="tab_experience" class="pane hidden">
-        <div class="paneTitle">Experience</div>
-        <div id="expWrap" class="muted">Loading…</div>
-      </section>
-    </section>
-
-    <!-- Floating add (+ in lifebuoy) -->
-    <a id="addPostFab" class="addPostFab" href="/feed/index.html" aria-label="Add post" title="Add post">
-      <span class="lifebuoy">+</span>
-    </a>
-
-    <!-- Avatar Upload Modal -->
-    <div id="avatarModal" class="modal hidden">
-      <div class="modalOverlay"></div>
-      <div class="modalContent">
-        <div class="modalHeader">
-          <h2>Upload Profile Photo</h2>
-          <button id="closeAvatarModal" class="iconBtn" aria-label="Close">&times;</button>
-        </div>
-
-        <input type="file" id="avatarInput" accept="image/*" style="display:none">
-
-        <div id="avatarSelectView">
-          <button id="selectImageBtn" class="btnPrimary">Select Photo</button>
-        </div>
-
-        <div id="avatarEditView" class="hidden">
-          <div class="canvasWrap">
-            <canvas id="avatarCanvas"></canvas>
+          <div id="avatarSelectView">
+            <button id="selectImageBtn" class="btnPrimary">Select Photo</button>
           </div>
 
-          <!-- Preset Filters -->
-          <div class="presetFilters">
-            <button class="filterBtn active" data-filter="normal">Normal</button>
-            <button class="filterBtn" data-filter="grayscale">B&W</button>
-            <button class="filterBtn" data-filter="sepia">Sepia</button>
-            <button class="filterBtn" data-filter="vintage">Vintage</button>
-            <button class="filterBtn" data-filter="cool">Cool</button>
-            <button class="filterBtn" data-filter="warm">Warm</button>
-          </div>
+          <div id="avatarEditView" class="hidden">
+            <div class="canvasWrap">
+              <canvas id="avatarCanvas"></canvas>
+            </div>
 
-          <!-- Fine-tune Controls -->
-          <div class="filterControls">
-            <label>
-              <span>Zoom</span>
-              <input type="range" id="zoom" min="100" max="300" value="100">
-            </label>
-            <label>
-              <span>Brightness</span>
-              <input type="range" id="brightness" min="0" max="200" value="100">
-            </label>
-            <label>
-              <span>Contrast</span>
-              <input type="range" id="contrast" min="0" max="200" value="100">
-            </label>
-            <label>
-              <span>Saturation</span>
-              <input type="range" id="saturation" min="0" max="200" value="100">
-            </label>
-            <label>
-              <span>Blur</span>
-              <input type="range" id="blur" min="0" max="10" value="0">
-            </label>
-          </div>
+            <!-- Preset Filters -->
+            <div class="presetFilters">
+              <button class="filterBtn active" data-filter="normal">Normal</button>
+              <button class="filterBtn" data-filter="grayscale">B&W</button>
+              <button class="filterBtn" data-filter="sepia">Sepia</button>
+              <button class="filterBtn" data-filter="vintage">Vintage</button>
+              <button class="filterBtn" data-filter="cool">Cool</button>
+              <button class="filterBtn" data-filter="warm">Warm</button>
+            </div>
 
-          <div class="modalActions">
-            <button id="uploadAvatarBtn" class="btnPrimary">Upload & Save</button>
-            <button id="cancelAvatarBtn" class="btnSecondary">Cancel</button>
+            <!-- Fine-tune Controls -->
+            <div class="filterControls">
+              <label>
+                <span>Zoom</span>
+                <input type="range" id="zoom" min="100" max="300" value="100">
+              </label>
+              <label>
+                <span>Brightness</span>
+                <input type="range" id="brightness" min="0" max="200" value="100">
+              </label>
+              <label>
+                <span>Contrast</span>
+                <input type="range" id="contrast" min="0" max="200" value="100">
+              </label>
+              <label>
+                <span>Saturation</span>
+                <input type="range" id="saturation" min="0" max="200" value="100">
+              </label>
+              <label>
+                <span>Blur</span>
+                <input type="range" id="blur" min="0" max="10" value="0">
+              </label>
+            </div>
+
+            <div class="modalActions">
+              <button id="uploadAvatarBtn" class="btnPrimary">Upload & Save</button>
+              <button id="cancelAvatarBtn" class="btnSecondary">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Job Posting Modal -->
-    <div id="jobModal" class="modal hidden">
-      <div class="modalOverlay"></div>
-      <div class="modalContent" style="max-width: 700px;">
-        <div class="modalHeader">
-          <h2 id="jobModalTitle">Create New Job Post</h2>
-          <button id="closeJobModal" class="iconBtn" aria-label="Close">&times;</button>
+      <!-- Job Posting Modal -->
+      <div id="jobModal" class="modal hidden">
+        <div class="modalOverlay"></div>
+        <div class="modalContent" style="max-width: 700px;">
+          <div class="modalHeader">
+            <h2 id="jobModalTitle">Create New Job Post</h2>
+            <button id="closeJobModal" class="iconBtn" aria-label="Close">&times;</button>
+          </div>
+
+          <form id="jobForm" class="jobFormWrap" autocomplete="off">
+            <input type="hidden" id="j_id">
+
+            <div class="aboutGrid">
+              <div class="box span2">
+                <div class="k">Job Title</div>
+                <input class="v input" id="j_title" placeholder="e.g. Master for Oil Tanker" required />
+              </div>
+
+              <div class="box">
+                <div class="k">Rank</div>
+                <input class="v input" id="j_rank" placeholder="Master / Chief Engineer / AB..." list="rankList" />
+              </div>
+
+              <div class="box">
+                <div class="k">Vessel Name / Detail</div>
+                <input class="v input" id="j_vessel_name" placeholder="Vessel Name (optional)" />
+              </div>
+
+              <div class="box">
+                <div class="k">Vessel Type</div>
+                <input class="v input" id="j_vessel_type" placeholder="Bulk / Tanker / Container..." />
+              </div>
+
+              <div class="box">
+                <div class="k">Contract Type</div>
+                <select class="v input" id="j_contract_type">
+                  <option value="Temporary">Temporary / Single Voyage</option>
+                  <option value="Permanent">Permanent</option>
+                  <option value="Rotational">Rotational</option>
+                </select>
+              </div>
+
+              <div class="box">
+                <div class="k">Salary / Wages</div>
+                <input class="v input" id="j_salary" placeholder="e.g. USD 4500 / Month" />
+              </div>
+
+              <div class="box">
+                <div class="k">Contract Duration</div>
+                <input class="v input" id="j_duration" placeholder="e.g. 4+1 months" />
+              </div>
+
+              <div class="box">
+                <div class="k">Joining Location</div>
+                <input class="v input" id="j_location" placeholder="e.g. Fujairah, Singapore..." />
+              </div>
+
+              <div class="box">
+                <div class="k">Joining Date</div>
+                <input class="v input" id="j_joining_date" type="date" />
+              </div>
+
+              <div class="box span2">
+                <div class="k">Detailed Job Description</div>
+                <textarea class="v input textarea" id="j_description" rows="4"
+                  placeholder="Describe the role and responsibilities..."></textarea>
+              </div>
+
+              <div class="box span2">
+                <div class="k">Requirements (Certificates, Visas, etc.)</div>
+                <textarea class="v input textarea" id="j_requirements" rows="3"
+                  placeholder="US Visa, Advance Tanker, STCW..."></textarea>
+              </div>
+
+              <div class="box span2">
+                <div class="k">Benefits & Perks</div>
+                <textarea class="v input textarea" id="j_benefits" rows="2"
+                  placeholder="Wifi, Gym, Health Insurance..."></textarea>
+              </div>
+
+              <div class="box span2">
+                <div class="k">Tags / Badges (comma separated)</div>
+                <input class="v input" id="j_tags" placeholder="URGENT, NEW, VISA SPONSORED" />
+              </div>
+            </div>
+
+            <div class="modalActions">
+              <button type="submit" id="saveJobBtn" class="btnPrimary">Publish Job Post</button>
+              <button type="button" id="cancelJobBtn" class="btnSecondary">Discard</button>
+            </div>
+          </form>
         </div>
-
-        <form id="jobForm" class="jobFormWrap" autocomplete="off">
-          <input type="hidden" id="j_id">
-
-          <div class="aboutGrid">
-            <div class="box span2">
-              <div class="k">Job Title</div>
-              <input class="v input" id="j_title" placeholder="e.g. Master for Oil Tanker" required />
-            </div>
-
-            <div class="box">
-              <div class="k">Rank</div>
-              <input class="v input" id="j_rank" placeholder="Master / Chief Engineer / AB..." list="rankList" />
-            </div>
-
-            <div class="box">
-              <div class="k">Vessel Name / Detail</div>
-              <input class="v input" id="j_vessel_name" placeholder="Vessel Name (optional)" />
-            </div>
-
-            <div class="box">
-              <div class="k">Vessel Type</div>
-              <input class="v input" id="j_vessel_type" placeholder="Bulk / Tanker / Container..." />
-            </div>
-
-            <div class="box">
-              <div class="k">Contract Type</div>
-              <select class="v input" id="j_contract_type">
-                <option value="Temporary">Temporary / Single Voyage</option>
-                <option value="Permanent">Permanent</option>
-                <option value="Rotational">Rotational</option>
-              </select>
-            </div>
-
-            <div class="box">
-              <div class="k">Salary / Wages</div>
-              <input class="v input" id="j_salary" placeholder="e.g. USD 4500 / Month" />
-            </div>
-
-            <div class="box">
-              <div class="k">Contract Duration</div>
-              <input class="v input" id="j_duration" placeholder="e.g. 4+1 months" />
-            </div>
-
-            <div class="box">
-              <div class="k">Joining Location</div>
-              <input class="v input" id="j_location" placeholder="e.g. Fujairah, Singapore..." />
-            </div>
-
-            <div class="box">
-              <div class="k">Joining Date</div>
-              <input class="v input" id="j_joining_date" type="date" />
-            </div>
-
-            <div class="box span2">
-              <div class="k">Detailed Job Description</div>
-              <textarea class="v input textarea" id="j_description" rows="4"
-                placeholder="Describe the role and responsibilities..."></textarea>
-            </div>
-
-            <div class="box span2">
-              <div class="k">Requirements (Certificates, Visas, etc.)</div>
-              <textarea class="v input textarea" id="j_requirements" rows="3"
-                placeholder="US Visa, Advance Tanker, STCW..."></textarea>
-            </div>
-
-            <div class="box span2">
-              <div class="k">Benefits & Perks</div>
-              <textarea class="v input textarea" id="j_benefits" rows="2"
-                placeholder="Wifi, Gym, Health Insurance..."></textarea>
-            </div>
-
-            <div class="box span2">
-              <div class="k">Tags / Badges (comma separated)</div>
-              <input class="v input" id="j_tags" placeholder="URGENT, NEW, VISA SPONSORED" />
-            </div>
-          </div>
-
-          <div class="modalActions">
-            <button type="submit" id="saveJobBtn" class="btnPrimary">Publish Job Post</button>
-            <button type="button" id="cancelJobBtn" class="btnSecondary">Discard</button>
-          </div>
-        </form>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
+</div>
 
-  <!-- Bottom nav -->
-  <nav class="bottomNav glass">
-    <a class="navItem" href="/feed/index.html">
-      <span>🏠</span>
-      <span>Feed</span>
-    </a>
-    <a class="navItem" href="/jobs/index.html">
-      <span>⚓</span>
-      <span>Jobs</span>
-    </a>
-    <a class="navItem" href="/messages/index.html">
-      <span>💬</span>
-      <span>Chats</span>
-    </a>
-    <a class="navItem active" href="/profile/home.html">
-      <span>👤</span>
-      <span>Profile</span>
-    </a>
-  </nav>
+<!-- Bottom nav (Mobile) -->
+<nav class="bottomNav glass">
+  <a class="navItem" href="/feed/index.html">
+    <span>🏠</span>
+    <span>Feed</span>
+  </a>
+  <a class="navItem" href="/jobs/index.html">
+    <span>⚓</span>
+    <span>Jobs</span>
+  </a>
+  <a class="navItem" href="/messages/index.html">
+    <span>💬</span>
+    <span>Chats</span>
+  </a>
+  <a class="navItem active" href="/profile/home.html">
+    <span>👤</span>
+    <span>Profile</span>
+  </a>
+</nav>
 
-  <script type="module" src="/profile/profile.js?v=20260118-avatar-v2"></script>
-</body>
+<script type="module" src="/profile/profile.js?v=20260118-avatar-v2"></script>
 
 </html>

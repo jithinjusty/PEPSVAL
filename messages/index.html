@@ -17,47 +17,81 @@
   </script>
 </head>
 
-<body>
-  <div class="app">
+<div class="app-container">
+  <!-- Sidebar (Desktop) -->
+  <aside class="sidebar">
+    <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
 
-    <header class="top">
-      <div class="toggle">
-        <button id="tabCommunity" class="active">Community</button>
-        <button id="tabMessages">Messages</button>
-        <button id="tabNotifications">Notifications <span id="notifCount">0</span></button>
-      </div>
-    </header>
+    <nav style="display: flex; flex-direction: column; gap: 4px;">
+      <a class="navItem" href="/feed/index.html">
+        <span>🏠</span>
+        <span>Feed</span>
+      </a>
+      <a class="navItem" href="/jobs/index.html">
+        <span>⚓</span>
+        <span>Jobs</span>
+      </a>
+      <a class="navItem active" href="/messages/index.html">
+        <span>💬</span>
+        <span>Chats</span>
+      </a>
+      <a class="navItem" href="/profile/home.html">
+        <span>👤</span>
+        <span>Profile</span>
+      </a>
+      <a class="navItem" href="/dashboard/settings.html">
+        <span>⚙️</span>
+        <span>Settings</span>
+      </a>
+    </nav>
 
-    <main id="list" class="list"></main>
-
-    <!-- Chat Input (Hidden initially) -->
-    <div id="chatInputWrap" class="chatInputWrap" style="display:none;">
-      <input id="chatInput" placeholder="Write a message…" />
-      <button id="sendBtn">Send</button>
+    <div style="margin-top: auto; padding: 12px;">
+      <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
+        style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
     </div>
+  </aside>
 
+  <div class="main-content">
+    <div class="app">
+      <header class="top">
+        <div class="toggle">
+          <button id="tabCommunity" class="active">Community</button>
+          <button id="tabMessages">Messages</button>
+          <button id="tabNotifications">Notifications <span id="notifCount">0</span></button>
+        </div>
+      </header>
+
+      <main id="list" class="list"></main>
+
+      <!-- Chat Input (Hidden initially) -->
+      <div id="chatInputWrap" class="chatInputWrap" style="display:none;">
+        <input id="chatInput" placeholder="Write a message…" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <script type="module" src="/messages/messages.js?v=20260118-chat-v1"></script>
+<script type="module" src="/messages/messages.js?v=20260118-chat-v1"></script>
 
-  <nav class="bottomNav glass">
-    <a class="navItem" href="/feed/index.html">
-      <span>🏠</span>
-      <span>Feed</span>
-    </a>
-    <a class="navItem" href="/jobs/index.html">
-      <span>⚓</span>
-      <span>Jobs</span>
-    </a>
-    <a class="navItem active" href="/messages/index.html">
-      <span>💬</span>
-      <span>Chats</span>
-    </a>
-    <a class="navItem" href="/profile/home.html">
-      <span>👤</span>
-      <span>Profile</span>
-    </a>
-  </nav>
+<nav class="bottomNav glass">
+  <a class="navItem" href="/feed/index.html">
+    <span>🏠</span>
+    <span>Feed</span>
+  </a>
+  <a class="navItem" href="/jobs/index.html">
+    <span>⚓</span>
+    <span>Jobs</span>
+  </a>
+  <a class="navItem active" href="/messages/index.html">
+    <span>💬</span>
+    <span>Chats</span>
+  </a>
+  <a class="navItem" href="/profile/home.html">
+    <span>👤</span>
+    <span>Profile</span>
+  </a>
+</nav>
 
 </body>
 
