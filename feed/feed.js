@@ -373,7 +373,7 @@ function renderCommentRow(c, profMap, cLikeInfo) {
   return `
     <div class="pv-commentRow ${isReply}" data-comment-id="${esc(c.id)}" data-parent-id="${esc(c.parent_id || '')}">
       <a href="/profile/user.html?id=${esc(uid)}" class="pv-commentAvatar">
-        ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<span>${esc(name.slice(0, 1))}</span>`}
+        ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<div class="sAv"><span>${esc(name.slice(0, 1))}</span></div>`}
       </a>
       <div class="pv-commentBody">
         <div class="pv-commentTop">
@@ -385,8 +385,8 @@ function renderCommentRow(c, profMap, cLikeInfo) {
           ${clAvail ? `<button class="pv-commentActionBtn ${clMine ? 'active' : ''}" data-action="likeComment" data-comment-id="${esc(c.id)}">
             ${clMine ? '❤️' : '🤍'} <span class="action-count">${clCount}</span>
           </button>` : ``}
-          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}">Reply</button>
-          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}">Delete</button>` : ``}
+          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}"><span>💬</span> Reply</button>
+          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}" style="color:var(--danger)"><span>🗑️</span> Delete</button>` : ``}
         </div>
       </div>
     </div>
@@ -447,11 +447,17 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
         <div class="pv-actions">
           <button class="pv-actionBtn ${iLiked ? 'active' : ''}" data-action="toggleLike">
             <span class="action-icon">${iLiked ? '❤️' : '🤍'}</span>
+            <span>Like</span>
             <span data-like-count>${likes}</span>
           </button>
           <button class="pv-actionBtn" data-action="toggleComments">
             <span class="action-icon">💬</span>
+            <span>Comment</span>
             <span data-comment-count>${commCount}</span>
+          </button>
+          <button class="pv-actionBtn" data-action="sharePost">
+            <span class="action-icon">🔗</span>
+            <span>Share</span>
           </button>
         </div>
 
@@ -753,8 +759,29 @@ function bindFeedEvents() {
 }
 
 /* ---------- Main load ---------- */
+function showSkeleton() {
+  if (!elList) return;
+  elList.innerHTML = Array(3).fill(0).map(() => `
+    <div class="pv-post animate-slide-up" style="padding:16px;">
+      <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+        <div class="skeleton" style="width:44px; height:44px; border-radius:50%;"></div>
+        <div style="flex:1;">
+          <div class="skeleton" style="width:120px; height:12px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="width:80px; height:10px;"></div>
+        </div>
+      </div>
+      <div class="skeleton" style="width:100%; height:100px; border-radius:12px; margin-bottom:16px;"></div>
+      <div style="display:flex; gap:16px;">
+        <div class="skeleton" style="width:60px; height:20px; border-radius:10px;"></div>
+        <div class="skeleton" style="width:60px; height:20px; border-radius:10px;"></div>
+      </div>
+    </div>
+  `).join("");
+}
+
 async function loadFeed() {
   try {
+    showSkeleton();
     setStatus("Loading feed…");
 
     const posts = await fetchPosts();
@@ -863,16 +890,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (searchDrop) {
         if (!data || data.length === 0) {
-          searchDrop.innerHTML = `<div style="padding:10px; font-size:13px; color:#888;">No users found for "${q}"</div>`;
+          searchDrop.innerHTML = `<div style="padding:16px; font-size:14px; color:var(--text-muted); text-align:center;">No users found for "${esc(q)}"</div>`;
         } else {
           searchDrop.innerHTML = data.map(p => `
-            <div class="searchItem" onclick="window.location.href='/profile/user.html?id=${p.id}'" style="display:flex; gap:10px; padding:10px; border-bottom:1px solid #eee; cursor:pointer; align-items:center;">
-              <div class="sAv" style="width:34px; height:34px; border-radius:18px; overflow:hidden; border:1px solid #eee; background:#f0f2f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-weight:900; color:#1f6f86;">${(p.full_name || "U").slice(0, 1)}</span>`}
+            <div class="searchItem" onclick="window.location.href='/profile/user.html?id=${p.id}'">
+              <div class="pv-userAvatar" style="width:36px; height:36px;">
+                ${p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : `<span style="font-weight:800; color:var(--brand);">${(p.full_name || "U").slice(0, 1)}</span>`}
               </div>
-              <div class="sMeta" style="min-width:0;">
-                <div class="sName" style="font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.full_name)}</div>
-                <div class="sSub" style="font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.rank || "Seafarer")}</div>
+              <div class="sMeta">
+                <div class="sName">${esc(p.full_name)}</div>
+                <div class="sSub">${esc(p.rank || "Seafarer")}</div>
               </div>
             </div>
           `).join("");

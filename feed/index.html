@@ -25,7 +25,7 @@
     </div>
 
     <div class="topSearch">
-      <input id="searchInput" type="text" placeholder="Search seafarers, companies…" autocomplete="off" />
+      <input id="searchInput" class="pv-input" type="text" placeholder="Search seafarers…" autocomplete="off" />
       <div id="searchDrop" class="searchDrop" style="display:none;"></div>
     </div>
 
@@ -34,60 +34,77 @@
         <img class="avatar" src="/assets/logo.webp" alt="Me" />
       </button>
 
-      <div id="meMenu" class="avatarMenu">
+      <div id="meMenu" class="avatarMenu glass">
         <button id="menuProfile" type="button">Profile</button>
         <button id="menuSettings" type="button">Settings</button>
-        <button id="menuLogout" type="button">Logout</button>
+        <div class="divLine"></div>
+        <button id="menuLogout" type="button" style="color:var(--danger)">Logout</button>
       </div>
     </div>
   </header>
 
-  <!-- Status -->
-  <div id="feedStatus" class="status"></div>
+  <div class="feed-container">
+    <!-- Status -->
+    <div id="feedStatus" class="status"></div>
 
-  <!-- Composer -->
-  <section class="composer">
-    <div class="composerInner">
-      <textarea id="postText" placeholder="What’s happening at sea today?"></textarea>
+    <!-- Composer -->
+    <section class="composer animate-slide-up">
+      <div class="composerInner">
+        <textarea id="postText" placeholder="What’s happening at sea today?"></textarea>
 
-      <div class="composerActions">
-        <button id="fileBtn" class="pv-pillBtn" type="button">Attach</button>
-        <button id="postBtn" class="pv-btn" type="button">Post</button>
-        <input id="postFile" type="file" accept="image/*,video/*" hidden />
-      </div>
-
-      <div id="fileInfo" class="fileInfo" style="display:none;">
-        <div class="fileMeta">
-          <span class="fileDot"></span>
-          <span id="fileName"></span>
+        <div class="composerActions">
+          <button id="fileBtn" class="pv-btn pv-btn-ghost" type="button">
+            <span>📎</span> Attach
+          </button>
+          <button id="postBtn" class="pv-btn pv-btn-primary" type="button">Post</button>
+          <input id="postFile" type="file" accept="image/*,video/*" hidden />
         </div>
-        <button id="clearFile" class="pv-linkBtn" type="button">Remove</button>
-      </div>
 
-      <div id="progressWrap" class="progressWrap" style="display:none;">
-        <div class="progressTop">
-          <div id="progressLabel" class="progressLabel">Uploading…</div>
-          <div id="progressPct" class="progressPct">0%</div>
+        <div id="fileInfo" class="fileInfo" style="display:none;">
+          <div class="fileMeta">
+            <span class="fileDot"></span>
+            <span id="fileName"></span>
+          </div>
+          <button id="clearFile" class="pv-linkBtn" type="button">Remove</button>
         </div>
-        <div class="progressBar">
-          <div id="progressFill" class="progressFill" style="width:0%"></div>
+
+        <div id="progressWrap" class="progressWrap" style="display:none;">
+          <div class="progressTop">
+            <div id="progressLabel" class="progressLabel">Uploading…</div>
+            <div id="progressPct" class="progressPct">0%</div>
+          </div>
+          <div class="progressBar">
+            <div id="progressFill" class="progressFill" style="width:0%"></div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Feed list -->
-  <main id="feedList" class="feedList"></main>
+    <!-- Feed list -->
+    <main id="feedList" class="feedList"></main>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <!-- Bottom nav -->
-  <nav class="bottomNav">
-    <a class="navItem active" href="/feed/index.html">Feed</a>
-    <a class="navItem" href="/jobs/index.html">Jobs</a>
-    <a class="navItem" href="/messages/index.html">Messages</a>
-    <a class="navItem" href="/profile/home.html">Profile</a>
+  <nav class="bottomNav glass">
+    <a class="navItem active" href="/feed/index.html">
+      <span>🏠</span>
+      <span>Feed</span>
+    </a>
+    <a class="navItem" href="/jobs/index.html">
+      <span>⚓</span>
+      <span>Jobs</span>
+    </a>
+    <a class="navItem" href="/messages/index.html">
+      <span>💬</span>
+      <span>Chats</span>
+    </a>
+    <a class="navItem" href="/profile/home.html">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
   </nav>
 
   <script type="module" src="/feed/feed.js?v=2002"></script>
