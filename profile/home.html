@@ -18,12 +18,15 @@
 
 <body>
   <header class="topbar">
-    <a class="brand" href="/feed/index.html" aria-label="Go to feed">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">connect, hire and grow</div>
-    </a>
+    <div class="topLeft">
+      <a href="/feed/index.html" style="text-decoration:none">
+        <div class="brandName">Pepsval</div>
+      </a>
+    </div>
 
-    <a class="btnGhost" href="/feed/index.html">Back</a>
+    <div class="topRight">
+      <a class="pv-btn pv-btn-ghost" href="/feed/index.html">Back to Feed</a>
+    </div>
   </header>
 
   <main class="wrap">
@@ -375,11 +378,23 @@
   </main>
 
   <!-- Bottom nav -->
-  <nav class="bottomNav">
-    <a class="navItem" href="/feed/index.html">Feed</a>
-    <a class="navItem" href="/jobs/index.html">Jobs</a>
-    <a class="navItem" href="/messages/index.html">Messages</a>
-    <a class="navItem active" href="/profile/home.html">Profile</a>
+  <nav class="bottomNav glass">
+    <a class="navItem" href="/feed/index.html">
+      <span>🏠</span>
+      <span>Feed</span>
+    </a>
+    <a class="navItem" href="/jobs/index.html">
+      <span>⚓</span>
+      <span>Jobs</span>
+    </a>
+    <a class="navItem" href="/messages/index.html">
+      <span>💬</span>
+      <span>Chats</span>
+    </a>
+    <a class="navItem active" href="/profile/home.html">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
   </nav>
 
   <script type="module" src="/profile/profile.js?v=20260118-avatar-v2"></script>

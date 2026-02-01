@@ -212,7 +212,8 @@ function buildTabs() {
   // Add Request Verification button if not verified
   if (!profile?.is_verified) {
     const vBtn = document.createElement("button");
-    vBtn.className = "tab v-req-btn";
+    vBtn.className = "tab";
+    vBtn.style.color = "var(--brand)";
     vBtn.textContent = "Get Verified";
     vBtn.onclick = () => alert("Verification request submitted! We will review your documents soon.");
     elTabs.appendChild(vBtn);
@@ -461,7 +462,6 @@ function paintAbout() {
   if (accountKind === "seafarer") showAboutSection("seafarer");
   if (accountKind === "company") showAboutSection("company");
   if (accountKind === "professional") showAboutSection("professional");
-  if (accountKind === "professional") showAboutSection("professional");
   // Default fallback -> show Seafarer inputs. This matches getAccountKind() default.
   // Ideally this line is rarely hit now that we default aggressively.
   if (accountKind === "other" || accountKind === "seafarer") showAboutSection("seafarer");
@@ -680,22 +680,21 @@ async function loadPostsSafe() {
         : "";
 
       return `
-        <article class="pv-post" style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-            <div style="font-weight:900;">${escapeHtml(profile?.full_name || profile?.company_name || "Me")}</div>
+        <article class="pv-post animate-slide-up" style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;">
+            <div style="font-weight:800; color:var(--text-main);">${escapeHtml(profile?.full_name || profile?.company_name || "Me")}</div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <select data-action="postVis" data-id="${id}" style="border:1px solid rgba(0,0,0,.10);border-radius:999px;padding:6px 10px;font-weight:900;">
+              <select data-action="postVis" data-id="${id}" class="pv-input" style="padding:4px 12px; width:auto; font-size:12px;">
                 <option value="public" ${vis === "public" ? "selected" : ""}>Public</option>
                 <option value="hide" ${vis === "hide" ? "selected" : ""}>Hide</option>
                 <option value="private" ${vis === "private" ? "selected" : ""}>Private</option>
               </select>
-              <button class="iconBtn" type="button" data-action="deletePost" data-id="${id}" title="Delete post">✕</button>
+              <button class="pv-btn pv-btn-ghost" style="padding:4px 10px; color:var(--danger); border-color:var(--stroke);" type="button" data-action="deletePost" data-id="${id}" title="Delete">✕</button>
             </div>
           </div>
-          <div class="muted" style="margin-top:4px;">${escapeHtml(formatDate(r.created_at || r.inserted_at || ""))}</div>
-          ${text ? `<div style="margin-top:10px;font-weight:700;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ``}
-          ${mediaHtml ? `<div style="margin-top:10px;">${mediaHtml}</div>` : ``}
-          <div class="muted" style="margin-top:10px;">Likes & comments: open from feed (same interactions).</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">${escapeHtml(formatDate(r.created_at || r.inserted_at || ""))}</div>
+          ${text ? `<div style="font-size:15px; line-height:1.6; color:var(--text-main); white-space:pre-wrap;">${escapeHtml(text)}</div>` : ``}
+          ${mediaHtml ? `<div style="margin-top:12px;">${mediaHtml}</div>` : ``}
         </article>
       `;
     }).join("");
@@ -766,8 +765,8 @@ function renderDocs(rows) {
   const list = Array.isArray(rows) ? rows : [];
   const table = `
     <div class="tableActions">
-      <button class="miniBtn" type="button" data-action="addDoc">+ Add document</button>
-      <span class="badPill">${list.length} documents</span>
+      <button class="pv-btn pv-btn-primary" type="button" data-action="addDoc">+ Add Document</button>
+      <span class="badge">${list.length} Total</span>
     </div>
 
     <div class="tableWrap">

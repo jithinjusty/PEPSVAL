@@ -164,13 +164,14 @@
 
 <body>
   <header class="topbar">
-    <div class="brand">
-      <div class="brandWord">PEPSVAL</div>
-      <div class="brandTag">settings</div>
+    <div class="topLeft">
+      <a href="/feed/index.html" style="text-decoration:none">
+        <div class="brandName">Pepsval</div>
+      </a>
     </div>
-    <div class="topActions">
-      <a class="chip" href="/dashboard/index.html">Back</a>
-      <button class="chip danger" id="logoutBtn" type="button">Logout</button>
+
+    <div class="topRight">
+      <button class="pv-btn pv-btn-ghost" id="logoutBtn" type="button" style="color:var(--danger)">Logout</button>
     </div>
   </header>
 
@@ -217,7 +218,8 @@
               <label>Additional Phones (comma separated)</label>
               <input type="text" id="secondaryPhones" placeholder="e.g. +1..., +2...">
             </div>
-            <button type="submit" class="btn-block" id="saveContactBtn">Save Contact Details</button>
+            <button type="submit" class="pv-btn pv-btn-primary" id="saveContactBtn" style="width:100%">Save Contact
+              Details</button>
             <div id="contactMsg" class="msg-box"></div>
           </form>
         </div>
@@ -238,7 +240,8 @@
               <label>Confirm New Password</label>
               <input type="password" id="confirmPassword" placeholder="Repeat new password">
             </div>
-            <button type="submit" class="btn-block" id="changePassBtn">Update Password</button>
+            <button type="submit" class="pv-btn pv-btn-primary" id="changePassBtn" style="width:100%">Update
+              Password</button>
             <div id="passwordMsg" class="msg-box"></div>
           </form>
         </div>
@@ -251,7 +254,7 @@
           <form class="support-form" id="supportForm">
             <p class="cardSub">Send your query to our maritime support team (support@pepsval.com).</p>
             <textarea id="supportText" rows="3" placeholder="Describe your issue or suggestion..."></textarea>
-            <button type="submit" class="btn-block">Open Support Email</button>
+            <button type="submit" class="pv-btn pv-btn-primary" style="width:100%">Open Support Email</button>
           </form>
         </div>
       </section>
@@ -285,11 +288,23 @@
     </div>
   </main>
 
-  <nav class="bottomNav">
-    <a class="navItem" href="/feed/index.html">Feed</a>
-    <a class="navItem" href="/jobs/index.html">Jobs</a>
-    <a class="navItem" href="/messages/index.html">Messages</a>
-    <a class="navItem" href="/profile/home.html">Profile</a>
+  <nav class="bottomNav glass">
+    <a class="navItem" href="/feed/index.html">
+      <span>🏠</span>
+      <span>Feed</span>
+    </a>
+    <a class="navItem" href="/jobs/index.html">
+      <span>⚓</span>
+      <span>Jobs</span>
+    </a>
+    <a class="navItem" href="/messages/index.html">
+      <span>💬</span>
+      <span>Chats</span>
+    </a>
+    <a class="navItem" href="/profile/home.html">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
   </nav>
 
   <script type="module" src="/dashboard/settings.js"></script>

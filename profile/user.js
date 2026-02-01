@@ -132,7 +132,7 @@ function buildTabs() {
     tabs.push({ id: "posts", label: "Posts" });
 
     tabsEl.innerHTML = tabs.map(t => `
-        <div class="tab ${t.id === currentTab ? 'active' : ''}" data-tab="${t.id}">${t.id === 'posts' ? 'Posts' : t.label}</div>
+        <button class="tab ${t.id === currentTab ? 'active' : ''}" data-tab="${t.id}">${t.label}</button>
     `).join("");
 
     tabsEl.querySelectorAll(".tab").forEach(tab => {
@@ -209,10 +209,11 @@ async function loadPosts() {
     }
 
     postsWrap.innerHTML = data.map(p => `
-        <div style="margin-bottom:16px; padding:12px; border:1px solid rgba(0,0,0,.06); border-radius:12px; background:#fff;">
-            <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">${new Date(p.created_at).toLocaleDateString()}</div>
-            <div style="font-size:14px; line-height:1.45;">${escapeHtml(p.content)}</div>
-        </div>
+        <article class="pv-post animate-slide-up" style="margin-bottom:16px;">
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${new Date(p.created_at).toLocaleDateString()}</div>
+            <div style="font-size:15px; line-height:1.6; color:var(--text-main);">${escapeHtml(p.content)}</div>
+            ${p.media_url ? `<div style="margin-top:12px;"><img src="${p.media_url}" style="width:100%; border-radius:12px; border:1px solid var(--stroke);" /></div>` : ""}
+        </article>
     `).join("");
 }
 
@@ -235,12 +236,12 @@ async function loadJobs() {
     }
 
     jobsWrap.innerHTML = data.map(j => {
-        const tags = j.tags || [];
+        const tags = Array.isArray(j.tags) ? j.tags : (j.tags ? j.tags.split(',') : []);
         const isUrgent = tags.some(t => t.trim().toUpperCase() === 'URGENT');
         return `
-        <div class="jobCard" style="margin-top:0; margin-bottom:14px;">
+        <div class="jobCard animate-slide-up">
             <div class="jobHeader">
-                <div class="jobTitleGroup">
+                <div>
                     <div class="jobTitleText">${escapeHtml(j.title)}</div>
                     <div class="jobSubText">
                         <span>${escapeHtml(j.rank || "Any Rank")}</span>
@@ -250,13 +251,21 @@ async function loadJobs() {
                 <div class="jobBadge ${isUrgent ? 'urgent' : ''}">${isUrgent ? 'Urgent' : 'Active'}</div>
             </div>
             <div class="jobGrid">
-                <div class="jobItem"><div class="jobLabel">Salary</div><div class="jobValue">${escapeHtml(j.salary || "TBA")}</div></div>
-                <div class="jobItem"><div class="jobLabel">Duration</div><div class="jobValue">${escapeHtml(j.contract_duration || "TBA")}</div></div>
-                <div class="jobItem"><div class="jobLabel">Location</div><div class="jobValue">${escapeHtml(j.location || "TBA")}</div></div>
-                <div class="jobItem"><div class="jobLabel">Joining</div><div class="jobValue">${j.joining_date || "TBA"}</div></div>
+                <div class="jobItem">
+                    <div class="jobLabel">Salary</div>
+                    <div class="jobValue">${escapeHtml(j.salary || "TBA")}</div>
+                </div>
+                <div class="jobItem">
+                    <div class="jobLabel">Contract</div>
+                    <div class="jobValue">${escapeHtml(j.contract_duration || "TBA")}</div>
+                </div>
+                <div class="jobItem">
+                    <div class="jobLabel">Joining</div>
+                    <div class="jobValue">${j.joining_date || "TBA"}</div>
+                </div>
             </div>
-            <div style="margin-top:12px;">
-                <button class="btnPrimary" style="width:100%;" onclick="alert('Applications handled through PEPSVAL Messaging or Company Contact.')">Apply for this Job</button>
+            <div style="margin-top:20px;">
+                <button class="pv-btn pv-btn-primary" style="width:100%;" onclick="alert('Please message the company directly to apply for this position.')">Apply Now</button>
             </div>
         </div>
         `;
