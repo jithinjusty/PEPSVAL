@@ -145,3 +145,10 @@
 .chatInputWrap button:active {
   transform: scale(0.95);
 }
+
+@media (min-width: 1024px) {
+  .chatInputWrap {
+    left: calc(50% + 130px);
+    bottom: 32px;
+  }
+}

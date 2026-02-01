@@ -151,18 +151,22 @@ function bindAvatarMenu() {
 
 /* ---------- Avatar load (top-right) ---------- */
 async function loadMyAvatar() {
-  if (!me?.id || !elMeAvatarImg) return;
+  if (!me?.id) return;
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("avatar_url, full_name")
+      .select("*")
       .eq("id", me.id)
       .maybeSingle();
     if (error) throw error;
-    if (data?.avatar_url) elMeAvatarImg.src = data.avatar_url;
-    if (data?.full_name) elMeAvatarImg.alt = data.full_name;
+    if (data) {
+      me.profile = data;
+      if (elMeAvatarImg) {
+        if (data.avatar_url) elMeAvatarImg.src = data.avatar_url;
+        elMeAvatarImg.alt = data.full_name || "Me";
+      }
+    }
   } catch (e) {
-    // do not crash feed
     console.warn("Top avatar failed:", e?.message || e);
   }
 }
@@ -611,13 +615,27 @@ async function sendComment(postId, postEl) {
   if (!txt) return;
 
   // optimistic UI append
-  const node = document.createElement("div");
-  node.className = "pv-comment";
-  node.innerHTML = `<div class="pv-commentText">${esc(txt)}</div><div class="pv-commentMeta">${esc(new Date().toLocaleString())}</div>`;
-  if (list) list.appendChild(node);
-
   const pid = postId;
   const parentId = input.getAttribute("data-reply-to") || null;
+
+  const mockComment = {
+    id: "temp-" + Date.now(),
+    user_id: me.id,
+    body: txt,
+    parent_id: parentId,
+    created_at: new Date().toISOString()
+  };
+
+  const profMap = new Map();
+  profMap.set(me.id, me.profile || { full_name: "Me", avatar_url: null });
+  const cLikeInfo = { counts: new Map(), mine: new Set(), available: true };
+
+  const rowHtml = renderCommentRow(mockComment, profMap, cLikeInfo);
+  if (list) {
+    // remove "No comments yet" if exists
+    if (list.innerHTML.includes("No comments yet")) list.innerHTML = "";
+    list.insertAdjacentHTML('beforeend', rowHtml);
+  }
 
   if (countEl) countEl.textContent = String(Number(countEl.textContent || "0") + 1);
   if (input) {
@@ -645,15 +663,21 @@ async function sendComment(postId, postEl) {
       if (fallbackErr) throw fallbackErr;
     }
 
+    // After successful DB insert, we don't need to do anything because the Realtime listener 
+    // will pick it up or the optimistic UI is already there. 
+    // Actually, to avoid duplicates (optimistic + realtime), we should handle that in the realtime listener.
+    // For now, let's just toast and move on.
+
     if (ownerId && ownerId !== me.id) {
-      // Use me.full_name or similar if available
       const senderName = me.profile?.full_name || "Someone";
       await sendNotification(ownerId, "New Comment", `${senderName} commented on your post.`, { postId: pid });
     }
 
   } catch (e) {
-    // rollback optimistic UI
-    node.remove();
+    // rollback optimistic UI: find the temp row
+    const tempRow = list?.querySelector(`[data-comment-id^="temp-"]`);
+    tempRow?.remove();
+
     if (countEl) countEl.textContent = String(Math.max(0, Number(countEl.textContent || "1") - 1));
     showDbError("Comment failed", e);
   }
@@ -822,6 +846,20 @@ async function loadFeed() {
     supabase.channel('public:post_comments')
       .on('postgres_changes', { event: 'INSERT', table: 'post_comments' }, async (payload) => {
         const c = payload.new;
+
+        // Avoid duplicate if this is my own comment which was added optimistically
+        if (c.user_id === me.id) {
+          // Find temp row and update it with real ID
+          const list = elList.querySelector(`article[data-post-id="${c.post_id}"] .pv-commentsList`);
+          const tempRow = list?.querySelector(`[data-comment-id^="temp-"]`);
+          if (tempRow) {
+            tempRow.setAttribute("data-comment-id", c.id);
+            // Also update delete/like buttons in it
+            tempRow.querySelectorAll("[data-comment-id]").forEach(el => el.setAttribute("data-comment-id", c.id));
+            return;
+          }
+        }
+
         const postEl = elList.querySelector(`article[data-post-id="${c.post_id}"]`);
         if (!postEl) return;
 
@@ -830,16 +868,11 @@ async function loadFeed() {
 
         const list = postEl.querySelector(".pv-commentsList");
         if (list) {
-          // If we don't have the profile in profMap yet, fetch it
+          if (list.innerHTML.includes("No comments yet")) list.innerHTML = "";
           const { data: prof } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", c.user_id).single();
-
-          // Re-create a temporary Map for this single row to satisfy renderCommentRow's expectations
           const tempMap = new Map();
           if (prof) tempMap.set(c.user_id, prof);
-
-          // Mock cLikeInfo for instant display
           const mockCLikes = { counts: new Map(), mine: new Set(), available: true };
-
           const rowHtml = renderCommentRow(c, tempMap, mockCLikes);
           list.insertAdjacentHTML('beforeend', rowHtml);
         }

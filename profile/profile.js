@@ -502,6 +502,15 @@ async function loadProfile() {
   await ensureProfileRow(me);
   profile = await fetchProfile(me.id);
 
+  // Update header avatar
+  const avatarBtn = document.getElementById("meAvatarBtn");
+  const hAvatarImg = avatarBtn?.querySelector("img");
+  if (profile && hAvatarImg) {
+    if (profile.avatar_url) hAvatarImg.src = profile.avatar_url;
+    hAvatarImg.alt = profile.full_name || "Me";
+  }
+  avatarBtn?.addEventListener("click", () => window.location.href = "/profile/home.html");
+
   accountKind = getAccountKind(profile?.account_type);
   console.log("Loaded Profile:", profile);
   console.log("Determined Account Kind:", accountKind);

@@ -15,168 +15,169 @@
   </script>
 </head>
 
-<div class="app-container">
-  <!-- Sidebar (Desktop) -->
-  <aside class="sidebar">
-    <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
+<body class="app-bg">
+  <div class="app-container">
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar">
+      <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
 
-    <nav style="display: flex; flex-direction: column; gap: 4px;">
-      <a class="navItem active" href="/feed/index.html">
-        <span>🏠</span>
-        <span>Feed</span>
-      </a>
-      <a class="navItem" href="/jobs/index.html">
-        <span>⚓</span>
-        <span>Jobs</span>
-      </a>
-      <a class="navItem" href="/messages/index.html">
-        <span>💬</span>
-        <span>Chats</span>
-      </a>
-      <a class="navItem" href="/profile/home.html">
-        <span>👤</span>
-        <span>Profile</span>
-      </a>
-      <a class="navItem" href="/dashboard/settings.html">
-        <span>⚙️</span>
-        <span>Settings</span>
-      </a>
-    </nav>
+      <nav style="display: flex; flex-direction: column; gap: 4px;">
+        <a class="navItem active" href="/feed/index.html">
+          <span>🏠</span>
+          <span>Feed</span>
+        </a>
+        <a class="navItem" href="/jobs/index.html">
+          <span>⚓</span>
+          <span>Jobs</span>
+        </a>
+        <a class="navItem" href="/messages/index.html">
+          <span>💬</span>
+          <span>Chats</span>
+        </a>
+        <a class="navItem" href="/profile/home.html">
+          <span>👤</span>
+          <span>Profile</span>
+        </a>
+        <a class="navItem" href="/dashboard/settings.html">
+          <span>⚙️</span>
+          <span>Settings</span>
+        </a>
+      </nav>
 
-    <div style="margin-top: auto; padding: 12px;">
-      <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
-        style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
-    </div>
-  </aside>
-
-  <div class="main-content">
-    <!-- Top bar (Mobile Cabinet) -->
-    <header class="topbar">
-      <div class="topLeft">
-        <img class="brandIcon" src="/assets/logo.webp" alt="Pepsval" />
-        <div class="brandName">Pepsval</div>
+      <div style="margin-top: auto; padding: 12px;">
+        <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
+          style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
       </div>
+    </aside>
 
-      <div class="topSearch">
-        <input id="searchInput" class="pv-input" type="text" placeholder="Search seafarers…" autocomplete="off" />
-        <div id="searchDrop" class="searchDrop" style="display:none;"></div>
-      </div>
+    <div class="main-content">
+      <!-- Top bar (Mobile Cabinet) -->
+      <header class="topbar">
+        <div class="topLeft">
+          <img class="brandIcon" src="/assets/logo.webp" alt="Pepsval" />
+          <div class="brandName">Pepsval</div>
+        </div>
 
-      <div class="topRight">
-        <button id="meAvatarBtn" class="avatarBtn" type="button">
-          <img class="avatar" src="/assets/logo.webp" alt="Me" />
-        </button>
-      </div>
-    </header>
+        <div class="topSearch">
+          <input id="searchInput" class="pv-input" type="text" placeholder="Search seafarers…" autocomplete="off" />
+          <div id="searchDrop" class="searchDrop" style="display:none;"></div>
+        </div>
 
-    <div class="feed-layout">
-      <div class="feed-main">
-        <!-- Status -->
-        <div id="feedStatus" class="status"></div>
+        <div class="topRight">
+          <button id="meAvatarBtn" class="avatarBtn" type="button">
+            <img class="avatar" src="/assets/logo.webp" alt="Me" />
+          </button>
+        </div>
+      </header>
 
-        <!-- Composer -->
-        <section class="composer animate-slide-up">
-          <div class="composerInner">
-            <textarea id="postText" placeholder="What’s happening at sea today?"></textarea>
+      <div class="feed-layout">
+        <div class="feed-main">
+          <!-- Status -->
+          <div id="feedStatus" class="status"></div>
 
-            <div class="composerActions">
-              <button id="fileBtn" class="pv-btn pv-btn-ghost" type="button">
-                <span>📎</span> Attach
-              </button>
-              <button id="postBtn" class="pv-btn pv-btn-primary" type="button">Post</button>
-              <input id="postFile" type="file" accept="image/*,video/*" hidden />
-            </div>
+          <!-- Composer -->
+          <section class="composer animate-slide-up">
+            <div class="composerInner">
+              <textarea id="postText" placeholder="What’s happening at sea today?"></textarea>
 
-            <div id="fileInfo" class="fileInfo" style="display:none;">
-              <div class="fileMeta">
-                <span class="fileDot"></span>
-                <span id="fileName"></span>
+              <div class="composerActions">
+                <button id="fileBtn" class="pv-btn pv-btn-ghost" type="button">
+                  <span>📎</span> Attach
+                </button>
+                <button id="postBtn" class="pv-btn pv-btn-primary" type="button">Post</button>
+                <input id="postFile" type="file" accept="image/*,video/*" hidden />
               </div>
-              <button id="clearFile" class="pv-linkBtn" type="button">Remove</button>
-            </div>
 
-            <div id="progressWrap" class="progressWrap" style="display:none;">
-              <div class="progressTop">
-                <div id="progressLabel" class="progressLabel">Uploading…</div>
-                <div id="progressPct" class="progressPct">0%</div>
+              <div id="fileInfo" class="fileInfo" style="display:none;">
+                <div class="fileMeta">
+                  <span class="fileDot"></span>
+                  <span id="fileName"></span>
+                </div>
+                <button id="clearFile" class="pv-linkBtn" type="button">Remove</button>
               </div>
-              <div class="progressBar">
-                <div id="progressFill" class="progressFill" style="width:0%"></div>
+
+              <div id="progressWrap" class="progressWrap" style="display:none;">
+                <div class="progressTop">
+                  <div id="progressLabel" class="progressLabel">Uploading…</div>
+                  <div id="progressPct" class="progressPct">0%</div>
+                </div>
+                <div class="progressBar">
+                  <div id="progressFill" class="progressFill" style="width:0%"></div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Feed list -->
-        <main id="feedList" class="feedList"></main>
+          <!-- Feed list -->
+          <main id="feedList" class="feedList"></main>
+        </div>
+
+        <!-- Right Sidebar (Desktop) -->
+        <aside class="feed-side">
+          <section class="pv-card glass" style="padding: 20px; border-radius: var(--radius-lg);">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Maritime Trends</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="trend-item">
+                <div style="font-size: 12px; color: var(--text-muted);">Trending in Shipping</div>
+                <div style="font-weight: 700;">#Decarbonization</div>
+              </div>
+              <div class="trend-item">
+                <div style="font-size: 12px; color: var(--text-muted);">Industry News</div>
+                <div style="font-weight: 700;">New IMO Regulations 2026</div>
+              </div>
+              <div class="trend-item">
+                <div style="font-size: 12px; color: var(--text-muted);">Career Advice</div>
+                <div style="font-weight: 700;">ETO Certification Tips</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pv-card glass" style="padding: 20px; border-radius: var(--radius-lg); margin-top: 20px;">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Suggested Companies</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div
+                  style="width: 32px; height: 32px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--brand);">
+                  M</div>
+                <div style="font-weight: 600; font-size: 14px;">Maersk Line</div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div
+                  style="width: 32px; height: 32px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--brand);">
+                  MSC</div>
+                <div style="font-weight: 600; font-size: 14px;">MSC Mediterranean</div>
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
-
-      <!-- Right Sidebar (Desktop) -->
-      <aside class="feed-side">
-        <section class="pv-card glass" style="padding: 20px; border-radius: var(--radius-lg);">
-          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Maritime Trends</h3>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div class="trend-item">
-              <div style="font-size: 12px; color: var(--text-muted);">Trending in Shipping</div>
-              <div style="font-weight: 700;">#Decarbonization</div>
-            </div>
-            <div class="trend-item">
-              <div style="font-size: 12px; color: var(--text-muted);">Industry News</div>
-              <div style="font-weight: 700;">New IMO Regulations 2026</div>
-            </div>
-            <div class="trend-item">
-              <div style="font-size: 12px; color: var(--text-muted);">Career Advice</div>
-              <div style="font-weight: 700;">ETO Certification Tips</div>
-            </div>
-          </div>
-        </section>
-
-        <section class="pv-card glass" style="padding: 20px; border-radius: var(--radius-lg); margin-top: 20px;">
-          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Suggested Companies</h3>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 12px; align-items: center;">
-              <div
-                style="width: 32px; height: 32px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--brand);">
-                M</div>
-              <div style="font-weight: 600; font-size: 14px;">Maersk Line</div>
-            </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
-              <div
-                style="width: 32px; height: 32px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--brand);">
-                MSC</div>
-              <div style="font-weight: 600; font-size: 14px;">MSC Mediterranean</div>
-            </div>
-          </div>
-        </section>
-      </aside>
     </div>
   </div>
-</div>
 
-<!-- Toast -->
-<div id="toast" class="toast" aria-live="polite"></div>
+  <!-- Toast -->
+  <div id="toast" class="toast" aria-live="polite"></div>
 
-<!-- Bottom nav (Mobile) -->
-<nav class="bottomNav glass">
-  <a class="navItem active" href="/feed/index.html">
-    <span>🏠</span>
-    <span>Feed</span>
-  </a>
-  <a class="navItem" href="/jobs/index.html">
-    <span>⚓</span>
-    <span>Jobs</span>
-  </a>
-  <a class="navItem" href="/messages/index.html">
-    <span>💬</span>
-    <span>Chats</span>
-  </a>
-  <a class="navItem" href="/profile/home.html">
-    <span>👤</span>
-    <span>Profile</span>
-  </a>
-</nav>
+  <!-- Bottom nav (Mobile) -->
+  <nav class="bottomNav glass">
+    <a class="navItem active" href="/feed/index.html">
+      <span>🏠</span>
+      <span>Feed</span>
+    </a>
+    <a class="navItem" href="/jobs/index.html">
+      <span>⚓</span>
+      <span>Jobs</span>
+    </a>
+    <a class="navItem" href="/messages/index.html">
+      <span>💬</span>
+      <span>Chats</span>
+    </a>
+    <a class="navItem" href="/profile/home.html">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
+  </nav>
 
-<script type="module" src="/feed/feed.js?v=2002"></script>
+  <script type="module" src="/feed/feed.js?v=2002"></script>
 </body>
 
 </html>

@@ -88,10 +88,15 @@
 .searchItem {
   display: flex;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   cursor: pointer;
   align-items: center;
   transition: background 0.2s ease;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.searchItem:last-child {
+  border-bottom: none;
 }
 
 .searchItem:hover {
@@ -175,14 +180,23 @@
 }
 
 .pv-userAvatar {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--radius-full);
   background: var(--brand-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--stroke);
+}
+
+.pv-userAvatar span {
+  font-weight: 800;
+  color: var(--brand);
+  font-size: 16px;
+  text-transform: uppercase;
 }
 
 .pv-userAvatar img {

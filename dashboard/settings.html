@@ -162,188 +162,189 @@
   </style>
 </head>
 
-<div class="app-container">
-  <!-- Sidebar (Desktop) -->
-  <aside class="sidebar">
-    <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
+<body class="app-bg">
+  <div class="app-container">
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar">
+      <a href="/feed/index.html" class="sidebar-logo">Pepsval</a>
 
-    <nav style="display: flex; flex-direction: column; gap: 4px;">
-      <a class="navItem" href="/feed/index.html">
-        <span>🏠</span>
-        <span>Feed</span>
-      </a>
-      <a class="navItem" href="/jobs/index.html">
-        <span>⚓</span>
-        <span>Jobs</span>
-      </a>
-      <a class="navItem" href="/messages/index.html">
-        <span>💬</span>
-        <span>Chats</span>
-      </a>
-      <a class="navItem" href="/profile/home.html">
-        <span>👤</span>
-        <span>Profile</span>
-      </a>
-      <a class="navItem active" href="/dashboard/settings.html">
-        <span>⚙️</span>
-        <span>Settings</span>
-      </a>
-    </nav>
-
-    <div style="margin-top: auto; padding: 12px;">
-      <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
-        style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
-    </div>
-  </aside>
-
-  <div class="main-content">
-    <header class="topbar">
-      <div class="topLeft">
-        <a href="/feed/index.html" style="text-decoration:none">
-          <div class="brandName">Pepsval</div>
+      <nav style="display: flex; flex-direction: column; gap: 4px;">
+        <a class="navItem" href="/feed/index.html">
+          <span>🏠</span>
+          <span>Feed</span>
         </a>
+        <a class="navItem" href="/jobs/index.html">
+          <span>⚓</span>
+          <span>Jobs</span>
+        </a>
+        <a class="navItem" href="/messages/index.html">
+          <span>💬</span>
+          <span>Chats</span>
+        </a>
+        <a class="navItem" href="/profile/home.html">
+          <span>👤</span>
+          <span>Profile</span>
+        </a>
+        <a class="navItem active" href="/dashboard/settings.html">
+          <span>⚙️</span>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div style="margin-top: auto; padding: 12px;">
+        <button id="sidebarLogout" class="pv-btn pv-btn-ghost"
+          style="width: 100%; color: var(--danger); border-color: var(--stroke);">Logout</button>
       </div>
+    </aside>
 
-      <div class="topRight">
-        <button class="pv-btn pv-btn-ghost" id="logoutBtn" type="button" style="color:var(--danger)">Logout</button>
-      </div>
-    </header>
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topLeft">
+          <a href="/feed/index.html" style="text-decoration:none">
+            <div class="brandName">Pepsval</div>
+          </a>
+        </div>
 
-    <main class="wrap">
-      <div class="settings-grid">
+        <div class="topRight">
+          <button class="pv-btn pv-btn-ghost" id="logoutBtn" type="button" style="color:var(--danger)">Logout</button>
+        </div>
+      </header>
 
-        <!-- Appearance -->
-        <section class="card">
-          <div class="cardBody">
-            <div class="cardTitle">Appearance</div>
-            <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center;">
-              <div class="setting-info" style="margin-bottom: 0;">
-                <h4>Dark Mode</h4>
-                <p style="margin-bottom: 0;">Switch between day and night themes.</p>
+      <main class="wrap">
+        <div class="settings-grid">
+
+          <!-- Appearance -->
+          <section class="card">
+            <div class="cardBody">
+              <div class="cardTitle">Appearance</div>
+              <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="setting-info" style="margin-bottom: 0;">
+                  <h4>Dark Mode</h4>
+                  <p style="margin-bottom: 0;">Switch between day and night themes.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="themeToggle">
+                  <span class="slider"></span>
+                </label>
               </div>
-              <label class="switch">
-                <input type="checkbox" id="themeToggle">
-                <span class="slider"></span>
-              </label>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Contact Info -->
-        <section class="card">
-          <div class="cardBody">
-            <div class="cardTitle">Contact Information</div>
-            <p class="cardSub">Manage your primary and additional contact methods.</p>
+          <!-- Contact Info -->
+          <section class="card">
+            <div class="cardBody">
+              <div class="cardTitle">Contact Information</div>
+              <p class="cardSub">Manage your primary and additional contact methods.</p>
 
-            <form id="contactForm">
-              <div class="input-group">
-                <label>Primary Email</label>
-                <input type="email" id="primaryEmail" disabled>
-              </div>
-              <div class="input-group">
-                <label>Additional Emails (comma separated)</label>
-                <input type="text" id="secondaryEmails" placeholder="e.g. alt@mail.com, office@mail.com">
-              </div>
-              <div class="input-group" style="margin-top: 20px;">
-                <label>Primary Phone</label>
-                <input type="tel" id="primaryPhone" placeholder="+1 234 567 890">
-              </div>
-              <div class="input-group">
-                <label>Additional Phones (comma separated)</label>
-                <input type="text" id="secondaryPhones" placeholder="e.g. +1..., +2...">
-              </div>
-              <button type="submit" class="pv-btn pv-btn-primary" id="saveContactBtn" style="width:100%">Save Contact
-                Details</button>
-              <div id="contactMsg" class="msg-box"></div>
-            </form>
-          </div>
-        </section>
-
-        <!-- Security -->
-        <section class="card">
-          <div class="cardBody">
-            <div class="cardTitle">Security</div>
-            <p class="cardSub">Update your password to keep your account secure.</p>
-
-            <form id="passwordForm">
-              <div class="input-group">
-                <label>New Password</label>
-                <input type="password" id="newPassword" placeholder="Minimum 6 characters">
-              </div>
-              <div class="input-group">
-                <label>Confirm New Password</label>
-                <input type="password" id="confirmPassword" placeholder="Repeat new password">
-              </div>
-              <button type="submit" class="pv-btn pv-btn-primary" id="changePassBtn" style="width:100%">Update
-                Password</button>
-              <div id="passwordMsg" class="msg-box"></div>
-            </form>
-          </div>
-        </section>
-
-        <!-- Support -->
-        <section class="card">
-          <div class="cardBody">
-            <div class="cardTitle">Help & Support</div>
-            <form class="support-form" id="supportForm">
-              <p class="cardSub">Send your query to our maritime support team (support@pepsval.com).</p>
-              <textarea id="supportText" rows="3" placeholder="Describe your issue or suggestion..."></textarea>
-              <button type="submit" class="pv-btn pv-btn-primary" style="width:100%">Open Support Email</button>
-            </form>
-          </div>
-        </section>
-
-        <!-- Other Settings -->
-        <section class="card">
-          <div class="cardBody">
-            <div class="cardTitle">Other Links</div>
-            <div class="setting-item">
-              <a href="/setup/profile-setup.html" class="linkCard">Full Profile Setup (Rank, Photo, etc.)</a>
+              <form id="contactForm">
+                <div class="input-group">
+                  <label>Primary Email</label>
+                  <input type="email" id="primaryEmail" disabled>
+                </div>
+                <div class="input-group">
+                  <label>Additional Emails (comma separated)</label>
+                  <input type="text" id="secondaryEmails" placeholder="e.g. alt@mail.com, office@mail.com">
+                </div>
+                <div class="input-group" style="margin-top: 20px;">
+                  <label>Primary Phone</label>
+                  <input type="tel" id="primaryPhone" placeholder="+1 234 567 890">
+                </div>
+                <div class="input-group">
+                  <label>Additional Phones (comma separated)</label>
+                  <input type="text" id="secondaryPhones" placeholder="e.g. +1..., +2...">
+                </div>
+                <button type="submit" class="pv-btn pv-btn-primary" id="saveContactBtn" style="width:100%">Save Contact
+                  Details</button>
+                <div id="contactMsg" class="msg-box"></div>
+              </form>
             </div>
-            <div class="setting-item">
-              <a href="/legal/privacy.html" class="linkCard">Privacy Policy</a>
-            </div>
-            <div class="setting-item">
-              <a href="/legal/terms.html" class="linkCard">Terms of Service</a>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Danger Zone -->
-        <section class="card" style="border-color: rgba(176, 0, 32, 0.2);">
-          <div class="cardBody">
-            <div class="cardTitle" style="color: #b00020;">Danger Zone</div>
-            <p class="cardSub">Use with caution. These actions are permanent.</p>
-            <button class="btn-block ghost" style="color: #b00020; border-color: #ffb3b3;" id="deleteAccBtn">Delete
-              Account</button>
-          </div>
-        </section>
+          <!-- Security -->
+          <section class="card">
+            <div class="cardBody">
+              <div class="cardTitle">Security</div>
+              <p class="cardSub">Update your password to keep your account secure.</p>
 
-      </div>
-    </main>
+              <form id="passwordForm">
+                <div class="input-group">
+                  <label>New Password</label>
+                  <input type="password" id="newPassword" placeholder="Minimum 6 characters">
+                </div>
+                <div class="input-group">
+                  <label>Confirm New Password</label>
+                  <input type="password" id="confirmPassword" placeholder="Repeat new password">
+                </div>
+                <button type="submit" class="pv-btn pv-btn-primary" id="changePassBtn" style="width:100%">Update
+                  Password</button>
+                <div id="passwordMsg" class="msg-box"></div>
+              </form>
+            </div>
+          </section>
+
+          <!-- Support -->
+          <section class="card">
+            <div class="cardBody">
+              <div class="cardTitle">Help & Support</div>
+              <form class="support-form" id="supportForm">
+                <p class="cardSub">Send your query to our maritime support team (support@pepsval.com).</p>
+                <textarea id="supportText" rows="3" placeholder="Describe your issue or suggestion..."></textarea>
+                <button type="submit" class="pv-btn pv-btn-primary" style="width:100%">Open Support Email</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Other Settings -->
+          <section class="card">
+            <div class="cardBody">
+              <div class="cardTitle">Other Links</div>
+              <div class="setting-item">
+                <a href="/setup/profile-setup.html" class="linkCard">Full Profile Setup (Rank, Photo, etc.)</a>
+              </div>
+              <div class="setting-item">
+                <a href="/legal/privacy.html" class="linkCard">Privacy Policy</a>
+              </div>
+              <div class="setting-item">
+                <a href="/legal/terms.html" class="linkCard">Terms of Service</a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Danger Zone -->
+          <section class="card" style="border-color: rgba(176, 0, 32, 0.2);">
+            <div class="cardBody">
+              <div class="cardTitle" style="color: #b00020;">Danger Zone</div>
+              <p class="cardSub">Use with caution. These actions are permanent.</p>
+              <button class="btn-block ghost" style="color: #b00020; border-color: #ffb3b3;" id="deleteAccBtn">Delete
+                Account</button>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
   </div>
-</div>
 
-<nav class="bottomNav glass">
-  <a class="navItem" href="/feed/index.html">
-    <span>🏠</span>
-    <span>Feed</span>
-  </a>
-  <a class="navItem" href="/jobs/index.html">
-    <span>⚓</span>
-    <span>Jobs</span>
-  </a>
-  <a class="navItem" href="/messages/index.html">
-    <span>💬</span>
-    <span>Chats</span>
-  </a>
-  <a class="navItem" href="/profile/home.html">
-    <span>👤</span>
-    <span>Profile</span>
-  </a>
-</nav>
+  <nav class="bottomNav glass">
+    <a class="navItem" href="/feed/index.html">
+      <span>🏠</span>
+      <span>Feed</span>
+    </a>
+    <a class="navItem" href="/jobs/index.html">
+      <span>⚓</span>
+      <span>Jobs</span>
+    </a>
+    <a class="navItem" href="/messages/index.html">
+      <span>💬</span>
+      <span>Chats</span>
+    </a>
+    <a class="navItem" href="/profile/home.html">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
+  </nav>
 
-<script type="module" src="/dashboard/settings.js"></script>
+  <script type="module" src="/dashboard/settings.js"></script>
 </body>
 
 </html>

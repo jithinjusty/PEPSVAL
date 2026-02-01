@@ -63,6 +63,15 @@ function roleToJobsLabel(role) {
     );
   }
 
+  // Load avatar
+  const avatarBtn = document.getElementById("meAvatarBtn");
+  const avatarImg = avatarBtn?.querySelector("img");
+  if (me && avatarImg) {
+    if (me.avatar_url) avatarImg.src = me.avatar_url;
+    avatarImg.alt = me.full_name || "Me";
+  }
+  avatarBtn?.addEventListener("click", () => window.location.href = "/profile/home.html");
+
   // --- SEARCH LOGIC ---
   const jobSearchInput = document.getElementById("jobSearchInput");
   const jobSearchDrop = document.getElementById("jobSearchDrop");

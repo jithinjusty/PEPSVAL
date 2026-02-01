@@ -72,6 +72,16 @@ async function initLoad() {
   }
   currentUser = user;
 
+  // Load avatar
+  const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const avatarBtn = document.getElementById("meAvatarBtn");
+  const avatarImg = avatarBtn?.querySelector("img");
+  if (prof && avatarImg) {
+    if (prof.avatar_url) avatarImg.src = prof.avatar_url;
+    avatarImg.alt = prof.full_name || "Me";
+  }
+  avatarBtn?.addEventListener("click", () => window.location.href = "/profile/home.html");
+
   if (urlConvId) {
     currentTab = "messages";
     currentConversationId = urlConvId;
