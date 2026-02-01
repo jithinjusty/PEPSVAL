@@ -357,6 +357,19 @@ chatInput.onkeydown = (e) => {
 
 initLoad();
 
+// --- REAL-TIME NOTIFICATIONS ---
+supabase.channel('public:notifications')
+  .on('postgres_changes', {
+    event: 'INSERT',
+    table: 'notifications',
+    filter: `user_id=eq.${currentUser.id}`
+  }, (payload) => {
+    // Reload notifications list or just prepending it
+    load();
+    // Show a small toast or badge if needed
+  })
+  .subscribe();
+
 async function acceptRequest(senderId, notifId) {
   if (!senderId) return;
   try {
