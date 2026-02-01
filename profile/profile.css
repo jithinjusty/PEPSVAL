@@ -1,12 +1,11 @@
 :root {
-  --bg: #f6fbff;
-  --card: #ffffff;
-  --line: #dbe7ef;
-  --text: #0b1b24;
-  --muted: #5a6b76;
-  --brand: #1F6F86;
-  --shadow: 0 10px 30px rgba(11, 27, 36, .08);
-  --radius: 18px;
+  --bg: var(--bg-body, #f6fbff);
+  --card: var(--bg-card, rgba(255, 255, 255, 0.85));
+  --line: var(--stroke, rgba(0, 0, 0, 0.06));
+  --text: var(--text-main, #1a202c);
+  --muted: var(--text-muted, #718096);
+  --brand: #1f6f86;
+  --radius: 24px;
 }
 
 .wrap {
@@ -17,9 +16,11 @@
 
 .profileCard {
   background: var(--card);
-  border: 1px solid rgba(0, 0, 0, .06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
   overflow: hidden;
 }
 
@@ -769,11 +770,11 @@ input:checked+.slider:before {
   z-index: 55;
   display: flex;
   gap: 8px;
-  padding: 10px 12px 18px;
-  background: rgba(246, 251, 255, .92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0, 0, 0, .06);
+  padding: 10px 16px 24px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
 }
 
 .navItem {
@@ -799,6 +800,7 @@ input:checked+.slider:before {
 .navItem:active {
   transform: scale(0.96);
 }
+
 /* ========== Job Management Premium Styles ========== */
 .jobCard {
   border: 1px solid rgba(0, 0, 0, .07);
@@ -869,7 +871,7 @@ input:checked+.slider:before {
   background: #f8fafc;
   padding: 14px;
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,.03);
+  border: 1px solid rgba(0, 0, 0, .03);
 }
 
 .jobItem {

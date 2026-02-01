@@ -209,6 +209,15 @@ function buildTabs() {
     `<button class="tab ${i === 0 ? "active" : ""}" data-tab="${t.key}" type="button">${t.label}</button>`
   ).join("");
 
+  // Add Request Verification button if not verified
+  if (!profile?.is_verified) {
+    const vBtn = document.createElement("button");
+    vBtn.className = "tab v-req-btn";
+    vBtn.textContent = "Get Verified";
+    vBtn.onclick = () => alert("Verification request submitted! We will review your documents soon.");
+    elTabs.appendChild(vBtn);
+  }
+
   elTabs.addEventListener("click", (e) => {
     const btn = e.target.closest(".tab");
     if (!btn) return;
@@ -269,7 +278,11 @@ function setEditing(state) {
 
 function paintHeader() {
   const name = profile?.full_name || profile?.company_name || me?.email?.split("@")[0] || "Profile";
-  elProfileName.textContent = name;
+  elProfileName.innerHTML = name;
+
+  if (profile?.is_verified) {
+    elProfileName.innerHTML += ` <span class="v-badge" title="Verified Member">✅</span>`;
+  }
 
   // mini row tries to show rank + nationality for seafarer, else role/company hints
   if (accountKind === "seafarer") {

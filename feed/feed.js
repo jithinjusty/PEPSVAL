@@ -1,4 +1,4 @@
-import { supabase, getCurrentUser } from "/js/supabase.js";
+import { supabase, getCurrentUser, sendNotification } from "/js/supabase.js";
 
 /* =========================================================
    PEPSVAL FEED — FINAL BUG-FIX BUILD
@@ -366,8 +366,11 @@ function renderCommentRow(c, profMap, cLikeInfo) {
         </div>
         <div class="pv-commentText">${esc(text)}</div>
         <div class="pv-commentActions">
-          ${clAvail ? `<button class="pv-linkBtn" data-action="likeComment" data-comment-id="${esc(c.id)}">${clMine ? "Unlike" : "Like"} (${clCount})</button>` : ``}
-          ${mine ? `<button class="pv-linkBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}">Delete</button>` : ``}
+          ${clAvail ? `<button class="pv-commentActionBtn ${clMine ? 'active' : ''}" data-action="likeComment" data-comment-id="${esc(c.id)}">
+            ${clMine ? '❤️' : '🤍'} <span class="action-count">${clCount}</span>
+          </button>` : ``}
+          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}">Reply</button>
+          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}">Delete</button>` : ``}
         </div>
       </div>
     </div>
@@ -405,7 +408,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const isMine = (uid === me.id);
 
     return `
-      <article class="pv-post" data-post-id="${esc(pid)}">
+      <article class="pv-post" data-post-id="${esc(pid)}" data-user-id="${esc(uid)}">
         <header class="pv-postHead">
           <div class="pv-user">
             <div class="pv-userAvatar">
@@ -426,8 +429,14 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
         ${renderMedia(media)}
 
         <div class="pv-actions">
-          <button class="pv-pillBtn" data-action="toggleLike">${iLiked ? "Unlike" : "Like"} (<span data-like-count>${likes}</span>)</button>
-          <button class="pv-pillBtn" data-action="toggleComments">Comments (<span data-comment-count>${commCount}</span>)</button>
+          <button class="pv-actionBtn ${iLiked ? 'active' : ''}" data-action="toggleLike">
+            <span class="action-icon">${iLiked ? '❤️' : '🤍'}</span>
+            <span data-like-count>${likes}</span>
+          </button>
+          <button class="pv-actionBtn" data-action="toggleComments">
+            <span class="action-icon">💬</span>
+            <span data-comment-count>${commCount}</span>
+          </button>
         </div>
 
         <div class="pv-commentsWrap" data-comments style="display:none;">
@@ -519,15 +528,21 @@ async function toggleLike(postId, postEl) {
   const btn = postEl.querySelector('[data-action="toggleLike"]');
   const countEl = postEl.querySelector("[data-like-count]");
   if (!btn || !countEl) return;
-
-  const currentlyLiked = btn.textContent.trim().toLowerCase().startsWith("unlike");
-  let count = Number(countEl.textContent || "0");
+  const ownerId = postEl.getAttribute("data-user-id");
 
   // optimistic UI
-  if (currentlyLiked) { count = Math.max(0, count - 1); }
-  else { count = count + 1; }
+  const iconEl = btn.querySelector(".action-icon");
+  if (currentlyLiked) {
+    count = Math.max(0, count - 1);
+    btn.classList.remove("active");
+    if (iconEl) iconEl.textContent = "🤍";
+  }
+  else {
+    count = count + 1;
+    btn.classList.add("active");
+    if (iconEl) iconEl.textContent = "❤️";
+  }
   countEl.textContent = String(count);
-  btn.firstChild.textContent = currentlyLiked ? "Like (" : "Unlike ("; // keep label stable-ish
 
   try {
     if (currentlyLiked) {
@@ -537,12 +552,22 @@ async function toggleLike(postId, postEl) {
       // insert (if duplicate happens, policy/table should have unique; if not, this still works mostly)
       const { error } = await supabase.from("post_likes").insert([{ post_id: postId, user_id: me.id }]);
       if (error) throw error;
+      if (ownerId && ownerId !== me.id) {
+        await sendNotification(ownerId, "New Like", `${me.profile?.full_name || 'Someone'} liked your post.`, { postId });
+      }
     }
   } catch (e) {
     // rollback UI
-    if (currentlyLiked) countEl.textContent = String(count + 1);
-    else countEl.textContent = String(Math.max(0, count - 1));
-    btn.firstChild.textContent = currentlyLiked ? "Unlike (" : "Like (";
+    if (currentlyLiked) {
+      countEl.textContent = String(count + 1);
+      btn.classList.add("active");
+      if (iconEl) iconEl.textContent = "❤️";
+    }
+    else {
+      countEl.textContent = String(Math.max(0, count - 1));
+      btn.classList.remove("active");
+      if (iconEl) iconEl.textContent = "🤍";
+    }
     showDbError("Like failed", e);
   }
 }
@@ -552,6 +577,7 @@ async function sendComment(postId, postEl) {
   const input = wrap?.querySelector("[data-comment-input]");
   const list = wrap?.querySelector(".pv-commentsList");
   const countEl = postEl.querySelector("[data-comment-count]");
+  const ownerId = postEl.getAttribute("data-user-id");
 
   const txt = (input?.value || "").trim();
   if (!txt) return;
@@ -583,6 +609,10 @@ async function sendComment(postId, postEl) {
 
     if (res.error) throw res.error;
 
+    if (ownerId && ownerId !== me.id) {
+      await sendNotification(ownerId, "New Comment", `${me.profile?.full_name || 'Someone'} commented on your post.`, { postId });
+    }
+
   } catch (e) {
     // rollback optimistic UI
     node.remove();
@@ -592,13 +622,20 @@ async function sendComment(postId, postEl) {
 }
 
 async function toggleCommentLike(commentId, btn) {
-  const currentlyLiked = btn.textContent.trim().toLowerCase().startsWith("unlike");
-  const m = btn.textContent.match(/\((\d+)\)/);
-  let count = m ? Number(m[1]) : 0;
+  const currentlyLiked = btn.classList.contains("active");
+  const countEl = btn.querySelector(".action-count");
+  let count = countEl ? Number(countEl.textContent) : 0;
 
-  // optimistic label
-  count = currentlyLiked ? Math.max(0, count - 1) : count + 1;
-  btn.textContent = `${currentlyLiked ? "Like" : "Unlike"} (${count})`;
+  // optimistic UI
+  if (currentlyLiked) {
+    count = Math.max(0, count - 1);
+    btn.classList.remove("active");
+    btn.innerHTML = `🤍 <span class="action-count">${count}</span>`;
+  } else {
+    count++;
+    btn.classList.add("active");
+    btn.innerHTML = `❤️ <span class="action-count">${count}</span>`;
+  }
 
   try {
     if (currentlyLiked) {
@@ -610,8 +647,15 @@ async function toggleCommentLike(commentId, btn) {
     }
   } catch (e) {
     // rollback
-    count = currentlyLiked ? count + 1 : Math.max(0, count - 1);
-    btn.textContent = `${currentlyLiked ? "Unlike" : "Like"} (${count})`;
+    if (currentlyLiked) {
+      count++;
+      btn.classList.add("active");
+      btn.innerHTML = `❤️ <span class="action-count">${count}</span>`;
+    } else {
+      count = Math.max(0, count - 1);
+      btn.classList.remove("active");
+      btn.innerHTML = `🤍 <span class="action-count">${count}</span>`;
+    }
     showDbError("Comment like failed", e);
   }
 }
@@ -650,6 +694,18 @@ function bindFeedEvents() {
     if (action === "toggleLike") return await toggleLike(postId, postEl);
     if (action === "sendComment") return await sendComment(postId, postEl);
     if (action === "deletePost") return await deletePost(postId);
+
+    if (action === "replyComment") {
+      const author = btn.getAttribute("data-author-name");
+      const wrap = postEl.querySelector("[data-comments]");
+      const input = wrap?.querySelector("[data-comment-input]");
+      if (input) {
+        wrap.style.display = "block";
+        input.value = `@${author} `;
+        input.focus();
+      }
+      return;
+    }
 
     if (action === "likeComment") {
       const cid = btn.getAttribute("data-comment-id");

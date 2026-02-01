@@ -30,3 +30,40 @@ export async function getCurrentUser() {
     profile
   };
 }
+
+/** 
+ * Send a notification to a specific user
+ */
+export async function sendNotification(userId, title, body, data = {}) {
+  try {
+    const { error } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        title,
+        body,
+        metadata: data,
+        is_read: false, // defensive: we'll use is_read as primary
+        read: false,    // and read for compatibility with dashboard.js
+        created_at: new Date().toISOString()
+      });
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Notification failed:", err.message);
+  }
+}
+
+/**
+ * Mark a notification as read
+ */
+export async function markNotificationAsRead(notifId) {
+  try {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true, read: true })
+      .eq("id", notifId);
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Mark read failed:", err.message);
+  }
+}

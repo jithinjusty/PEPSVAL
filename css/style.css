@@ -1,27 +1,31 @@
 :root {
-  --bg-body: #eaf6fb;
-  --bg-card: #ffffff;
-  --text-main: #0b1b22;
-  --text-muted: #52646d;
-  --stroke: rgba(10, 30, 40, .10);
+  --bg-body: #f0f4f8;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --text-main: #1a202c;
+  --text-muted: #718096;
+  --stroke: rgba(0, 0, 0, 0.05);
   --brand: #1f6f86;
-  --accent: #2aa7c7;
-  --danger: #b42318;
-  --ok: #067647;
-  --nav-bg: rgba(246, 251, 255, .92);
-  --nav-item-bg: #ffffff;
-  --nav-border: rgba(0, 0, 0, .06);
+  --brand-light: #e6f6f9;
+  --accent: #38b2ac;
+  --danger: #e53e3e;
+  --ok: #38a169;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .dark-mode {
-  --bg-body: #061b22;
-  --bg-card: #0b2b34;
-  --text-main: #eaf6fb;
-  --text-muted: #aab8bf;
-  --stroke: rgba(255, 255, 255, .12);
-  --nav-bg: rgba(6, 27, 34, .95);
-  --nav-item-bg: #0b2b34;
-  --nav-border: rgba(255, 255, 255, .08);
+  --bg-body: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.85);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --stroke: rgba(255, 255, 255, 0.1);
+  --brand: #22d3ee;
+  --brand-light: rgba(34, 211, 238, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -173,10 +177,11 @@ body {
   z-index: 55;
   display: flex;
   gap: 8px;
-  padding: 10px 12px 18px;
-  background: var(--nav-bg);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--nav-border);
+  padding: 10px 16px 24px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border);
 }
 
 .navItem {
@@ -194,17 +199,29 @@ body {
 }
 
 .navItem.active {
-  background: rgba(31, 111, 134, .10);
-  border-color: rgba(31, 111, 134, .35);
-  color: var(--brand, #1f6f86);
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
 }
 
-.navItem:active {
-  transform: scale(.97);
+.navItem:hover:not(.active) {
+  background: var(--brand-light);
 }
 
-.wrap {
-  padding-bottom: 80px
+.v-badge {
+  color: var(--accent);
+  font-size: 0.9em;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  border-radius: 20px;
 }
 
 .topbar {

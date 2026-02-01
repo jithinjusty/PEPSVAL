@@ -1,4 +1,4 @@
-import { supabase } from "/js/supabase.js";
+import { supabase, markNotificationAsRead, sendNotification } from "/js/supabase.js";
 
 const list = document.getElementById("list");
 const tabCommunity = document.getElementById("tabCommunity");
@@ -12,6 +12,7 @@ const notifCount = document.getElementById("notifCount");
 let currentTab = "community"; // Default tab
 let currentUser = null;
 let currentConversationId = null;
+let currentOtherId = null;
 let subscriptions = [];
 
 const params = new URLSearchParams(window.location.search);
@@ -165,11 +166,19 @@ async function loadConversations() {
       div.style.cursor = "pointer";
       div.onclick = () => {
         currentConversationId = conv.conversation_id;
+        currentOtherId = other.id;
         loadPrivateChat(conv.conversation_id, other.full_name);
       };
       div.innerHTML = `
-        <h4>${other.full_name}</h4>
-        <p>Click to open chat</p>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:12px; background:var(--brand-light); color:var(--brand); display:flex; align-items:center; justify-content:center; font-weight:900;">
+            ${(other.full_name || "P").slice(0, 1)}
+          </div>
+          <div>
+            <h4 style="margin:0; font-size:15px; font-weight:800;">${other.full_name}</h4>
+            <p style="margin:0; font-size:12px; opacity:0.7;">Click to open chat</p>
+          </div>
+        </div>
       `;
       list.appendChild(div);
     }
@@ -200,6 +209,14 @@ async function loadPrivateChat(convId, otherName = "Chat") {
     `;
     list.appendChild(div);
   });
+
+  // Mark as read (defensive)
+  await supabase
+    .from("private_messages")
+    .update({ is_read: true, read: true })
+    .eq("conversation_id", convId)
+    .neq("sender_id", currentUser.id);
+
 
   const sub = supabase.channel(`dm_${convId}`)
     .on('postgres_changes', { event: 'INSERT', table: 'private_messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
@@ -232,13 +249,26 @@ async function loadNotifications() {
     const div = document.createElement("div");
     div.className = "item";
     div.innerHTML = `
-      <h4>${n.title}</h4>
-      <p>${n.body}</p>
-      <small>${new Date(n.created_at).toLocaleString()}</small>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="padding:8px; border-radius:10px; background:var(--brand-light); color:var(--brand);">🔔</div>
+        <div>
+          <h4 style="margin:0; font-size:14px; font-weight:800;">${n.title}</h4>
+          <p style="margin:4px 0; font-size:13px; line-height:1.4;">${n.body}</p>
+          <small style="opacity:0.6; font-size:11px;">${new Date(n.created_at).toLocaleString()}</small>
+        </div>
+      </div>
     `;
     list.appendChild(div);
   });
-  notifCount.textContent = data?.filter(n => !n.is_read).length || 0;
+  notifCount.textContent = data?.filter(n => !n.is_read && !n.read).length || 0;
+
+  // Mark as read when viewing
+  if (data?.length > 0) {
+    const unreadIds = data.filter(n => !n.is_read && !n.read).map(n => n.id);
+    for (const id of unreadIds) {
+      await markNotificationAsRead(id);
+    }
+  }
 }
 
 // --- SEND LOGIC ---
@@ -297,6 +327,10 @@ sendBtn.onclick = async () => {
     if (error) {
       alert("Error sending: " + error.message);
       tempDiv.remove();
+    } else {
+      if (currentOtherId) {
+        await sendNotification(currentOtherId, "New Message", `${currentUser.profile?.full_name || 'Someone'} sent you a message.`, { conversationId: currentConversationId });
+      }
     }
   }
 };
