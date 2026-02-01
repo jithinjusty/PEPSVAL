@@ -1,4 +1,4 @@
-import { supabase } from "/js/supabase.js";
+import { supabase, getMessagingStatus, sendNotification, getCurrentUser } from "/js/supabase.js";
 
 // DOM Elements
 const avatarImg = document.getElementById("avatarImg");
@@ -36,12 +36,12 @@ function safeText(val, fallback = "") {
 }
 
 async function init() {
-    const { data: { user } } = await supabase.auth.getUser();
-    viewer = user;
-    if (!viewer) {
+    const userWithProfile = await getCurrentUser();
+    if (!userWithProfile) {
         window.location.href = "/auth/login.html";
         return;
     }
+    viewer = userWithProfile;
 
     if (!profileId) {
         alert("No profile ID specified.");
@@ -71,9 +71,25 @@ async function init() {
     // Message Button Logic
     if (viewer.id === profileId) {
         messageBtn.style.display = "none";
+    } else {
+        updateMessageButton();
     }
 
     messageBtn.onclick = handleMessage;
+}
+
+async function updateMessageButton() {
+    const { status } = await getMessagingStatus(viewer.id, profileId);
+    if (status === 'connected') {
+        messageBtn.textContent = "Open Chat";
+        messageBtn.disabled = false;
+    } else if (status === 'pending') {
+        messageBtn.textContent = "Request Sent";
+        messageBtn.disabled = true;
+    } else {
+        messageBtn.textContent = "Message";
+        messageBtn.disabled = false;
+    }
 }
 
 function renderHeader() {
@@ -256,24 +272,23 @@ async function handleMessage() {
     messageBtn.disabled = true;
     messageBtn.textContent = "Connecting…";
 
-    // check common conversation
-    const { data: myConversations } = await supabase.from("conversation_participants").select("conversation_id").eq("profile_id", viewer.id);
-    const { data: theirConversations } = await supabase.from("conversation_participants").select("conversation_id").eq("profile_id", profileId);
+    const { status, conversationId } = await getMessagingStatus(viewer.id, profileId);
 
-    const common = myConversations?.find(mc => theirConversations?.some(tc => tc.conversation_id === mc.conversation_id));
-
-    if (common) {
-        window.location.href = `/messages/index.html?convId=${common.conversation_id}`;
+    if (status === 'connected') {
+        window.location.href = `/messages/index.html?convId=${conversationId}`;
+    } else if (status === 'pending') {
+        // do nothing, button should be disabled
     } else {
-        const { data: newConv, error: convErr } = await supabase.from("conversations").insert({}).select().single();
-        if (convErr) {
-            alert("Error: " + convErr.message);
-            messageBtn.disabled = false;
-            messageBtn.textContent = "Message";
-            return;
-        }
-        await supabase.from("conversation_participants").insert([{ conversation_id: newConv.id, profile_id: viewer.id }, { conversation_id: newConv.id, profile_id: profileId }]);
-        window.location.href = `/messages/index.html?convId=${newConv.id}`;
+        // Send request
+        await sendNotification(
+            profileId,
+            "Message Request",
+            `${viewer.profile?.full_name || 'Someone'} wants to message you.`,
+            { sender_id: viewer.id, sender_name: viewer.profile?.full_name || 'Someone' },
+            "message_request"
+        );
+        messageBtn.textContent = "Request Sent";
+        alert("Message request sent!");
     }
 }
 

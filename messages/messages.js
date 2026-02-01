@@ -1,4 +1,4 @@
-import { supabase, markNotificationAsRead, sendNotification } from "/js/supabase.js";
+import { supabase, markNotificationAsRead, sendNotification, createConversation } from "/js/supabase.js";
 
 const list = document.getElementById("list");
 const tabCommunity = document.getElementById("tabCommunity");
@@ -251,13 +251,28 @@ async function loadNotifications() {
     div.innerHTML = `
       <div style="display:flex; gap:12px; align-items:flex-start;">
         <div style="padding:8px; border-radius:10px; background:var(--brand-light); color:var(--brand);">🔔</div>
-        <div>
+        <div style="flex:1;">
           <h4 style="margin:0; font-size:14px; font-weight:800;">${n.title}</h4>
           <p style="margin:4px 0; font-size:13px; line-height:1.4;">${n.body}</p>
           <small style="opacity:0.6; font-size:11px;">${new Date(n.created_at).toLocaleString()}</small>
+          ${n.type === 'message_request' ? `
+            <div style="margin-top:10px; display:flex; gap:8px;">
+              <button class="accept-btn" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer;">Accept</button>
+              <button class="ignore-btn" style="background:#eee; color:#666; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer;">Ignore</button>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
+
+    const acceptBtn = div.querySelector('.accept-btn');
+    const ignoreBtn = div.querySelector('.ignore-btn');
+    if (acceptBtn) acceptBtn.onclick = () => acceptRequest(n.metadata?.sender_id, n.id);
+    if (ignoreBtn) ignoreBtn.onclick = async () => {
+      await markNotificationAsRead(n.id);
+      load();
+    };
+
     list.appendChild(div);
   });
   notifCount.textContent = data?.filter(n => !n.is_read && !n.read).length || 0;
@@ -340,3 +355,16 @@ chatInput.onkeydown = (e) => {
 };
 
 initLoad();
+
+async function acceptRequest(senderId, notifId) {
+  if (!senderId) return;
+  try {
+    const cid = await createConversation(currentUser.id, senderId);
+    await markNotificationAsRead(notifId);
+    // Switch to the newly created chat
+    currentConversationId = cid;
+    switchTab("messages");
+  } catch (err) {
+    alert("Error accepting request: " + err.message);
+  }
+}

@@ -356,12 +356,12 @@ function renderCommentRow(c, profMap, cLikeInfo) {
 
   return `
     <div class="pv-commentRow" data-comment-id="${esc(c.id)}">
-      <div class="pv-commentAvatar">
+      <a href="/profile/user.html?id=${esc(uid)}" class="pv-commentAvatar">
         ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<span>${esc(name.slice(0, 1))}</span>`}
-      </div>
+      </a>
       <div class="pv-commentBody">
         <div class="pv-commentTop">
-          <div class="pv-commentName">${esc(name)}</div>
+          <a href="/profile/user.html?id=${esc(uid)}" class="pv-commentName">${esc(name)}</a>
           <div class="pv-commentMeta">${esc(safeDate(c.created_at))}</div>
         </div>
         <div class="pv-commentText">${esc(text)}</div>
@@ -411,11 +411,11 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
       <article class="pv-post" data-post-id="${esc(pid)}" data-user-id="${esc(uid)}">
         <header class="pv-postHead">
           <div class="pv-user">
-            <div class="pv-userAvatar">
+            <a href="/profile/user.html?id=${esc(uid)}" class="pv-userAvatar">
               ${avatar ? `<img src="${esc(avatar)}" alt="${esc(name)}">` : `<span>${esc(name.slice(0, 1))}</span>`}
-            </div>
+            </a>
             <div class="pv-userMeta">
-              <div class="pv-userName">${esc(name)}</div>
+              <a href="/profile/user.html?id=${esc(uid)}" class="pv-userName">${esc(name)}</a>
               <div class="pv-userSub">${rank}${country}</div>
             </div>
           </div>

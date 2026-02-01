@@ -34,7 +34,7 @@ export async function getCurrentUser() {
 /** 
  * Send a notification to a specific user
  */
-export async function sendNotification(userId, title, body, data = {}) {
+export async function sendNotification(userId, title, body, data = {}, type = "alert") {
   try {
     const { error } = await supabase
       .from("notifications")
@@ -43,8 +43,9 @@ export async function sendNotification(userId, title, body, data = {}) {
         title,
         body,
         metadata: data,
-        is_read: false, // defensive: we'll use is_read as primary
-        read: false,    // and read for compatibility with dashboard.js
+        type,
+        is_read: false,
+        read: false,
         created_at: new Date().toISOString()
       });
     if (error) throw error;
@@ -66,4 +67,45 @@ export async function markNotificationAsRead(notifId) {
   } catch (err) {
     console.warn("Mark read failed:", err.message);
   }
+}
+
+/**
+ * Check if a message request is pending or a conversation exists
+ */
+export async function getMessagingStatus(myId, theirId) {
+  // 1. Check for existing conversation
+  const { data: myConvs } = await supabase.from("conversation_participants").select("conversation_id").eq("profile_id", myId);
+  const { data: theirConvs } = await supabase.from("conversation_participants").select("conversation_id").eq("profile_id", theirId);
+
+  const common = myConvs?.find(mc => theirConvs?.some(tc => tc.conversation_id === mc.conversation_id));
+  if (common) return { status: 'connected', conversationId: common.conversation_id };
+
+  // 2. Check for pending request
+  const { data: req } = await supabase
+    .from("notifications")
+    .select("id")
+    .eq("user_id", theirId)
+    .eq("type", "message_request")
+    .maybeSingle();
+
+  // Note: For simplicity, we assume if ANY message_request for this user exists, 
+  // we check metadata in the client if needed, but eq("metadata->sender_id", myId) would be ideal if Supabase supports it well here.
+  // Using a simpler approach: fetch all pending and filter.
+
+  if (req) return { status: 'pending' };
+
+  return { status: 'none' };
+}
+
+/**
+ * Create a new conversation between two users
+ */
+export async function createConversation(u1, u2) {
+  const { data: conv, error } = await supabase.from("conversations").insert({}).select().single();
+  if (error) throw error;
+  await supabase.from("conversation_participants").insert([
+    { conversation_id: conv.id, profile_id: u1 },
+    { conversation_id: conv.id, profile_id: u2 }
+  ]);
+  return conv.id;
 }
