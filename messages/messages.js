@@ -36,6 +36,27 @@ async function switchTab(tab) {
 
   cleanupSubscriptions();
   load();
+
+  // --- REAL-TIME NOTIFICATIONS ---
+  supabase.channel('public:notifications')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      table: 'notifications',
+      filter: `user_id=eq.${currentUser.id}`
+    }, (payload) => {
+      console.log("New notification received:", payload.new);
+      load(); // Reload the list
+
+      // Simple Toast
+      const toast = document.createElement("div");
+      toast.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--brand); color:#fff; padding:12px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:10000; font-weight:bold; animation: slideDown 0.3s ease-out;";
+      toast.textContent = `New Notification: ${payload.new.title}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    })
+    .subscribe((status) => {
+      console.log("Notification subscription status:", status);
+    });
 }
 
 function cleanupSubscriptions() {
@@ -345,7 +366,13 @@ sendBtn.onclick = async () => {
       tempDiv.remove();
     } else {
       if (currentOtherId) {
-        await sendNotification(currentOtherId, "New Message", `${currentUser.profile?.full_name || 'Someone'} sent you a message.`, { conversationId: currentConversationId });
+        await sendNotification(
+          currentOtherId,
+          "New Message",
+          `${currentUser.full_name || 'Someone'} sent you a message.`,
+          { conversationId: currentConversationId },
+          "message"
+        );
       }
     }
   }
@@ -356,19 +383,6 @@ chatInput.onkeydown = (e) => {
 };
 
 initLoad();
-
-// --- REAL-TIME NOTIFICATIONS ---
-supabase.channel('public:notifications')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    table: 'notifications',
-    filter: `user_id=eq.${currentUser.id}`
-  }, (payload) => {
-    // Reload notifications list or just prepending it
-    load();
-    // Show a small toast or badge if needed
-  })
-  .subscribe();
 
 async function acceptRequest(senderId, notifId) {
   if (!senderId) return;
