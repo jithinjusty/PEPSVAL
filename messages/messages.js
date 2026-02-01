@@ -242,6 +242,7 @@ async function loadNotifications() {
   const { data } = await supabase
     .from("notifications")
     .select("*")
+    .eq("user_id", currentUser.id)
     .order("created_at", { ascending: false });
 
   list.innerHTML = "";

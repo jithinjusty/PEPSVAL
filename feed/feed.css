@@ -622,6 +622,12 @@ textarea {
   margin-left: 2px;
 }
 
+.pv-commentRow.pv-commentReply {
+  margin-left: 44px;
+  border-left: 2px solid var(--stroke);
+  padding-left: 12px;
+}
+
 .pv-commentComposer {
   display: flex;
   gap: 8px;

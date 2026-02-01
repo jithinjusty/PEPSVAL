@@ -246,6 +246,17 @@ async function fetchPosts() {
   return res.data || [];
 }
 
+async function fetchNotifications() {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", me.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data || [];
+}
+
 async function fetchProfilesMap(userIds) {
   if (!userIds.length) return new Map();
 
@@ -354,8 +365,9 @@ function renderCommentRow(c, profMap, cLikeInfo) {
   const clMine = cLikeInfo.mine.has(c.id);
   const clAvail = cLikeInfo.available;
 
+  const isReply = c.parent_id ? 'pv-commentReply' : '';
   return `
-    <div class="pv-commentRow" data-comment-id="${esc(c.id)}">
+    <div class="pv-commentRow ${isReply}" data-comment-id="${esc(c.id)}" data-parent-id="${esc(c.parent_id || '')}">
       <a href="/profile/user.html?id=${esc(uid)}" class="pv-commentAvatar">
         ${avatar ? `<img src="${esc(avatar)}" alt="">` : `<span>${esc(name.slice(0, 1))}</span>`}
       </a>
@@ -369,7 +381,7 @@ function renderCommentRow(c, profMap, cLikeInfo) {
           ${clAvail ? `<button class="pv-commentActionBtn ${clMine ? 'active' : ''}" data-action="likeComment" data-comment-id="${esc(c.id)}">
             ${clMine ? '❤️' : '🤍'} <span class="action-count">${clCount}</span>
           </button>` : ``}
-          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}">Reply</button>
+          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}">Reply</button>
           ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}">Delete</button>` : ``}
         </div>
       </div>
@@ -530,6 +542,9 @@ async function toggleLike(postId, postEl) {
   if (!btn || !countEl) return;
   const ownerId = postEl.getAttribute("data-user-id");
 
+  const currentlyLiked = btn.classList.contains("active");
+  let count = Number(countEl.textContent || "0");
+
   // optimistic UI
   const iconEl = btn.querySelector(".action-icon");
   if (currentlyLiked) {
@@ -588,14 +603,22 @@ async function sendComment(postId, postEl) {
   node.innerHTML = `<div class="pv-commentText">${esc(txt)}</div><div class="pv-commentMeta">${esc(new Date().toLocaleString())}</div>`;
   if (list) list.appendChild(node);
 
+  const pid = postId;
+  const parentId = input.getAttribute("data-reply-to") || null;
+
   if (countEl) countEl.textContent = String(Number(countEl.textContent || "0") + 1);
-  if (input) input.value = "";
+  if (input) {
+    input.value = "";
+    input.removeAttribute("data-reply-to");
+    input.placeholder = "Write a comment…";
+  }
 
   try {
-    let res = await supabase.from("post_comments").insert([{
-      post_id: postId,
+    const { error } = await supabase.from("post_comments").insert([{
+      post_id: pid,
       user_id: me.id,
       body: txt,
+      parent_id: parentId,
       created_at: new Date().toISOString()
     }]);
 
@@ -697,11 +720,14 @@ function bindFeedEvents() {
 
     if (action === "replyComment") {
       const author = btn.getAttribute("data-author-name");
+      const cid = btn.getAttribute("data-comment-id");
       const wrap = postEl.querySelector("[data-comments]");
       const input = wrap?.querySelector("[data-comment-input]");
       if (input) {
         wrap.style.display = "block";
         input.value = `@${author} `;
+        input.setAttribute("data-reply-to", cid);
+        input.placeholder = `Replying to ${author}…`;
         input.focus();
       }
       return;
@@ -755,6 +781,26 @@ async function loadFeed() {
     const cLikeInfo = await fetchCommentLikes(commentIds);
 
     renderFeed(posts, ks, profMap, likesInfo, commentsInfo, cLikeInfo);
+
+    // --- REAL-TIME UPDATES FOR COMMENTS ---
+    supabase.channel('public:post_comments')
+      .on('postgres_changes', { event: 'INSERT', table: 'post_comments' }, async (payload) => {
+        const c = payload.new;
+        const postEl = elList.querySelector(`article[data-post-id="${c.post_id}"]`);
+        if (!postEl) return;
+
+        const countEl = postEl.querySelector("[data-comment-count]");
+        if (countEl) countEl.textContent = String(Number(countEl.textContent || "0") + 1);
+
+        const list = postEl.querySelector(".pv-commentsList");
+        if (list) {
+          // If we don't have the profile in profMap yet, fetch it
+          const { data: prof } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", c.user_id).single();
+          const rowHtml = renderCommentRow(c, prof?.full_name || "User", prof?.avatar_url, c.user_id === me.id);
+          list.insertAdjacentHTML('beforeend', rowHtml);
+        }
+      })
+      .subscribe();
 
     setStatus("");
   } catch (e) {
