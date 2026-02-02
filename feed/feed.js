@@ -778,16 +778,61 @@ async function toggleCommentLike(commentId, btn) {
   }
 }
 
+
 async function deleteComment(commentId, rowEl) {
   if (!confirm("Delete this comment?")) return;
   try {
     const { error } = await supabase.from("post_comments").delete().eq("id", commentId).eq("user_id", me.id);
     if (error) throw error;
+
+    // Remove the row
     rowEl.remove();
+
+    // Also remove all replies to this comment from the DOM
+    const list = rowEl.closest('.pv-commentsList');
+    if (list) {
+      const replies = list.querySelectorAll(`.pv-commentRow[data-parent-id="${commentId}"]`);
+      replies.forEach(r => r.remove());
+    }
+
     toast("Comment deleted");
   } catch (e) {
     showDbError("Delete comment failed", e);
   }
+}
+
+async function sharePost(postId, postEl) {
+  const url = `${window.location.origin}/post.html?id=${postId}`;
+  const title = "Check out this post on PEPSVAL";
+  const text = postEl.querySelector(".pv-postText")?.textContent || "Interesting post!";
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: title,
+        text: text,
+        url: url
+      });
+      toast("Opened share menu");
+    } catch (err) {
+      // User cancelled or failed
+      if (err.name !== 'AbortError') {
+        console.warn('Share failed:', err);
+        copyToClipboard(url);
+      }
+    }
+  } else {
+    // Fallback
+    copyToClipboard(url);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast("Link copied to clipboard");
+  }).catch(() => {
+    prompt("Copy this link:", text);
+  });
 }
 
 /* ---------- Events ---------- */
@@ -812,6 +857,8 @@ function bindFeedEvents() {
     if (action === "toggleLike") return await toggleLike(postId, postEl);
     if (action === "sendComment") return await sendComment(postId, postEl);
     if (action === "deletePost") return await deletePost(postId);
+
+    if (action === "sharePost") return await sharePost(postId, postEl);
 
     if (action === "replyComment") {
       const author = btn.getAttribute("data-author-name");
@@ -948,14 +995,6 @@ async function loadFeed() {
             // Find parent row
             const parentRow = list.querySelector(`[data-comment-id="${c.parent_id}"]`);
             if (parentRow) {
-              // Now we want to find the LAST reply that belongs to this thread, to append after it.
-              // Or just append after parent if no replies yet.
-              // A simple heuristic: walk down siblings until we find one that is NOT a reply (or end of list),
-              // OR check "data-parent-id" of siblings.
-
-              // Simplest visual approach: insert immediately after parentRow, 
-              // BUT if we want chronological replies, we should insert after the last reply to that parent.
-
               let insertAfterNode = parentRow;
               let nextNode = parentRow.nextElementSibling;
               while (nextNode && nextNode.getAttribute("data-parent-id") === c.parent_id) {
@@ -972,6 +1011,16 @@ async function loadFeed() {
           list.insertAdjacentHTML('beforeend', rowHtml);
         }
       })
+      .on('postgres_changes', { event: 'DELETE', table: 'post_comments' }, (payload) => {
+        const cid = payload.old.id;
+        // Remove from DOM if exists
+        const el = document.querySelector(`[data-comment-id="${cid}"]`);
+        if (el) el.remove();
+
+        // Also remove replies if any are currently visible
+        const replies = document.querySelectorAll(`[data-parent-id="${cid}"]`);
+        replies.forEach(r => r.remove());
+      })
       .subscribe();
 
     setStatus("");
@@ -979,6 +1028,7 @@ async function loadFeed() {
     showDbError("Feed load failed", e);
   }
 }
+
 
 /* ---------- Boot ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
