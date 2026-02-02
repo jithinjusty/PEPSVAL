@@ -400,6 +400,40 @@ function renderCommentRow(c, profMap, cLikeInfo) {
   `;
 }
 
+
+/* ---------- Sort Helper ---------- */
+function sortCommentsThreaded(infoByPost) {
+  // Sort logic: Parents first (by date), then their children (by date) immediately after
+  const sortedMap = new Map();
+
+  for (const [pid, comments] of infoByPost.entries()) {
+    const parents = comments.filter(c => !c.parent_id).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const children = comments.filter(c => c.parent_id).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    const result = [];
+
+    // Recursive header to flatten tree
+    const addNode = (node) => {
+      result.push(node);
+      const kids = children.filter(c => c.parent_id === node.id);
+      kids.forEach(k => addNode(k));
+    };
+
+    parents.forEach(p => addNode(p));
+
+    // Orphans (shouldn't happen often, but safe to append)
+    const processedIds = new Set(result.map(c => c.id));
+    children.forEach(c => {
+      if (!processedIds.has(c.id)) result.push(c);
+    });
+
+    sortedMap.set(pid, result);
+  }
+
+  infoByPost.clear();
+  sortedMap.forEach((v, k) => infoByPost.set(k, v));
+}
+
 function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
   if (!elList) return;
 
@@ -407,6 +441,9 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     elList.innerHTML = `<div style="opacity:.7;padding:14px;">No posts yet</div>`;
     return;
   }
+
+  // Pre-sort comments threaded
+  sortCommentsThreaded(commentInfo.byPost);
 
   elList.innerHTML = posts.map(p => {
     const pid = getPostId(p, ks);
@@ -634,7 +671,26 @@ async function sendComment(postId, postEl) {
   if (list) {
     // remove "No comments yet" if exists
     if (list.innerHTML.includes("No comments yet")) list.innerHTML = "";
-    list.insertAdjacentHTML('beforeend', rowHtml);
+
+    // Smart Insertion for optimistic UI:
+    if (parentId) {
+      const parentRow = list.querySelector(`[data-comment-id="${parentId}"]`);
+      if (parentRow) {
+        let insertAfterNode = parentRow;
+        let nextNode = parentRow.nextElementSibling;
+        while (nextNode && nextNode.getAttribute("data-parent-id") === parentId) {
+          insertAfterNode = nextNode;
+          nextNode = nextNode.nextElementSibling;
+        }
+        insertAfterNode.insertAdjacentHTML('afterend', rowHtml);
+      } else {
+        // Parent not found, append to end
+        list.insertAdjacentHTML('beforeend', rowHtml);
+      }
+    } else {
+      // Root comment, append to end
+      list.insertAdjacentHTML('beforeend', rowHtml);
+    }
   }
 
   if (countEl) countEl.textContent = String(Number(countEl.textContent || "0") + 1);
@@ -783,6 +839,17 @@ function bindFeedEvents() {
       return await deleteComment(cid, row);
     }
   });
+
+  // Enter key to submit comment
+  elList.addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    if (e.target.matches("[data-comment-input]")) {
+      e.preventDefault(); // prevent new line
+      const postEl = e.target.closest("article[data-post-id]");
+      const postId = postEl?.getAttribute("data-post-id");
+      await sendComment(postId, postEl);
+    }
+  });
 }
 
 /* ---------- Main load ---------- */
@@ -847,33 +914,61 @@ async function loadFeed() {
       .on('postgres_changes', { event: 'INSERT', table: 'post_comments' }, async (payload) => {
         const c = payload.new;
 
-        // Avoid duplicate if this is my own comment which was added optimistically
+        const postEl = elList.querySelector(`article[data-post-id="${c.post_id}"]`);
+        if (!postEl) return;
+
+        // 1. Handle "own comment" optimistic update (replace temp row)
         if (c.user_id === me.id) {
-          // Find temp row and update it with real ID
-          const list = elList.querySelector(`article[data-post-id="${c.post_id}"] .pv-commentsList`);
+          const list = postEl.querySelector(".pv-commentsList");
           const tempRow = list?.querySelector(`[data-comment-id^="temp-"]`);
           if (tempRow) {
             tempRow.setAttribute("data-comment-id", c.id);
-            // Also update delete/like buttons in it
             tempRow.querySelectorAll("[data-comment-id]").forEach(el => el.setAttribute("data-comment-id", c.id));
             return;
           }
         }
 
-        const postEl = elList.querySelector(`article[data-post-id="${c.post_id}"]`);
-        if (!postEl) return;
-
+        // 2. Regular insertion (incoming comment/reply)
         const countEl = postEl.querySelector("[data-comment-count]");
         if (countEl) countEl.textContent = String(Number(countEl.textContent || "0") + 1);
 
         const list = postEl.querySelector(".pv-commentsList");
         if (list) {
           if (list.innerHTML.includes("No comments yet")) list.innerHTML = "";
+
           const { data: prof } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", c.user_id).single();
           const tempMap = new Map();
           if (prof) tempMap.set(c.user_id, prof);
           const mockCLikes = { counts: new Map(), mine: new Set(), available: true };
           const rowHtml = renderCommentRow(c, tempMap, mockCLikes);
+
+          // Smart Insertion:
+          // If it's a reply, try to find the parent or the last sibling reply to insert after.
+          if (c.parent_id) {
+            // Find parent row
+            const parentRow = list.querySelector(`[data-comment-id="${c.parent_id}"]`);
+            if (parentRow) {
+              // Now we want to find the LAST reply that belongs to this thread, to append after it.
+              // Or just append after parent if no replies yet.
+              // A simple heuristic: walk down siblings until we find one that is NOT a reply (or end of list),
+              // OR check "data-parent-id" of siblings.
+
+              // Simplest visual approach: insert immediately after parentRow, 
+              // BUT if we want chronological replies, we should insert after the last reply to that parent.
+
+              let insertAfterNode = parentRow;
+              let nextNode = parentRow.nextElementSibling;
+              while (nextNode && nextNode.getAttribute("data-parent-id") === c.parent_id) {
+                insertAfterNode = nextNode;
+                nextNode = nextNode.nextElementSibling;
+              }
+
+              insertAfterNode.insertAdjacentHTML('afterend', rowHtml);
+              return;
+            }
+          }
+
+          // Default: Append to end
           list.insertAdjacentHTML('beforeend', rowHtml);
         }
       })
