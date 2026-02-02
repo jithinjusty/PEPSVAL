@@ -1761,17 +1761,26 @@ c.emailsWrap?.addEventListener("click", (e) => {
 
 // ---------- logout ----------
 const sidebarLogoutBtn = document.getElementById("sidebarLogout");
-sidebarLogoutBtn?.addEventListener("click", async () => {
-  try {
-    sidebarLogoutBtn.disabled = true;
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    window.location.href = "/auth/login.html";
-  } catch (err) {
-    alert("Logout failed: " + err.message);
-    sidebarLogoutBtn.disabled = false;
-  }
-});
+if (sidebarLogoutBtn) {
+  sidebarLogoutBtn.addEventListener("click", async () => {
+    try {
+      sidebarLogoutBtn.disabled = true;
+      sidebarLogoutBtn.textContent = "Logging out...";
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = "/auth/login.html";
+    } catch (err) {
+      console.error("Logout failed:", err);
+      // Fallback redirect
+      window.location.href = "/auth/login.html";
+    } finally {
+      if (sidebarLogoutBtn) {
+        sidebarLogoutBtn.disabled = false;
+        sidebarLogoutBtn.textContent = "Logout";
+      }
+    }
+  });
+}
 
 // ---------- init ----------
 (async () => {
@@ -1781,6 +1790,7 @@ sidebarLogoutBtn?.addEventListener("click", async () => {
     await loadProfile();
   } catch (e) {
     console.error("Profile load error:", e);
-    alert("Profile load failed: " + (e.message || "Unknown error"));
+    // Don't alert on load error to avoid annoyance, just log
   }
 })();
+
