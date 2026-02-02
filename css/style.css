@@ -534,3 +534,8 @@ select {
     background-position: -200% 0;
   }
 }
+
+/* Utility Defaults */
+.hidden {
+  display: none !important;
+}
