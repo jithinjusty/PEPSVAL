@@ -997,6 +997,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const text = getPostText(p, ks);
     const media = getPostMedia(p, ks);
     const created = getPostCreated(p, ks);
+    const visibility = p.visibility || 'public';
 
     const likes = likeInfo.counts.get(String(pid)) || 0;
     const iLiked = likeInfo.mine.has(String(pid));
@@ -1018,9 +1019,33 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
               <div class="pv-userSub">${rank}${country}</div>
             </div>
           </div>
+          
           <div class="pv-postRight">
-            <div class="pv-time">${esc(safeDate(created))}</div>
-            ${isMine ? `<button class="pv-linkBtn" data-action="deletePost">Delete</button>` : ``}
+             <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                <div class="pv-time">${esc(safeDate(created))}</div>
+                ${visibility === 'private' ? '<div class="post-visibility-badge">🔒 Private</div>' : ''}
+             </div>
+             <div class="post-menu-wrap">
+               <button class="post-menu-btn" data-action="toggleMenu">⋮</button>
+               <div class="post-menu-dropdown">
+                 ${isMine ? `
+                   <button class="post-menu-item" data-action="deletePost">
+                     <span>🗑️</span> Delete
+                   </button>
+                   <div class="post-menu-divider"></div>
+                   <button class="post-menu-item" data-action="setVisibility" data-value="public">
+                     <span>🌍</span> Make Public
+                   </button>
+                   <button class="post-menu-item" data-action="setVisibility" data-value="private">
+                      <span>🔒</span> Make Private
+                   </button>
+                 ` : `
+                   <button class="post-menu-item danger" data-action="reportPost">
+                      <span>🚩</span> Report
+                   </button>
+                 `}
+               </div>
+             </div>
           </div>
         </header>
 
@@ -1065,6 +1090,8 @@ async function createPost() {
   const text = (elPostText?.value || "").trim();
   if (!text && !selectedFile) return toast("Write something or attach a file.");
 
+  const visibility = document.getElementById("postVisibility")?.value || "public";
+
   try {
     elPostBtn && (elPostBtn.disabled = true);
     setStatus("Posting…");
@@ -1076,6 +1103,7 @@ async function createPost() {
       user_id: me.id,
       content: text,
       media_url: mediaUrl,
+      visibility: visibility,
       created_at: new Date().toISOString()
     }]).select("*").maybeSingle();
 
@@ -1399,6 +1427,24 @@ function bindFeedEvents() {
 
     if (action === "sharePost") return await sharePost(postId, postEl);
 
+    if (action === "toggleMenu") {
+      e.stopPropagation();
+      // Close others
+      document.querySelectorAll(".post-menu-dropdown.active").forEach(el => {
+        if (el !== btn.nextElementSibling) el.classList.remove("active");
+      });
+      const drop = btn.nextElementSibling;
+      if (drop) drop.classList.toggle("active");
+      return;
+    }
+
+    if (action === "reportPost") return await reportPost(postId);
+
+    if (action === "setVisibility") {
+      const val = btn.getAttribute("data-value");
+      return await setPostVisibility(postId, val);
+    }
+
     if (action === "replyComment") {
       const author = btn.getAttribute("data-author-name");
       const cid = btn.getAttribute("data-comment-id");
@@ -1436,6 +1482,50 @@ function bindFeedEvents() {
       await sendComment(postId, postEl);
     }
   });
+
+  // Global click to close menus
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".post-menu-wrap")) {
+      document.querySelectorAll(".post-menu-dropdown.active").forEach(el => el.classList.remove("active"));
+    }
+  });
+}
+
+/* ---------- Post Actions ---------- */
+async function reportPost(postId) {
+  const reason = prompt("Reason for reporting this post:");
+  if (!reason) return;
+
+  if (!confirm("Are you sure you want to report this post?")) return;
+
+  try {
+    const { error } = await supabase.from("post_reports").insert([{
+      post_id: postId,
+      user_id: me.id,
+      reason: reason
+    }]);
+
+    if (error) {
+      if (error.code === '23505') return toast("You have already reported this post.");
+      throw error;
+    }
+
+    toast("Report submitted. Thank you.");
+  } catch (e) {
+    showDbError("Report failed", e);
+  }
+}
+
+async function setPostVisibility(postId, visibility) {
+  try {
+    const { error } = await supabase.from("posts").update({ visibility }).eq("id", postId).eq("user_id", me.id);
+    if (error) throw error;
+
+    toast(`Post is now ${visibility}`);
+    loadFeed();
+  } catch (e) {
+    showDbError("Update failed", e);
+  }
 }
 
 /* ---------- Main load ---------- */
