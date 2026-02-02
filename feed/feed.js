@@ -177,23 +177,21 @@ async function loadMyAvatar() {
 /* ---------- Composer ---------- */
 /* ---------- Image Editor State ---------- */
 let editorState = {
-  originalImage: null, // HTMLImageElement
+  originalImage: null,
   canvas: null,
   ctx: null,
-  history: [], // Stack of states
+  history: [],
   historyIndex: -1,
 
   // Current State
   filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 },
 
-  // Crop & Transform State
-  // We keep a "View Transform" (translation + scale) relative to the original image
+  // Transform (Viewport)
   transform: { x: 0, y: 0, scale: 1 },
-  cropRatio: null, // null (free), or number (w/h)
-
-  drawings: [], // Array of strokes { color, size, points: [{x,y},...] }
-  texts: [], // Array of { text, x, y, color, size, font } -- x,y are normalized 0..1 relative to viewport? No, relative to Image Space is better but hard to manage with crop. 
-  // Let's stick to: All coordinates (drawings, text position) are relative to the ORIGINAL IMAGE dimensions (0..width, 0..height).
+  // Drawings & Text
+  drawings: [],
+  texts: [],
+  selectedTextIndex: -1, // New: track active text object
 
   // Interaction State
   activeTab: 'filters',
@@ -202,9 +200,9 @@ let editorState = {
   isDrawing: false,
   isDragging: false,
   dragStart: { x: 0, y: 0 },
-  dragTarget: null, // 'crop' (panning image) or index of text element
+  dragTarget: null, // 'pan', 'text'
 
-  drawMode: 'brush', // 'brush', 'erase'
+  drawMode: 'brush',
 };
 
 /* ---------- Undo/Redo ---------- */
@@ -212,7 +210,6 @@ function pushHistory() {
   const state = {
     filters: { ...editorState.filters },
     transform: { ...editorState.transform },
-    cropRatio: editorState.cropRatio,
     drawings: JSON.parse(JSON.stringify(editorState.drawings)),
     texts: JSON.parse(JSON.stringify(editorState.texts))
   };
@@ -247,9 +244,9 @@ function redo() {
 function restoreState(state) {
   editorState.filters = { ...state.filters };
   editorState.transform = { ...state.transform };
-  editorState.cropRatio = state.cropRatio;
   editorState.drawings = JSON.parse(JSON.stringify(state.drawings));
   editorState.texts = JSON.parse(JSON.stringify(state.texts));
+  editorState.selectedTextIndex = -1; // Deselect on undo/redo
   updateFilterUI();
 }
 
@@ -275,8 +272,7 @@ function updateFilterUI() {
   setVal("contrast", f.contrast);
   setVal("saturate", f.saturate);
   setVal("blur", f.blur, "px");
-
-  $("text-size-input") && ($("text-size-input").value = 40); // default reset?
+  setVal("sepia", f.sepia);
 }
 
 /* ---------- Logic ---------- */
@@ -288,9 +284,6 @@ function initEditor(file) {
   img.onload = () => {
     editorState.originalImage = img;
 
-    // Fit image to canvas initially
-    // We want to work with a fixed "Viewport" size for the canvas if possible, 
-    // or adapt canvas to image. Let's make canvas reasonably large.
     const MAX_W = 800;
     const MAX_H = 600;
     let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
@@ -298,13 +291,12 @@ function initEditor(file) {
     editorState.canvas.width = img.width * scale;
     editorState.canvas.height = img.height * scale;
 
-    // Initial Transform: Standard fit
-    editorState.transform = { x: 0, y: 0, scale: scale }; // x,y are canvas offsets
+    editorState.transform = { x: 0, y: 0, scale: scale }; // Fit initial
 
     editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
-    editorState.cropRatio = null;
     editorState.drawings = [];
     editorState.texts = [];
+    editorState.selectedTextIndex = -1;
     editorState.history = [];
     editorState.historyIndex = -1;
 
@@ -315,6 +307,27 @@ function initEditor(file) {
     if (modal) modal.style.display = "flex";
 
     renderEditor();
+
+    // Bind Text Prop listeners for live updates
+    const bindLive = (id, prop) => {
+      const el = $(id);
+      if (!el) return;
+      // Remove old listeners to avoid stacks
+      const clone = el.cloneNode(true);
+      el.parentNode.replaceChild(clone, el);
+
+      clone.addEventListener('input', () => {
+        if (editorState.selectedTextIndex !== -1 && editorState.texts[editorState.selectedTextIndex]) {
+          editorState.texts[editorState.selectedTextIndex][prop] = clone.value;
+          renderEditor();
+        }
+      });
+      clone.addEventListener('change', pushHistory); // Save on finish
+    };
+
+    bindLive('text-size-input', 'size');
+    bindLive('text-color', 'color');
+    bindLive('text-font-input', 'font');
   };
   img.src = URL.createObjectURL(file);
 }
@@ -322,8 +335,6 @@ function initEditor(file) {
 // Convert Canvas/Pointer Coords -> Image Space Coords
 function toImageSpace(cx, cy) {
   const t = editorState.transform;
-  // Canvas = (Image * scale) + translate
-  // Image = (Canvas - translate) / scale
   return {
     x: (cx - t.x) / t.scale,
     y: (cy - t.y) / t.scale
@@ -348,26 +359,21 @@ function renderEditor() {
   if (f.vintage > 0) filterString += ` sepia(${f.vintage * 0.5}%) contrast(${100 + f.vintage * 0.2}%)`;
 
   ctx.save();
-
-  // 1. Draw Image with Transforms (Zoom/Pan)
-  // We use the transform to position the image on canvas
   ctx.translate(t.x, t.y);
   ctx.scale(t.scale, t.scale);
 
+  // 1. Image
   ctx.filter = filterString;
   ctx.drawImage(img, 0, 0);
   ctx.filter = "none";
 
-  // 2. Draw Drawings (in Image Space)
+  // 2. Drawings
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   editorState.drawings.forEach(stroke => {
     ctx.beginPath();
     ctx.strokeStyle = stroke.color;
-    // Stroke size should match image scale? Or be consistent on screen?
-    // If user zooms in, stroke usually gets bigger.
     ctx.lineWidth = stroke.size;
-
     if (stroke.isErase) ctx.globalCompositeOperation = "destination-out";
     else ctx.globalCompositeOperation = "source-over";
 
@@ -381,31 +387,29 @@ function renderEditor() {
   });
   ctx.globalCompositeOperation = "source-over";
 
-  // 3. Draw Text (in Image Space)
-  editorState.texts.forEach(txt => {
+  // 3. Text
+  editorState.texts.forEach((txt, idx) => {
     ctx.fillStyle = txt.color;
     ctx.font = `bold ${txt.size}px ${txt.font || 'sans-serif'}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(txt.text, txt.x, txt.y);
 
-    // Selection Border (if active tab is text?)
-    // ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    // ctx.lineWidth = 2 / t.scale;
-    // ctx.strokeText(txt.text, txt.x, txt.y);
+    // Selection Box
+    if (idx === editorState.selectedTextIndex) {
+      ctx.save();
+      ctx.strokeStyle = "#00FFFF";
+      ctx.lineWidth = 2 / t.scale;
+      const metrics = ctx.measureText(txt.text);
+      const h = txt.size;
+      const w = metrics.width;
+      ctx.setLineDash([5 / t.scale, 5 / t.scale]);
+      ctx.strokeRect(txt.x - w / 2 - 10, txt.y - h / 2 - 10, w + 20, h + 20);
+      ctx.restore();
+    }
   });
 
   ctx.restore();
-
-  // 4. Draw Crop Overlay (Fixed to Canvas Center or similar?)
-  // Actually, "Crop" means we only SAVE what is visible in the viewport (or a sub-rect).
-  // For "Instagram style" crop, usually the Viewport IS the crop rect. 
-  // User pans image BEHIND the viewport.
-  // Let's assume the Canvas Size IS the crop window.
-  // If we want to change aspect ratio (Mask), we resize the canvas and re-center image.
-
-  // If we are in 'crop' mode, maybe dim the outside? 
-  // But here, we resize the CANVAS itself to match aspect ratio.
 }
 
 /* ---------- Interactions ---------- */
@@ -414,8 +418,6 @@ function handlePointer(e) {
   const rect = editorState.canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
   const cy = e.clientY - rect.top;
-
-  // Image Space Point
   const ip = toImageSpace(cx, cy);
 
   if (e.type === 'mousedown') {
@@ -426,7 +428,7 @@ function handlePointer(e) {
       editorState.isDrawing = true;
       editorState.currentStroke = {
         color: editorState.drawColor,
-        size: editorState.drawSize / editorState.transform.scale, // scale size to image
+        size: editorState.drawSize / editorState.transform.scale,
         isErase: editorState.drawMode === 'erase',
         points: [{ x: ip.x, y: ip.y }]
       };
@@ -434,29 +436,44 @@ function handlePointer(e) {
       renderEditor();
     }
     else if (editorState.activeTab === 'text') {
-      // Check for text hit
-      // Simple distance check (approximate)
-      let hitIndex = -1;
-      // Reverse iterate to pick top-most
+      // Hit Test Text
+      editorState.selectedTextIndex = -1; // Reset
+      let hit = -1;
+
+      // Check Top-most first
+      editorState.ctx.save(); // Context for measurement
       for (let i = editorState.texts.length - 1; i >= 0; i--) {
         const t = editorState.texts[i];
-        // simple box check: text height ~ size, width ~ length*size*0.5
-        const w = t.text.length * t.size * 0.6;
+        editorState.ctx.font = `bold ${t.size}px ${t.font || 'sans-serif'}`;
+        const metrics = editorState.ctx.measureText(t.text);
+        const w = metrics.width;
         const h = t.size;
-        // dist check
-        if (Math.abs(ip.x - t.x) < w / 2 && Math.abs(ip.y - t.y) < h / 2) {
-          hitIndex = i;
+
+        // Simple Box hit test
+        if (Math.abs(ip.x - t.x) < w / 2 + 10 && Math.abs(ip.y - t.y) < h / 2 + 10) {
+          hit = i;
           break;
         }
       }
-      if (hitIndex !== -1) {
-        editorState.dragTarget = { type: 'text', index: hitIndex };
+      editorState.ctx.restore();
+
+      if (hit !== -1) {
+        editorState.selectedTextIndex = hit;
+        editorState.dragTarget = { type: 'text', index: hit };
+
+        // Populate UI with selected text props
+        const t = editorState.texts[hit];
+        $("text-input").value = "";
+        $("text-size-input").value = t.size;
+        $("text-color").value = t.color;
+        $("text-font-input").value = t.font;
       } else {
-        editorState.dragTarget = { type: 'pan' }; // Fallback to pan if no text hit
+        editorState.dragTarget = { type: 'pan' };
       }
+      renderEditor();
     }
     else {
-      // Crop/Adjust/Filter mode -> Pan Image
+      // Crop/Adjust/Filter -> Pan Image
       editorState.dragTarget = { type: 'pan' };
     }
 
@@ -472,15 +489,14 @@ function handlePointer(e) {
       renderEditor();
     }
     else if (editorState.dragTarget?.type === 'text') {
-      // Move text (in image space)
-      // We need to convert delta-screen to delta-image
       const idx = editorState.dragTarget.index;
-      editorState.texts[idx].x += dx / editorState.transform.scale;
-      editorState.texts[idx].y += dy / editorState.transform.scale;
-      renderEditor();
+      if (editorState.texts[idx]) {
+        editorState.texts[idx].x += dx / editorState.transform.scale;
+        editorState.texts[idx].y += dy / editorState.transform.scale;
+        renderEditor();
+      }
     }
     else if (editorState.dragTarget?.type === 'pan') {
-      // Pan Image
       editorState.transform.x += dx;
       editorState.transform.y += dy;
       renderEditor();
@@ -497,7 +513,6 @@ function handlePointer(e) {
 }
 
 function handleZoom(delta) {
-  // delta > 0 zoom in
   const factor = delta > 0 ? 1.1 : 0.9;
   editorState.transform.scale *= factor;
   renderEditor();
@@ -509,7 +524,6 @@ function applyCropRatio(ratio) {
   if (!img || !canvas) return;
 
   if (ratio === 'reset') {
-    // Reset Viewport to fit image comfortably
     const MAX_W = 800;
     const MAX_H = 600;
     let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
@@ -518,17 +532,12 @@ function applyCropRatio(ratio) {
     editorState.transform = { x: 0, y: 0, scale: scale };
   }
   else {
-    // Resize CANVAS (Viewport) to target ratio
-    // Keep 'width' fixed or max, adjust height
     const [rw, rh] = ratio.split(':').map(Number);
     const targetRatio = rw / rh;
-
-    // Current canvas width
     let w = canvas.width;
     let h = w / targetRatio;
-
     canvas.height = h;
-    // We don't reset image transform, user can now Pan/Zoom image to fit this window
+    // Keep image transform as is, just change viewport frame
   }
   renderEditor();
   pushHistory();
@@ -536,19 +545,16 @@ function applyCropRatio(ratio) {
 
 function addText() {
   const input = $("text-input");
-  const sizeInput = $("text-size-input");
-  const fontInput = $("text-font-input");
-
   const txt = input.value.trim();
   if (!txt) return;
 
-  const size = Number(sizeInput?.value || 40);
-  const font = fontInput?.value || "sans-serif";
+  const size = Number($("text-size-input")?.value || 40);
+  const font = $("text-font-input")?.value || "sans-serif";
   const color = $("text-color").value || "#ffffff";
 
-  // Add to center of visible viewport
-  // Viewport center in Image Space:
+  // Center of Viewport in Image Space
   const canvas = editorState.canvas;
+  // We want the visual center of canvas -> image space coords
   const center = toImageSpace(canvas.width / 2, canvas.height / 2);
 
   editorState.texts.push({
@@ -560,6 +566,9 @@ function addText() {
     font
   });
 
+  // Auto-select new text
+  editorState.selectedTextIndex = editorState.texts.length - 1;
+
   input.value = "";
   renderEditor();
   pushHistory();
@@ -569,6 +578,14 @@ function switchTab(tabId) {
   editorState.activeTab = tabId;
   document.querySelectorAll(".editor-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
   document.querySelectorAll(".editor-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${tabId}`));
+
+  // Deselect text when leaving text tab? Or keep it?
+  // Use case: Adding text then filter. 
+  // Probably harmless to keep selected index, but maybe confusing visual.
+  if (tabId !== 'text') {
+    editorState.selectedTextIndex = -1;
+    renderEditor();
+  }
 }
 
 // ---- Colors ----
@@ -588,7 +605,10 @@ function generatePalette(containerId, inputId) {
     d.addEventListener('click', () => {
       container.querySelectorAll('.color-dot').forEach(x => x.classList.remove('active'));
       d.classList.add('active');
-      if (inputId) $(inputId).value = d.dataset.color;
+      if (inputId) {
+        $(inputId).value = d.dataset.color;
+        $(inputId).dispatchEvent(new Event('input')); // Trigger live update
+      }
       if (editorState.activeTab === 'draw') editorState.drawColor = d.dataset.color;
     });
   });
