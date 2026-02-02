@@ -154,8 +154,60 @@
     </div>
   </div>
 
+
+  <!-- Image Editor Modal -->
+  <div id="editorModal" class="editor-modal" style="display:none;">
+    <div class="editor-content">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; font-size:18px; font-weight:800; background:var(--brand-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Stats & Filters</h3>
+        <button id="closeEditorInv" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+      </div>
+
+      <div class="editor-preview">
+        <canvas id="editCanvas"></canvas>
+      </div>
+
+      <div class="editor-controls">
+        <div class="editor-slider-wrap">
+          <div class="editor-slider-label">
+            <span>Brightness</span>
+            <span id="val-brightness">100%</span>
+          </div>
+          <input type="range" class="editor-range" id="rng-brightness" min="0" max="200" value="100">
+        </div>
+        <div class="editor-slider-wrap">
+          <div class="editor-slider-label">
+            <span>Contrast</span>
+            <span id="val-contrast">100%</span>
+          </div>
+          <input type="range" class="editor-range" id="rng-contrast" min="0" max="200" value="100">
+        </div>
+        <div class="editor-slider-wrap">
+          <div class="editor-slider-label">
+            <span>Saturation</span>
+            <span id="val-saturate">100%</span>
+          </div>
+          <input type="range" class="editor-range" id="rng-saturate" min="0" max="200" value="100">
+        </div>
+        <div class="editor-slider-wrap">
+          <div class="editor-slider-label">
+            <span>Sepia</span>
+            <span id="val-sepia">0%</span>
+          </div>
+          <input type="range" class="editor-range" id="rng-sepia" min="0" max="100" value="0">
+        </div>
+      </div>
+
+      <div class="editor-actions">
+        <button id="cancelEdit" class="pv-btn pv-btn-ghost">Cancel</button>
+        <button id="saveEdit" class="pv-btn pv-btn-primary">Apply Filters</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast" aria-live="polite"></div>
+
 
   <!-- Bottom nav (Mobile) -->
   <nav class="bottomNav glass">

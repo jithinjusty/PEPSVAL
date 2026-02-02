@@ -172,6 +172,14 @@ async function loadMyAvatar() {
 }
 
 /* ---------- Composer ---------- */
+/* ---------- Image Editor State ---------- */
+let editorImage = new Image();
+let originalFile = null;
+let currentFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0 };
+const canvas = $("editCanvas");
+const ctx = canvas ? canvas.getContext("2d") : null;
+
+/* ---------- Composer (Updated with Editor) ---------- */
 function setFileUI(file) {
   selectedFile = file || null;
 
@@ -185,12 +193,101 @@ function setFileUI(file) {
   elFileName.textContent = selectedFile.name || "Attachment";
 }
 
+function openEditor(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    setFileUI(file);
+    return;
+  }
+
+  originalFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    editorImage.src = e.target.result;
+    editorImage.onload = () => {
+      // Show modal
+      const modal = $("editorModal");
+      if (modal) modal.style.display = "flex";
+      // Reset filters
+      currentFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0 };
+      updateFilters();
+      renderCanvas();
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderCanvas() {
+  if (!canvas || !ctx || !editorImage.src) return;
+
+  // Resize logic to fit canvas
+  const maxWidth = 800; // Limit max resolution for performance
+  const scale = Math.min(1, maxWidth / editorImage.width);
+  const w = editorImage.width * scale;
+  const h = editorImage.height * scale;
+
+  canvas.width = w;
+  canvas.height = h;
+
+  // Apply filters via filter string
+  ctx.filter = `brightness(${currentFilters.brightness}%) contrast(${currentFilters.contrast}%) saturate(${currentFilters.saturate}%) sepia(${currentFilters.sepia}%)`;
+  ctx.drawImage(editorImage, 0, 0, w, h);
+}
+
+function updateFilters() {
+  $("val-brightness").textContent = currentFilters.brightness + "%";
+  $("rng-brightness").value = currentFilters.brightness;
+
+  $("val-contrast").textContent = currentFilters.contrast + "%";
+  $("rng-contrast").value = currentFilters.contrast;
+
+  $("val-saturate").textContent = currentFilters.saturate + "%";
+  $("rng-saturate").value = currentFilters.saturate;
+
+  $("val-sepia").textContent = currentFilters.sepia + "%";
+  $("rng-sepia").value = currentFilters.sepia;
+}
+
+function bindEditorEvents() {
+  const modal = $("editorModal");
+  if (!modal) return;
+
+  // Sliders
+  $("rng-brightness")?.addEventListener("input", (e) => { currentFilters.brightness = e.target.value; updateFilters(); renderCanvas(); });
+  $("rng-contrast")?.addEventListener("input", (e) => { currentFilters.contrast = e.target.value; updateFilters(); renderCanvas(); });
+  $("rng-saturate")?.addEventListener("input", (e) => { currentFilters.saturate = e.target.value; updateFilters(); renderCanvas(); });
+  $("rng-sepia")?.addEventListener("input", (e) => { currentFilters.sepia = e.target.value; updateFilters(); renderCanvas(); });
+
+  // Buttons
+  $("cancelEdit")?.addEventListener("click", () => {
+    modal.style.display = "none";
+    setFileUI(null);
+    elFile.value = "";
+  });
+
+  $("closeEditorInv")?.addEventListener("click", () => {
+    modal.style.display = "none";
+    setFileUI(null);
+    elFile.value = "";
+  });
+
+  $("saveEdit")?.addEventListener("click", () => {
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      // create new file from blob
+      const editedFile = new File([blob], "edited_" + originalFile.name, { type: "image/jpeg" });
+      setFileUI(editedFile);
+      modal.style.display = "none";
+      toast("Filters applied!");
+    }, "image/jpeg", 0.9);
+  });
+}
+
 function bindComposer() {
   elFileBtn?.addEventListener("click", () => elFile?.click());
 
   elFile?.addEventListener("change", () => {
     const f = elFile.files && elFile.files[0];
-    setFileUI(f || null);
+    if (f) openEditor(f);
   });
 
   elClearFile?.addEventListener("click", () => {
@@ -199,32 +296,49 @@ function bindComposer() {
   });
 
   elPostBtn?.addEventListener("click", createPost);
+
+  // init editor
+  bindEditorEvents();
 }
 
-/* ---------- Media upload ---------- */
+/* ---------- Media upload (Enhanced Progress) ---------- */
 async function uploadMedia(file) {
   if (!file) return null;
 
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${me.id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
 
-  showProgress(true, "Uploading…", 5);
+  showProgress(true, "Preparing…", 0);
 
-  const { error: upErr } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, file, { upsert: false });
+  // Faux progress animation
+  let pct = 0;
+  const simulateInterval = setInterval(() => {
+    pct += Math.random() * 10; // random increment
+    if (pct > 90) pct = 90; // cap at 90 until real completion
+    showProgress(true, "Uploading…", Math.round(pct));
+  }, 200);
 
-  if (upErr) throw upErr;
+  try {
+    const { error: upErr } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .upload(path, file, { upsert: false });
 
-  showProgress(true, "Finishing…", 85);
+    if (upErr) throw upErr;
 
-  const { data: pub } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
-  const url = pub?.publicUrl || null;
+    // Success -> jump to 100
+    clearInterval(simulateInterval);
+    showProgress(true, "Finalizing…", 100);
 
-  showProgress(true, "Done", 100);
-  setTimeout(() => showProgress(false), 650);
+    const { data: pub } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+    const url = pub?.publicUrl || null;
 
-  return url;
+    setTimeout(() => showProgress(false), 800);
+    return url;
+  } catch (err) {
+    clearInterval(simulateInterval);
+    showProgress(false);
+    throw err;
+  }
 }
 
 /* ---------- Schema detection ---------- */
