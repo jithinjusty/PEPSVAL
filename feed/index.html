@@ -230,13 +230,8 @@
         <!-- Draw -->
         <div class="editor-panel" id="panel-draw">
           <div class="draw-controls">
-            <div class="color-picker-row">
-              <div class="color-dot active" style="background:#000000" data-color="#000000"></div>
-              <div class="color-dot" style="background:#ffffff" data-color="#ffffff"></div>
-              <div class="color-dot" style="background:#ff0000" data-color="#ff0000"></div>
-              <div class="color-dot" style="background:#00ff00" data-color="#00ff00"></div>
-              <div class="color-dot" style="background:#0000ff" data-color="#0000ff"></div>
-              <div class="color-dot" style="background:#ffff00" data-color="#ffff00"></div>
+            <div class="color-picker-row" id="draw-palette">
+              <!-- Auto-populated by JS -->
             </div>
             <div class="editor-slider-wrap">
               <div class="editor-slider-label"><span>Brush Size</span> <span id="val-brush">5px</span></div>
@@ -245,22 +240,38 @@
             <div style="display:flex; gap:10px; margin-top:10px;">
               <button id="btn-draw-mode" class="pv-btn pv-btn-primary" style="flex:1">Draw</button>
               <button id="btn-erase-mode" class="pv-btn pv-btn-ghost" style="flex:1">Erase</button>
-              <button id="btn-clear-draw" class="pv-btn pv-btn-ghost" style="color:var(--danger)">Clear All</button>
+              <button id="btn-clear-draw" class="pv-btn pv-btn-ghost" style="color:var(--danger)">Clear</button>
             </div>
           </div>
         </div>
 
         <!-- Text -->
         <div class="editor-panel" id="panel-text">
-          <div style="display:flex; gap:10px;">
+          <div style="display:flex; gap:10px; margin-bottom:12px;">
             <input id="text-input" type="text" class="pv-input" placeholder="Enter text...">
             <button id="btn-add-text" class="pv-btn pv-btn-primary">Add</button>
           </div>
-          <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+
+          <div class="editor-slider-wrap">
+            <div class="editor-slider-label"><span>Size</span></div>
+            <input type="range" class="editor-range" id="text-size-input" min="10" max="200" value="40">
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:12px; align-items:center;">
             <span>Color:</span>
-            <input type="color" id="text-color" value="#ffffff">
+            <input type="color" id="text-color" value="#ffffff"
+              style="width:40px; height:30px; border:none; padding:0; background:none;">
+
+            <select id="text-font-input" class="pv-input" style="width:auto; padding:4px 8px;">
+              <option value="sans-serif">Sans Serif</option>
+              <option value="serif">Serif</option>
+              <option value="monospace">Monospace</option>
+              <option value="cursive">Cursive</option>
+              <option value="fantasy">Fantasy</option>
+            </select>
+
             <button id="btn-clear-text" class="pv-btn pv-btn-ghost" style="font-size:12px; margin-left:auto;">Clear
-              Text</button>
+              All</button>
           </div>
         </div>
       </div>

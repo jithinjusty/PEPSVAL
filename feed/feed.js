@@ -185,31 +185,38 @@ let editorState = {
 
   // Current State
   filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 },
-  crop: { x: 0, y: 0, w: 0, h: 0 }, // Relative to original image
-  drawings: [], // Array of strokes { color, size, points: [{x,y},...] }
-  texts: [], // Array of { text, x, y, color, size }
 
-  // UI State
+  // Crop & Transform State
+  // We keep a "View Transform" (translation + scale) relative to the original image
+  transform: { x: 0, y: 0, scale: 1 },
+  cropRatio: null, // null (free), or number (w/h)
+
+  drawings: [], // Array of strokes { color, size, points: [{x,y},...] }
+  texts: [], // Array of { text, x, y, color, size, font } -- x,y are normalized 0..1 relative to viewport? No, relative to Image Space is better but hard to manage with crop. 
+  // Let's stick to: All coordinates (drawings, text position) are relative to the ORIGINAL IMAGE dimensions (0..width, 0..height).
+
+  // Interaction State
   activeTab: 'filters',
   drawColor: '#000000',
   drawSize: 5,
   isDrawing: false,
-  drawMode: 'brush', // 'brush', 'erase'
+  isDragging: false,
+  dragStart: { x: 0, y: 0 },
+  dragTarget: null, // 'crop' (panning image) or index of text element
 
-  // Helpers
-  scale: 1, // Canvas display scale
+  drawMode: 'brush', // 'brush', 'erase'
 };
 
-// Undo/Redo Management
+/* ---------- Undo/Redo ---------- */
 function pushHistory() {
   const state = {
     filters: { ...editorState.filters },
-    crop: { ...editorState.crop },
+    transform: { ...editorState.transform },
+    cropRatio: editorState.cropRatio,
     drawings: JSON.parse(JSON.stringify(editorState.drawings)),
     texts: JSON.parse(JSON.stringify(editorState.texts))
   };
 
-  // Remove future history if we pushed new state
   if (editorState.historyIndex < editorState.history.length - 1) {
     editorState.history = editorState.history.slice(0, editorState.historyIndex + 1);
   }
@@ -239,11 +246,10 @@ function redo() {
 
 function restoreState(state) {
   editorState.filters = { ...state.filters };
-  editorState.crop = { ...state.crop };
+  editorState.transform = { ...state.transform };
+  editorState.cropRatio = state.cropRatio;
   editorState.drawings = JSON.parse(JSON.stringify(state.drawings));
   editorState.texts = JSON.parse(JSON.stringify(state.texts));
-
-  // Update UI controls to match state
   updateFilterUI();
 }
 
@@ -258,24 +264,22 @@ function updateUndoRedoUI() {
 }
 
 function updateFilterUI() {
-  $("rng-brightness").value = editorState.filters.brightness;
-  $("val-brightness").textContent = editorState.filters.brightness + "%";
+  const f = editorState.filters;
+  const setVal = (k, v, s = "%") => {
+    const el = $(`rng-${k}`);
+    const lab = $(`val-${k}`);
+    if (el) el.value = v;
+    if (lab) lab.textContent = v + s;
+  };
+  setVal("brightness", f.brightness);
+  setVal("contrast", f.contrast);
+  setVal("saturate", f.saturate);
+  setVal("blur", f.blur, "px");
 
-  $("rng-contrast").value = editorState.filters.contrast;
-  $("val-contrast").textContent = editorState.filters.contrast + "%";
-
-  $("rng-saturate").value = editorState.filters.saturate;
-  $("val-saturate").textContent = editorState.filters.saturate + "%";
-
-  $("rng-blur").value = editorState.filters.blur;
-  $("val-blur").textContent = editorState.filters.blur + "px";
-
-  // Reset active buttons
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  // (Simple logic: if custom values, maybe no preset is active, handling presets later)
+  $("text-size-input") && ($("text-size-input").value = 40); // default reset?
 }
 
-/* ---------- Editor Logic ---------- */
+/* ---------- Logic ---------- */
 function initEditor(file) {
   editorState.canvas = $("editCanvas");
   editorState.ctx = editorState.canvas.getContext("2d");
@@ -283,20 +287,30 @@ function initEditor(file) {
   const img = new Image();
   img.onload = () => {
     editorState.originalImage = img;
-    // Reset State
+
+    // Fit image to canvas initially
+    // We want to work with a fixed "Viewport" size for the canvas if possible, 
+    // or adapt canvas to image. Let's make canvas reasonably large.
+    const MAX_W = 800;
+    const MAX_H = 600;
+    let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
+
+    editorState.canvas.width = img.width * scale;
+    editorState.canvas.height = img.height * scale;
+
+    // Initial Transform: Standard fit
+    editorState.transform = { x: 0, y: 0, scale: scale }; // x,y are canvas offsets
+
     editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
-    editorState.crop = { x: 0, y: 0, w: img.width, h: img.height };
+    editorState.cropRatio = null;
     editorState.drawings = [];
     editorState.texts = [];
     editorState.history = [];
     editorState.historyIndex = -1;
 
-    pushHistory(); // Initial state
-
-    // Switch to first tab
+    pushHistory();
     switchTab('filters');
 
-    // Show Modal
     const modal = $("editorModal");
     if (modal) modal.style.display = "flex";
 
@@ -305,184 +319,245 @@ function initEditor(file) {
   img.src = URL.createObjectURL(file);
 }
 
+// Convert Canvas/Pointer Coords -> Image Space Coords
+function toImageSpace(cx, cy) {
+  const t = editorState.transform;
+  // Canvas = (Image * scale) + translate
+  // Image = (Canvas - translate) / scale
+  return {
+    x: (cx - t.x) / t.scale,
+    y: (cy - t.y) / t.scale
+  };
+}
+
 function renderEditor() {
   if (!editorState.originalImage || !editorState.ctx) return;
-
   const ctx = editorState.ctx;
   const img = editorState.originalImage;
-  const crop = editorState.crop;
+  const cvs = editorState.canvas;
+  const t = editorState.transform;
 
-  // 1. Setup Canvas Size (rendering crop window)
-  // Limit max size for performance
-  const MAX_W = 1200;
-  let dispW = crop.w;
-  let dispH = crop.h;
-  if (dispW > MAX_W) {
-    const r = MAX_W / dispW;
-    dispW = MAX_W;
-    dispH = dispH * r;
-  }
+  // Clear
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-  editorState.canvas.width = dispW;
-  editorState.canvas.height = dispH;
-  editorState.scale = dispW / crop.w;
-
-  // 2. Clear
-  ctx.clearRect(0, 0, dispW, dispH);
-
-  // 3. Apply Filters contextually
+  // Apply Filters
   const f = editorState.filters;
   let filterString = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) blur(${f.blur}px) sepia(${f.sepia}%) grayscale(${f.grayscale}%) invert(${f.invert}%)`;
-
-  // Manual color matrix simulation for warm/cool/vintage (simplified via overlay or CSS filters)
-  // For standard canvas, CSS filters string is best.
-  // Warm: sepia + saturate
-  // Cool: hue-rotate
   if (f.warm > 0) filterString += ` sepia(${f.warm * 0.3}%) saturate(${100 + f.warm}%)`;
   if (f.cool > 0) filterString += ` hue-rotate(-${f.cool * 0.5}deg) saturate(${100 - f.cool * 0.2}%)`;
   if (f.vintage > 0) filterString += ` sepia(${f.vintage * 0.5}%) contrast(${100 + f.vintage * 0.2}%)`;
 
+  ctx.save();
+
+  // 1. Draw Image with Transforms (Zoom/Pan)
+  // We use the transform to position the image on canvas
+  ctx.translate(t.x, t.y);
+  ctx.scale(t.scale, t.scale);
+
   ctx.filter = filterString;
+  ctx.drawImage(img, 0, 0);
+  ctx.filter = "none";
 
-  // 4. Draw Base Image (Cropped)
-  ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, dispW, dispH);
-
-  ctx.filter = "none"; // Reset filter for drawings/text
-
-  // 5. Draw Strokes
+  // 2. Draw Drawings (in Image Space)
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-
   editorState.drawings.forEach(stroke => {
     ctx.beginPath();
     ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.size * editorState.scale;
-    if (stroke.isErase) {
-      ctx.globalCompositeOperation = "destination-out"; // Erase
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-    }
+    // Stroke size should match image scale? Or be consistent on screen?
+    // If user zooms in, stroke usually gets bigger.
+    ctx.lineWidth = stroke.size;
 
-    // Coords are stored relative to Key Image Size (0..1) or Original Config ?
-    // Let's store coords relative to CROP rect for simplicity or Original Image?
-    // Storing relative to Original Image is robust against recrop, but complex.
-    // Storing relative to Current View (0..1) is easiest.
-    // Let's assume stroke points are normalized (0..1) of the crop window at time of drawing.
+    if (stroke.isErase) ctx.globalCompositeOperation = "destination-out";
+    else ctx.globalCompositeOperation = "source-over";
 
     if (stroke.points.length > 0) {
-      // De-normalize
-      ctx.moveTo(stroke.points[0].x * dispW, stroke.points[0].y * dispH);
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
       for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x * dispW, stroke.points[i].y * dispH);
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
       }
     }
     ctx.stroke();
   });
-
   ctx.globalCompositeOperation = "source-over";
 
-  // 6. Draw Text
+  // 3. Draw Text (in Image Space)
   editorState.texts.forEach(txt => {
     ctx.fillStyle = txt.color;
-    ctx.font = `bold ${30 * editorState.scale}px sans-serif`;
+    ctx.font = `bold ${txt.size}px ${txt.font || 'sans-serif'}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(txt.text, txt.x * dispW, txt.y * dispH);
+    ctx.fillText(txt.text, txt.x, txt.y);
+
+    // Selection Border (if active tab is text?)
+    // ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    // ctx.lineWidth = 2 / t.scale;
+    // ctx.strokeText(txt.text, txt.x, txt.y);
   });
+
+  ctx.restore();
+
+  // 4. Draw Crop Overlay (Fixed to Canvas Center or similar?)
+  // Actually, "Crop" means we only SAVE what is visible in the viewport (or a sub-rect).
+  // For "Instagram style" crop, usually the Viewport IS the crop rect. 
+  // User pans image BEHIND the viewport.
+  // Let's assume the Canvas Size IS the crop window.
+  // If we want to change aspect ratio (Mask), we resize the canvas and re-center image.
+
+  // If we are in 'crop' mode, maybe dim the outside? 
+  // But here, we resize the CANVAS itself to match aspect ratio.
 }
 
-function handleDrawing(e) {
-  if (editorState.activeTab !== 'draw') return;
+/* ---------- Interactions ---------- */
+
+function handlePointer(e) {
   const rect = editorState.canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width;
-  const y = (e.clientY - rect.top) / rect.height;
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  // Image Space Point
+  const ip = toImageSpace(cx, cy);
 
   if (e.type === 'mousedown') {
-    editorState.isDrawing = true;
-    editorState.currentStroke = {
-      color: editorState.drawColor,
-      size: editorState.drawSize,
-      isErase: editorState.drawMode === 'erase',
-      points: [{ x, y }]
-    };
-    editorState.drawings.push(editorState.currentStroke);
-    renderEditor();
-  } else if (e.type === 'mousemove' && editorState.isDrawing) {
-    editorState.currentStroke.points.push({ x, y });
-    renderEditor();
+    editorState.isDragging = true;
+    editorState.dragStart = { x: cx, y: cy };
+
+    if (editorState.activeTab === 'draw') {
+      editorState.isDrawing = true;
+      editorState.currentStroke = {
+        color: editorState.drawColor,
+        size: editorState.drawSize / editorState.transform.scale, // scale size to image
+        isErase: editorState.drawMode === 'erase',
+        points: [{ x: ip.x, y: ip.y }]
+      };
+      editorState.drawings.push(editorState.currentStroke);
+      renderEditor();
+    }
+    else if (editorState.activeTab === 'text') {
+      // Check for text hit
+      // Simple distance check (approximate)
+      let hitIndex = -1;
+      // Reverse iterate to pick top-most
+      for (let i = editorState.texts.length - 1; i >= 0; i--) {
+        const t = editorState.texts[i];
+        // simple box check: text height ~ size, width ~ length*size*0.5
+        const w = t.text.length * t.size * 0.6;
+        const h = t.size;
+        // dist check
+        if (Math.abs(ip.x - t.x) < w / 2 && Math.abs(ip.y - t.y) < h / 2) {
+          hitIndex = i;
+          break;
+        }
+      }
+      if (hitIndex !== -1) {
+        editorState.dragTarget = { type: 'text', index: hitIndex };
+      } else {
+        editorState.dragTarget = { type: 'pan' }; // Fallback to pan if no text hit
+      }
+    }
+    else {
+      // Crop/Adjust/Filter mode -> Pan Image
+      editorState.dragTarget = { type: 'pan' };
+    }
+
+  } else if (e.type === 'mousemove') {
+    if (!editorState.isDragging) return;
+
+    const dx = cx - editorState.dragStart.x;
+    const dy = cy - editorState.dragStart.y;
+    editorState.dragStart = { x: cx, y: cy };
+
+    if (editorState.activeTab === 'draw' && editorState.isDrawing) {
+      editorState.currentStroke.points.push({ x: ip.x, y: ip.y });
+      renderEditor();
+    }
+    else if (editorState.dragTarget?.type === 'text') {
+      // Move text (in image space)
+      // We need to convert delta-screen to delta-image
+      const idx = editorState.dragTarget.index;
+      editorState.texts[idx].x += dx / editorState.transform.scale;
+      editorState.texts[idx].y += dy / editorState.transform.scale;
+      renderEditor();
+    }
+    else if (editorState.dragTarget?.type === 'pan') {
+      // Pan Image
+      editorState.transform.x += dx;
+      editorState.transform.y += dy;
+      renderEditor();
+    }
+
   } else if (e.type === 'mouseup' || e.type === 'mouseleave') {
-    if (editorState.isDrawing) {
+    if (editorState.isDragging) {
+      editorState.isDragging = false;
       editorState.isDrawing = false;
+      editorState.dragTarget = null;
       pushHistory();
     }
   }
 }
 
-function applyPresetFilter(name) {
-  // Reset base
-  const reset = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
-
-  if (name === 'grayscale') reset.grayscale = 100;
-  if (name === 'sepia') reset.sepia = 100;
-  if (name === 'invert') reset.invert = 100;
-  if (name === 'warm') reset.warm = 50;
-  if (name === 'cool') reset.cool = 50;
-  if (name === 'vintage') reset.vintage = 60;
-
-  editorState.filters = reset;
+function handleZoom(delta) {
+  // delta > 0 zoom in
+  const factor = delta > 0 ? 1.1 : 0.9;
+  editorState.transform.scale *= factor;
   renderEditor();
-  updateFilterUI();
-
-  // Highlight UI
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  document.querySelector(`.filter-btn[data-filter="${name}"]`)?.classList.add("active");
-  pushHistory();
 }
 
-function applyCrop(ratio) {
+function applyCropRatio(ratio) {
   const img = editorState.originalImage;
-  if (!img) return;
+  const canvas = editorState.canvas;
+  if (!img || !canvas) return;
 
-  if (ratio === 'reset' || ratio === 'free') {
-    editorState.crop = { x: 0, y: 0, w: img.width, h: img.height };
-  } else {
-    // Calculate centered box
+  if (ratio === 'reset') {
+    // Reset Viewport to fit image comfortably
+    const MAX_W = 800;
+    const MAX_H = 600;
+    let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    editorState.transform = { x: 0, y: 0, scale: scale };
+  }
+  else {
+    // Resize CANVAS (Viewport) to target ratio
+    // Keep 'width' fixed or max, adjust height
     const [rw, rh] = ratio.split(':').map(Number);
-    const imgRatio = img.width / img.height;
     const targetRatio = rw / rh;
 
-    let cropW, cropH;
+    // Current canvas width
+    let w = canvas.width;
+    let h = w / targetRatio;
 
-    if (imgRatio > targetRatio) {
-      // Image is wider than target -> Height fits, trim width
-      cropH = img.height;
-      cropW = cropH * targetRatio;
-    } else {
-      // Image is taller -> Width fits, trim height
-      cropW = img.width;
-      cropH = cropW / targetRatio;
-    }
-
-    const cx = (img.width - cropW) / 2;
-    const cy = (img.height - cropH) / 2;
-
-    editorState.crop = { x: cx, y: cy, w: cropW, h: cropH };
+    canvas.height = h;
+    // We don't reset image transform, user can now Pan/Zoom image to fit this window
   }
-
   renderEditor();
   pushHistory();
 }
 
 function addText() {
   const input = $("text-input");
+  const sizeInput = $("text-size-input");
+  const fontInput = $("text-font-input");
+
   const txt = input.value.trim();
   if (!txt) return;
 
+  const size = Number(sizeInput?.value || 40);
+  const font = fontInput?.value || "sans-serif";
+  const color = $("text-color").value || "#ffffff";
+
+  // Add to center of visible viewport
+  // Viewport center in Image Space:
+  const canvas = editorState.canvas;
+  const center = toImageSpace(canvas.width / 2, canvas.height / 2);
+
   editorState.texts.push({
     text: txt,
-    x: 0.5, // Center
-    y: 0.5,
-    color: $("text-color").value || "#ffffff"
+    x: center.x,
+    y: center.y,
+    color,
+    size,
+    font
   });
 
   input.value = "";
@@ -496,17 +571,42 @@ function switchTab(tabId) {
   document.querySelectorAll(".editor-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${tabId}`));
 }
 
+// ---- Colors ----
+const PALETTE = [
+  '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00',
+  '#00ffff', '#ff00ff', '#FFA500', '#800080', '#A52A2A', '#808080'
+];
+
+function generatePalette(containerId, inputId) {
+  const container = $(containerId);
+  if (!container) return;
+  container.innerHTML = PALETTE.map(c => `
+    <div class="color-dot" style="background:${c}" data-color="${c}"></div>
+  `).join('');
+
+  container.querySelectorAll('.color-dot').forEach(d => {
+    d.addEventListener('click', () => {
+      container.querySelectorAll('.color-dot').forEach(x => x.classList.remove('active'));
+      d.classList.add('active');
+      if (inputId) $(inputId).value = d.dataset.color;
+      if (editorState.activeTab === 'draw') editorState.drawColor = d.dataset.color;
+    });
+  });
+}
+
 /* ---------- Binders ---------- */
 function bindEditorEvents() {
   const modal = $("editorModal");
   if (!modal) return;
 
-  // Global listeners
+  // Close / Cancel / Save
   $("closeEditorInv")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
   $("cancelEdit")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
 
   $("saveEdit")?.addEventListener("click", () => {
     if (!editorState.canvas) return;
+    // For final save, we just grab the canvas content as is (WYSIWYG)
+    // Because the canvas IS the crop window.
     editorState.canvas.toBlob((blob) => {
       const editedFile = new File([blob], "edited_" + (editorState.originalImage?.name || "image.jpg"), { type: "image/jpeg" });
       setFileUI(editedFile);
@@ -520,23 +620,35 @@ function bindEditorEvents() {
   $("btnRedo")?.addEventListener("click", redo);
 
   // Tabs
-  document.querySelectorAll(".editor-tab").forEach(b => {
-    b.addEventListener("click", () => switchTab(b.dataset.tab));
-  });
+  document.querySelectorAll(".editor-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
 
   // Filters
   document.querySelectorAll(".filter-btn").forEach(b => {
-    b.addEventListener("click", () => applyPresetFilter(b.dataset.filter));
+    b.addEventListener("click", () => {
+      // Logic for presets
+      const name = b.dataset.filter;
+      // Reset base
+      editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
+      if (name === 'grayscale') editorState.filters.grayscale = 100;
+      if (name === 'sepia') editorState.filters.sepia = 100;
+      if (name === 'invert') editorState.filters.invert = 100;
+      if (name === 'warm') editorState.filters.warm = 50;
+      if (name === 'cool') editorState.filters.cool = 50;
+      if (name === 'vintage') editorState.filters.vintage = 60;
+      renderEditor(); updateFilterUI(); pushHistory();
+      document.querySelectorAll(".filter-btn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+    });
   });
 
-  // Adjust Sliders
+  // Sliders
   const bindSlider = (id, key, suffix = "%") => {
     $(id)?.addEventListener("input", (e) => {
       editorState.filters[key] = Number(e.target.value);
       $(`val-${key}`).textContent = e.target.value + suffix;
       renderEditor();
     });
-    $(id)?.addEventListener("change", () => pushHistory()); // Save history on release
+    $(id)?.addEventListener("change", () => pushHistory());
   };
   bindSlider("rng-brightness", "brightness");
   bindSlider("rng-contrast", "contrast");
@@ -544,48 +656,33 @@ function bindEditorEvents() {
   bindSlider("rng-blur", "blur", "px");
 
   // Crop Buttons
-  document.querySelectorAll("[data-crop]").forEach(b => {
-    b.addEventListener("click", () => applyCrop(b.dataset.crop));
-  });
+  document.querySelectorAll("[data-crop]").forEach(b => b.addEventListener("click", () => applyCropRatio(b.dataset.crop)));
 
-  // Draw Tools
-  const canvas = $("editCanvas");
-  canvas?.addEventListener("mousedown", handleDrawing);
-  canvas?.addEventListener("mousemove", handleDrawing);
-  canvas?.addEventListener("mouseup", handleDrawing);
-  canvas?.addEventListener("mouseleave", handleDrawing);
+  // Colors
+  generatePalette('draw-palette', null); // For Draw
 
-  // Draw colors
-  document.querySelectorAll(".color-dot").forEach(d => {
-    d.addEventListener("click", () => {
-      document.querySelectorAll(".color-dot").forEach(x => x.classList.remove("active"));
-      d.classList.add("active");
-      editorState.drawColor = d.dataset.color;
-    });
-  });
-
-  $("rng-brush")?.addEventListener("input", (e) => {
-    editorState.drawSize = Number(e.target.value);
-    $("val-brush").textContent = e.target.value + "px";
-  });
-
+  $("rng-brush")?.addEventListener("input", (e) => { editorState.drawSize = Number(e.target.value); $("val-brush").textContent = e.target.value + "px"; });
   $("btn-draw-mode")?.addEventListener("click", () => { editorState.drawMode = 'brush'; toast("Brush Mode"); });
   $("btn-erase-mode")?.addEventListener("click", () => { editorState.drawMode = 'erase'; toast("Eraser Mode"); });
-  $("btn-clear-draw")?.addEventListener("click", () => {
-    if (confirm("Clear all drawings?")) {
-      editorState.drawings = [];
-      renderEditor();
-      pushHistory();
-    }
-  });
+  $("btn-clear-draw")?.addEventListener("click", () => { if (confirm("Clear drawing?")) { editorState.drawings = []; renderEditor(); pushHistory(); } });
 
-  // Text Tools
+  // Text
   $("btn-add-text")?.addEventListener("click", addText);
-  $("btn-clear-text")?.addEventListener("click", () => {
-    editorState.texts = [];
-    renderEditor();
-    pushHistory();
-  });
+  $("btn-clear-text")?.addEventListener("click", () => { editorState.texts = []; renderEditor(); pushHistory(); });
+
+  // Canvas Interactions
+  const cvs = $("editCanvas");
+  if (cvs) {
+    cvs.addEventListener("mousedown", handlePointer);
+    cvs.addEventListener("mousemove", handlePointer);
+    cvs.addEventListener("mouseup", handlePointer);
+    cvs.addEventListener("mouseleave", handlePointer);
+    // Wheel zoom
+    cvs.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      handleZoom(e.deltaY < 0 ? 1 : -1);
+    });
+  }
 }
 
 
