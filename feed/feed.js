@@ -105,6 +105,23 @@ function isMenuOpen() {
   return !!elMeMenu && elMeMenu.style.display === "block";
 }
 function bindAvatarMenu() {
+  // Sidebar Logout (Always bind if present)
+  const logoutFn = async () => {
+    try {
+      setMenuOpen(false);
+      setStatus("Logging out…");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = "/auth/login.html";
+    } catch (err) {
+      showDbError("Logout failed", err);
+      setStatus("");
+    }
+  };
+
+  document.getElementById("sidebarLogout")?.addEventListener("click", logoutFn);
+
+  // Avatar Menu (Only bind if elements exist)
   if (!elMeAvatarBtn || !elMeMenu) return;
 
   elMeAvatarBtn.addEventListener("click", (e) => {
@@ -132,21 +149,7 @@ function bindAvatarMenu() {
     window.location.href = "/dashboard/settings.html";
   });
 
-  const logoutFn = async () => {
-    try {
-      setMenuOpen(false);
-      setStatus("Logging out…");
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      window.location.href = "/auth/login.html";
-    } catch (err) {
-      showDbError("Logout failed", err);
-      setStatus("");
-    }
-  };
-
   elMenuLogout?.addEventListener("click", logoutFn);
-  document.getElementById("sidebarLogout")?.addEventListener("click", logoutFn);
 }
 
 /* ---------- Avatar load (top-right) ---------- */
