@@ -79,29 +79,45 @@ DROP POLICY IF EXISTS "Users can update their own notifications" ON notification
 CREATE POLICY "Users can update their own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
 
 -- Community Chat Policies
+DROP POLICY IF EXISTS "Public read access for community_chat" ON community_chat;
 CREATE POLICY "Public read access for community_chat" ON community_chat FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert community_chat" ON community_chat;
 CREATE POLICY "Authenticated users can insert community_chat" ON community_chat FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Conversations Policies
+DROP POLICY IF EXISTS "Users can view conversations they are part of" ON conversations;
 CREATE POLICY "Users can view conversations they are part of" ON conversations FOR SELECT USING (
   EXISTS (SELECT 1 FROM conversation_participants cp WHERE cp.conversation_id = id AND cp.profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Authenticated users can create conversations" ON conversations;
 CREATE POLICY "Authenticated users can create conversations" ON conversations FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Conversation Participants Policies
+DROP POLICY IF EXISTS "Users can view their own participations" ON conversation_participants;
 CREATE POLICY "Users can view their own participations" ON conversation_participants FOR SELECT USING (profile_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users can view participants of their conversations" ON conversation_participants;
 CREATE POLICY "Users can view participants of their conversations" ON conversation_participants FOR SELECT USING (
   conversation_id IN (SELECT conversation_id FROM conversation_participants WHERE profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Users can add themselves or others to conversations" ON conversation_participants;
 CREATE POLICY "Users can add themselves or others to conversations" ON conversation_participants FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Private Messages Policies
+DROP POLICY IF EXISTS "Users can view messages in their conversations" ON private_messages;
 CREATE POLICY "Users can view messages in their conversations" ON private_messages FOR SELECT USING (
   conversation_id IN (SELECT conversation_id FROM conversation_participants WHERE profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Users can insert messages into their conversations" ON private_messages;
 CREATE POLICY "Users can insert messages into their conversations" ON private_messages FOR INSERT WITH CHECK (
   conversation_id IN (SELECT conversation_id FROM conversation_participants WHERE profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Users can update (mark read) messages in their conversations" ON private_messages;
 CREATE POLICY "Users can update (mark read) messages in their conversations" ON private_messages FOR UPDATE USING (
   conversation_id IN (SELECT conversation_id FROM conversation_participants WHERE profile_id = auth.uid())
 );
