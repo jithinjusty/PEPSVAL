@@ -157,50 +157,117 @@
 
   <!-- Image Editor Modal -->
   <div id="editorModal" class="editor-modal" style="display:none;">
+
     <div class="editor-content">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:18px; font-weight:800; background:var(--brand-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Stats & Filters</h3>
-        <button id="closeEditorInv" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+      <div class="editor-header">
+        <h3 class="editor-title">Studio Editor</h3>
+        <div class="editor-header-actions">
+          <button id="btnUndo" class="pv-icon-btn" title="Undo">↩️</button>
+          <button id="btnRedo" class="pv-icon-btn" title="Redo">↪️</button>
+          <button id="closeEditorInv" class="pv-icon-btn">&times;</button>
+        </div>
       </div>
 
-      <div class="editor-preview">
+      <div class="editor-workspace">
         <canvas id="editCanvas"></canvas>
       </div>
 
-      <div class="editor-controls">
-        <div class="editor-slider-wrap">
-          <div class="editor-slider-label">
-            <span>Brightness</span>
-            <span id="val-brightness">100%</span>
+      <!-- Tools Navigation -->
+      <div class="editor-tabs">
+        <button class="editor-tab active" data-tab="filters">Filters</button>
+        <button class="editor-tab" data-tab="adjust">Adjust</button>
+        <button class="editor-tab" data-tab="crop">Crop</button>
+        <button class="editor-tab" data-tab="draw">Draw</button>
+        <button class="editor-tab" data-tab="text">Text</button>
+      </div>
+
+      <!-- Tools Panels -->
+      <div class="editor-panels">
+        <!-- Filters -->
+        <div class="editor-panel active" id="panel-filters">
+          <div class="filter-grid">
+            <button class="filter-btn active" data-filter="normal">Normal</button>
+            <button class="filter-btn" data-filter="grayscale">B&W</button>
+            <button class="filter-btn" data-filter="sepia">Sepia</button>
+            <button class="filter-btn" data-filter="invert">Invert</button>
+            <button class="filter-btn" data-filter="warm">Warm</button>
+            <button class="filter-btn" data-filter="cool">Cool</button>
+            <button class="filter-btn" data-filter="vintage">Vintage</button>
           </div>
-          <input type="range" class="editor-range" id="rng-brightness" min="0" max="200" value="100">
         </div>
-        <div class="editor-slider-wrap">
-          <div class="editor-slider-label">
-            <span>Contrast</span>
-            <span id="val-contrast">100%</span>
+
+        <!-- Adjust -->
+        <div class="editor-panel" id="panel-adjust">
+          <div class="editor-slider-wrap">
+            <div class="editor-slider-label"><span>Brightness</span> <span id="val-brightness">100%</span></div>
+            <input type="range" class="editor-range" id="rng-brightness" min="0" max="200" value="100">
           </div>
-          <input type="range" class="editor-range" id="rng-contrast" min="0" max="200" value="100">
+          <div class="editor-slider-wrap">
+            <div class="editor-slider-label"><span>Contrast</span> <span id="val-contrast">100%</span></div>
+            <input type="range" class="editor-range" id="rng-contrast" min="0" max="200" value="100">
+          </div>
+          <div class="editor-slider-wrap">
+            <div class="editor-slider-label"><span>Saturation</span> <span id="val-saturate">100%</span></div>
+            <input type="range" class="editor-range" id="rng-saturate" min="0" max="200" value="100">
+          </div>
+          <div class="editor-slider-wrap">
+            <div class="editor-slider-label"><span>Blur</span> <span id="val-blur">0px</span></div>
+            <input type="range" class="editor-range" id="rng-blur" min="0" max="10" value="0">
+          </div>
         </div>
-        <div class="editor-slider-wrap">
-          <div class="editor-slider-label">
-            <span>Saturation</span>
-            <span id="val-saturate">100%</span>
+
+        <!-- Crop -->
+        <div class="editor-panel" id="panel-crop">
+          <div class="crop-grid">
+            <button class="pv-btn pv-btn-ghost" data-crop="free">Free</button>
+            <button class="pv-btn pv-btn-ghost" data-crop="1:1">Square (1:1)</button>
+            <button class="pv-btn pv-btn-ghost" data-crop="4:3">4:3</button>
+            <button class="pv-btn pv-btn-ghost" data-crop="16:9">16:9</button>
+            <button class="pv-btn pv-btn-ghost" data-crop="reset">Reset</button>
           </div>
-          <input type="range" class="editor-range" id="rng-saturate" min="0" max="200" value="100">
         </div>
-        <div class="editor-slider-wrap">
-          <div class="editor-slider-label">
-            <span>Sepia</span>
-            <span id="val-sepia">0%</span>
+
+        <!-- Draw -->
+        <div class="editor-panel" id="panel-draw">
+          <div class="draw-controls">
+            <div class="color-picker-row">
+              <div class="color-dot active" style="background:#000000" data-color="#000000"></div>
+              <div class="color-dot" style="background:#ffffff" data-color="#ffffff"></div>
+              <div class="color-dot" style="background:#ff0000" data-color="#ff0000"></div>
+              <div class="color-dot" style="background:#00ff00" data-color="#00ff00"></div>
+              <div class="color-dot" style="background:#0000ff" data-color="#0000ff"></div>
+              <div class="color-dot" style="background:#ffff00" data-color="#ffff00"></div>
+            </div>
+            <div class="editor-slider-wrap">
+              <div class="editor-slider-label"><span>Brush Size</span> <span id="val-brush">5px</span></div>
+              <input type="range" class="editor-range" id="rng-brush" min="1" max="50" value="5">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button id="btn-draw-mode" class="pv-btn pv-btn-primary" style="flex:1">Draw</button>
+              <button id="btn-erase-mode" class="pv-btn pv-btn-ghost" style="flex:1">Erase</button>
+              <button id="btn-clear-draw" class="pv-btn pv-btn-ghost" style="color:var(--danger)">Clear All</button>
+            </div>
           </div>
-          <input type="range" class="editor-range" id="rng-sepia" min="0" max="100" value="0">
+        </div>
+
+        <!-- Text -->
+        <div class="editor-panel" id="panel-text">
+          <div style="display:flex; gap:10px;">
+            <input id="text-input" type="text" class="pv-input" placeholder="Enter text...">
+            <button id="btn-add-text" class="pv-btn pv-btn-primary">Add</button>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+            <span>Color:</span>
+            <input type="color" id="text-color" value="#ffffff">
+            <button id="btn-clear-text" class="pv-btn pv-btn-ghost" style="font-size:12px; margin-left:auto;">Clear
+              Text</button>
+          </div>
         </div>
       </div>
 
       <div class="editor-actions">
         <button id="cancelEdit" class="pv-btn pv-btn-ghost">Cancel</button>
-        <button id="saveEdit" class="pv-btn pv-btn-primary">Apply Filters</button>
+        <button id="saveEdit" class="pv-btn pv-btn-primary">Save & Apply</button>
       </div>
     </div>
   </div>

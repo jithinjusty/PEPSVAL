@@ -176,13 +176,419 @@ async function loadMyAvatar() {
 
 /* ---------- Composer ---------- */
 /* ---------- Image Editor State ---------- */
-let editorImage = new Image();
-let originalFile = null;
-let currentFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0 };
-const canvas = $("editCanvas");
-const ctx = canvas ? canvas.getContext("2d") : null;
+let editorState = {
+  originalImage: null, // HTMLImageElement
+  canvas: null,
+  ctx: null,
+  history: [], // Stack of states
+  historyIndex: -1,
 
-/* ---------- Composer (Updated with Editor) ---------- */
+  // Current State
+  filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 },
+  crop: { x: 0, y: 0, w: 0, h: 0 }, // Relative to original image
+  drawings: [], // Array of strokes { color, size, points: [{x,y},...] }
+  texts: [], // Array of { text, x, y, color, size }
+
+  // UI State
+  activeTab: 'filters',
+  drawColor: '#000000',
+  drawSize: 5,
+  isDrawing: false,
+  drawMode: 'brush', // 'brush', 'erase'
+
+  // Helpers
+  scale: 1, // Canvas display scale
+};
+
+// Undo/Redo Management
+function pushHistory() {
+  const state = {
+    filters: { ...editorState.filters },
+    crop: { ...editorState.crop },
+    drawings: JSON.parse(JSON.stringify(editorState.drawings)),
+    texts: JSON.parse(JSON.stringify(editorState.texts))
+  };
+
+  // Remove future history if we pushed new state
+  if (editorState.historyIndex < editorState.history.length - 1) {
+    editorState.history = editorState.history.slice(0, editorState.historyIndex + 1);
+  }
+
+  editorState.history.push(state);
+  editorState.historyIndex = editorState.history.length - 1;
+  updateUndoRedoUI();
+}
+
+function undo() {
+  if (editorState.historyIndex > 0) {
+    editorState.historyIndex--;
+    restoreState(editorState.history[editorState.historyIndex]);
+    renderEditor();
+    updateUndoRedoUI();
+  }
+}
+
+function redo() {
+  if (editorState.historyIndex < editorState.history.length - 1) {
+    editorState.historyIndex++;
+    restoreState(editorState.history[editorState.historyIndex]);
+    renderEditor();
+    updateUndoRedoUI();
+  }
+}
+
+function restoreState(state) {
+  editorState.filters = { ...state.filters };
+  editorState.crop = { ...state.crop };
+  editorState.drawings = JSON.parse(JSON.stringify(state.drawings));
+  editorState.texts = JSON.parse(JSON.stringify(state.texts));
+
+  // Update UI controls to match state
+  updateFilterUI();
+}
+
+function updateUndoRedoUI() {
+  const undoBtn = $("btnUndo");
+  const redoBtn = $("btnRedo");
+  if (undoBtn) undoBtn.disabled = editorState.historyIndex <= 0;
+  if (redoBtn) redoBtn.disabled = editorState.historyIndex >= editorState.history.length - 1;
+
+  if (undoBtn) undoBtn.style.opacity = undoBtn.disabled ? 0.3 : 1;
+  if (redoBtn) redoBtn.style.opacity = redoBtn.disabled ? 0.3 : 1;
+}
+
+function updateFilterUI() {
+  $("rng-brightness").value = editorState.filters.brightness;
+  $("val-brightness").textContent = editorState.filters.brightness + "%";
+
+  $("rng-contrast").value = editorState.filters.contrast;
+  $("val-contrast").textContent = editorState.filters.contrast + "%";
+
+  $("rng-saturate").value = editorState.filters.saturate;
+  $("val-saturate").textContent = editorState.filters.saturate + "%";
+
+  $("rng-blur").value = editorState.filters.blur;
+  $("val-blur").textContent = editorState.filters.blur + "px";
+
+  // Reset active buttons
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  // (Simple logic: if custom values, maybe no preset is active, handling presets later)
+}
+
+/* ---------- Editor Logic ---------- */
+function initEditor(file) {
+  editorState.canvas = $("editCanvas");
+  editorState.ctx = editorState.canvas.getContext("2d");
+
+  const img = new Image();
+  img.onload = () => {
+    editorState.originalImage = img;
+    // Reset State
+    editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
+    editorState.crop = { x: 0, y: 0, w: img.width, h: img.height };
+    editorState.drawings = [];
+    editorState.texts = [];
+    editorState.history = [];
+    editorState.historyIndex = -1;
+
+    pushHistory(); // Initial state
+
+    // Switch to first tab
+    switchTab('filters');
+
+    // Show Modal
+    const modal = $("editorModal");
+    if (modal) modal.style.display = "flex";
+
+    renderEditor();
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function renderEditor() {
+  if (!editorState.originalImage || !editorState.ctx) return;
+
+  const ctx = editorState.ctx;
+  const img = editorState.originalImage;
+  const crop = editorState.crop;
+
+  // 1. Setup Canvas Size (rendering crop window)
+  // Limit max size for performance
+  const MAX_W = 1200;
+  let dispW = crop.w;
+  let dispH = crop.h;
+  if (dispW > MAX_W) {
+    const r = MAX_W / dispW;
+    dispW = MAX_W;
+    dispH = dispH * r;
+  }
+
+  editorState.canvas.width = dispW;
+  editorState.canvas.height = dispH;
+  editorState.scale = dispW / crop.w;
+
+  // 2. Clear
+  ctx.clearRect(0, 0, dispW, dispH);
+
+  // 3. Apply Filters contextually
+  const f = editorState.filters;
+  let filterString = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) blur(${f.blur}px) sepia(${f.sepia}%) grayscale(${f.grayscale}%) invert(${f.invert}%)`;
+
+  // Manual color matrix simulation for warm/cool/vintage (simplified via overlay or CSS filters)
+  // For standard canvas, CSS filters string is best.
+  // Warm: sepia + saturate
+  // Cool: hue-rotate
+  if (f.warm > 0) filterString += ` sepia(${f.warm * 0.3}%) saturate(${100 + f.warm}%)`;
+  if (f.cool > 0) filterString += ` hue-rotate(-${f.cool * 0.5}deg) saturate(${100 - f.cool * 0.2}%)`;
+  if (f.vintage > 0) filterString += ` sepia(${f.vintage * 0.5}%) contrast(${100 + f.vintage * 0.2}%)`;
+
+  ctx.filter = filterString;
+
+  // 4. Draw Base Image (Cropped)
+  ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, dispW, dispH);
+
+  ctx.filter = "none"; // Reset filter for drawings/text
+
+  // 5. Draw Strokes
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  editorState.drawings.forEach(stroke => {
+    ctx.beginPath();
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size * editorState.scale;
+    if (stroke.isErase) {
+      ctx.globalCompositeOperation = "destination-out"; // Erase
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    // Coords are stored relative to Key Image Size (0..1) or Original Config ?
+    // Let's store coords relative to CROP rect for simplicity or Original Image?
+    // Storing relative to Original Image is robust against recrop, but complex.
+    // Storing relative to Current View (0..1) is easiest.
+    // Let's assume stroke points are normalized (0..1) of the crop window at time of drawing.
+
+    if (stroke.points.length > 0) {
+      // De-normalize
+      ctx.moveTo(stroke.points[0].x * dispW, stroke.points[0].y * dispH);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x * dispW, stroke.points[i].y * dispH);
+      }
+    }
+    ctx.stroke();
+  });
+
+  ctx.globalCompositeOperation = "source-over";
+
+  // 6. Draw Text
+  editorState.texts.forEach(txt => {
+    ctx.fillStyle = txt.color;
+    ctx.font = `bold ${30 * editorState.scale}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(txt.text, txt.x * dispW, txt.y * dispH);
+  });
+}
+
+function handleDrawing(e) {
+  if (editorState.activeTab !== 'draw') return;
+  const rect = editorState.canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+
+  if (e.type === 'mousedown') {
+    editorState.isDrawing = true;
+    editorState.currentStroke = {
+      color: editorState.drawColor,
+      size: editorState.drawSize,
+      isErase: editorState.drawMode === 'erase',
+      points: [{ x, y }]
+    };
+    editorState.drawings.push(editorState.currentStroke);
+    renderEditor();
+  } else if (e.type === 'mousemove' && editorState.isDrawing) {
+    editorState.currentStroke.points.push({ x, y });
+    renderEditor();
+  } else if (e.type === 'mouseup' || e.type === 'mouseleave') {
+    if (editorState.isDrawing) {
+      editorState.isDrawing = false;
+      pushHistory();
+    }
+  }
+}
+
+function applyPresetFilter(name) {
+  // Reset base
+  const reset = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
+
+  if (name === 'grayscale') reset.grayscale = 100;
+  if (name === 'sepia') reset.sepia = 100;
+  if (name === 'invert') reset.invert = 100;
+  if (name === 'warm') reset.warm = 50;
+  if (name === 'cool') reset.cool = 50;
+  if (name === 'vintage') reset.vintage = 60;
+
+  editorState.filters = reset;
+  renderEditor();
+  updateFilterUI();
+
+  // Highlight UI
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`.filter-btn[data-filter="${name}"]`)?.classList.add("active");
+  pushHistory();
+}
+
+function applyCrop(ratio) {
+  const img = editorState.originalImage;
+  if (!img) return;
+
+  if (ratio === 'reset' || ratio === 'free') {
+    editorState.crop = { x: 0, y: 0, w: img.width, h: img.height };
+  } else {
+    // Calculate centered box
+    const [rw, rh] = ratio.split(':').map(Number);
+    const imgRatio = img.width / img.height;
+    const targetRatio = rw / rh;
+
+    let cropW, cropH;
+
+    if (imgRatio > targetRatio) {
+      // Image is wider than target -> Height fits, trim width
+      cropH = img.height;
+      cropW = cropH * targetRatio;
+    } else {
+      // Image is taller -> Width fits, trim height
+      cropW = img.width;
+      cropH = cropW / targetRatio;
+    }
+
+    const cx = (img.width - cropW) / 2;
+    const cy = (img.height - cropH) / 2;
+
+    editorState.crop = { x: cx, y: cy, w: cropW, h: cropH };
+  }
+
+  renderEditor();
+  pushHistory();
+}
+
+function addText() {
+  const input = $("text-input");
+  const txt = input.value.trim();
+  if (!txt) return;
+
+  editorState.texts.push({
+    text: txt,
+    x: 0.5, // Center
+    y: 0.5,
+    color: $("text-color").value || "#ffffff"
+  });
+
+  input.value = "";
+  renderEditor();
+  pushHistory();
+}
+
+function switchTab(tabId) {
+  editorState.activeTab = tabId;
+  document.querySelectorAll(".editor-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
+  document.querySelectorAll(".editor-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${tabId}`));
+}
+
+/* ---------- Binders ---------- */
+function bindEditorEvents() {
+  const modal = $("editorModal");
+  if (!modal) return;
+
+  // Global listeners
+  $("closeEditorInv")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
+  $("cancelEdit")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
+
+  $("saveEdit")?.addEventListener("click", () => {
+    if (!editorState.canvas) return;
+    editorState.canvas.toBlob((blob) => {
+      const editedFile = new File([blob], "edited_" + (editorState.originalImage?.name || "image.jpg"), { type: "image/jpeg" });
+      setFileUI(editedFile);
+      modal.style.display = "none";
+      toast("Image Saved!");
+    }, "image/jpeg", 0.95);
+  });
+
+  // Undo/Redo
+  $("btnUndo")?.addEventListener("click", undo);
+  $("btnRedo")?.addEventListener("click", redo);
+
+  // Tabs
+  document.querySelectorAll(".editor-tab").forEach(b => {
+    b.addEventListener("click", () => switchTab(b.dataset.tab));
+  });
+
+  // Filters
+  document.querySelectorAll(".filter-btn").forEach(b => {
+    b.addEventListener("click", () => applyPresetFilter(b.dataset.filter));
+  });
+
+  // Adjust Sliders
+  const bindSlider = (id, key, suffix = "%") => {
+    $(id)?.addEventListener("input", (e) => {
+      editorState.filters[key] = Number(e.target.value);
+      $(`val-${key}`).textContent = e.target.value + suffix;
+      renderEditor();
+    });
+    $(id)?.addEventListener("change", () => pushHistory()); // Save history on release
+  };
+  bindSlider("rng-brightness", "brightness");
+  bindSlider("rng-contrast", "contrast");
+  bindSlider("rng-saturate", "saturate");
+  bindSlider("rng-blur", "blur", "px");
+
+  // Crop Buttons
+  document.querySelectorAll("[data-crop]").forEach(b => {
+    b.addEventListener("click", () => applyCrop(b.dataset.crop));
+  });
+
+  // Draw Tools
+  const canvas = $("editCanvas");
+  canvas?.addEventListener("mousedown", handleDrawing);
+  canvas?.addEventListener("mousemove", handleDrawing);
+  canvas?.addEventListener("mouseup", handleDrawing);
+  canvas?.addEventListener("mouseleave", handleDrawing);
+
+  // Draw colors
+  document.querySelectorAll(".color-dot").forEach(d => {
+    d.addEventListener("click", () => {
+      document.querySelectorAll(".color-dot").forEach(x => x.classList.remove("active"));
+      d.classList.add("active");
+      editorState.drawColor = d.dataset.color;
+    });
+  });
+
+  $("rng-brush")?.addEventListener("input", (e) => {
+    editorState.drawSize = Number(e.target.value);
+    $("val-brush").textContent = e.target.value + "px";
+  });
+
+  $("btn-draw-mode")?.addEventListener("click", () => { editorState.drawMode = 'brush'; toast("Brush Mode"); });
+  $("btn-erase-mode")?.addEventListener("click", () => { editorState.drawMode = 'erase'; toast("Eraser Mode"); });
+  $("btn-clear-draw")?.addEventListener("click", () => {
+    if (confirm("Clear all drawings?")) {
+      editorState.drawings = [];
+      renderEditor();
+      pushHistory();
+    }
+  });
+
+  // Text Tools
+  $("btn-add-text")?.addEventListener("click", addText);
+  $("btn-clear-text")?.addEventListener("click", () => {
+    editorState.texts = [];
+    renderEditor();
+    pushHistory();
+  });
+}
+
+
 function setFileUI(file) {
   selectedFile = file || null;
 
@@ -201,88 +607,7 @@ function openEditor(file) {
     setFileUI(file);
     return;
   }
-
-  originalFile = file;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    editorImage.src = e.target.result;
-    editorImage.onload = () => {
-      // Show modal
-      const modal = $("editorModal");
-      if (modal) modal.style.display = "flex";
-      // Reset filters
-      currentFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0 };
-      updateFilters();
-      renderCanvas();
-    };
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderCanvas() {
-  if (!canvas || !ctx || !editorImage.src) return;
-
-  // Resize logic to fit canvas
-  const maxWidth = 800; // Limit max resolution for performance
-  const scale = Math.min(1, maxWidth / editorImage.width);
-  const w = editorImage.width * scale;
-  const h = editorImage.height * scale;
-
-  canvas.width = w;
-  canvas.height = h;
-
-  // Apply filters via filter string
-  ctx.filter = `brightness(${currentFilters.brightness}%) contrast(${currentFilters.contrast}%) saturate(${currentFilters.saturate}%) sepia(${currentFilters.sepia}%)`;
-  ctx.drawImage(editorImage, 0, 0, w, h);
-}
-
-function updateFilters() {
-  $("val-brightness").textContent = currentFilters.brightness + "%";
-  $("rng-brightness").value = currentFilters.brightness;
-
-  $("val-contrast").textContent = currentFilters.contrast + "%";
-  $("rng-contrast").value = currentFilters.contrast;
-
-  $("val-saturate").textContent = currentFilters.saturate + "%";
-  $("rng-saturate").value = currentFilters.saturate;
-
-  $("val-sepia").textContent = currentFilters.sepia + "%";
-  $("rng-sepia").value = currentFilters.sepia;
-}
-
-function bindEditorEvents() {
-  const modal = $("editorModal");
-  if (!modal) return;
-
-  // Sliders
-  $("rng-brightness")?.addEventListener("input", (e) => { currentFilters.brightness = e.target.value; updateFilters(); renderCanvas(); });
-  $("rng-contrast")?.addEventListener("input", (e) => { currentFilters.contrast = e.target.value; updateFilters(); renderCanvas(); });
-  $("rng-saturate")?.addEventListener("input", (e) => { currentFilters.saturate = e.target.value; updateFilters(); renderCanvas(); });
-  $("rng-sepia")?.addEventListener("input", (e) => { currentFilters.sepia = e.target.value; updateFilters(); renderCanvas(); });
-
-  // Buttons
-  $("cancelEdit")?.addEventListener("click", () => {
-    modal.style.display = "none";
-    setFileUI(null);
-    elFile.value = "";
-  });
-
-  $("closeEditorInv")?.addEventListener("click", () => {
-    modal.style.display = "none";
-    setFileUI(null);
-    elFile.value = "";
-  });
-
-  $("saveEdit")?.addEventListener("click", () => {
-    if (!canvas) return;
-    canvas.toBlob((blob) => {
-      // create new file from blob
-      const editedFile = new File([blob], "edited_" + originalFile.name, { type: "image/jpeg" });
-      setFileUI(editedFile);
-      modal.style.display = "none";
-      toast("Filters applied!");
-    }, "image/jpeg", 0.9);
-  });
+  initEditor(file); // Use the new initEditor
 }
 
 function bindComposer() {
