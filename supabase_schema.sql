@@ -47,11 +47,19 @@ CREATE TABLE IF NOT EXISTS private_messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- 5. Enable Real-time for all new tables
--- Note: You might need to check if they are already in the publication before running
-ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE community_chat;
-ALTER PUBLICATION supabase_realtime ADD TABLE private_messages;
+-- 5. Enable Real-time for all new tables (Safe implementation)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'notifications') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'community_chat') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE community_chat;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'private_messages') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE private_messages;
+  END IF;
+END $$;
 
 -- 6. Setup RLS Policies
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
