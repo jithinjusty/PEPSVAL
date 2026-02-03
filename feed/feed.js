@@ -772,28 +772,36 @@ async function sendComment(postId, postEl) {
   }
 
   try {
-    const { error } = await supabase.from("post_comments").insert([{
+    let res = await supabase.from("post_comments").insert([{
       post_id: pid,
       user_id: me.id,
       body: txt,
       parent_id: parentId,
       created_at: new Date().toISOString()
-    }]);
+    }]).select().single();
 
-    if (error) {
+    if (res.error) {
       // fallback for older schema
-      const { error: fallbackErr } = await supabase.from("post_comments").insert([{
+      res = await supabase.from("post_comments").insert([{
         post_id: pid,
         user_id: me.id,
         content: txt
-      }]);
-      if (fallbackErr) throw fallbackErr;
+      }]).select().single();
     }
 
-    // After successful DB insert, we don't need to do anything because the Realtime listener 
-    // will pick it up or the optimistic UI is already there. 
-    // Actually, to avoid duplicates (optimistic + realtime), we should handle that in the realtime listener.
-    // For now, let's just toast and move on.
+    if (res.error) throw res.error;
+
+    // IMMEDIATE ID SWAP (Fixes delete/like on fresh comments)
+    const realId = res.data?.id;
+    if (realId && list) {
+      const tempRow = list.querySelector(`[data-comment-id="${mockComment.id}"]`);
+      if (tempRow) {
+        tempRow.setAttribute("data-comment-id", realId);
+        tempRow.querySelectorAll(`[data-comment-id="${mockComment.id}"]`).forEach(el => el.setAttribute("data-comment-id", realId));
+
+        // Just in case we have to update children parent-ids (unlikely for a new leaf, but good practice)
+      }
+    }
 
     if (ownerId && ownerId !== me.id) {
       const senderName = me.profile?.full_name || "Someone";
@@ -802,7 +810,7 @@ async function sendComment(postId, postEl) {
 
   } catch (e) {
     // rollback optimistic UI: find the temp row
-    const tempRow = list?.querySelector(`[data-comment-id^="temp-"]`);
+    const tempRow = list?.querySelector(`[data-comment-id="${mockComment.id}"]`);
     tempRow?.remove();
 
     if (countEl) countEl.textContent = String(Math.max(0, Number(countEl.textContent || "1") - 1));
@@ -851,6 +859,19 @@ async function toggleCommentLike(commentId, btn) {
 
 
 async function deleteComment(commentId, rowEl) {
+  if (!commentId) return;
+
+  // Guard against temp IDs (optimistic UI)
+  if (String(commentId).startsWith("temp-")) {
+    const list = rowEl.closest('.pv-commentsList');
+    rowEl.remove();
+    if (list) {
+      const replies = list.querySelectorAll(`.pv-commentRow[data-parent-id="${commentId}"]`);
+      replies.forEach(r => r.remove());
+    }
+    return; // Do not call DB
+  }
+
   if (!confirm("Delete this comment?")) return;
   try {
     const { error } = await supabase.from("post_comments").delete().eq("id", commentId).eq("user_id", me.id);
