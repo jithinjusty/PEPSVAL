@@ -10,7 +10,6 @@ const sendBtn = document.getElementById("sendBtn");
 const emojiBtn = document.getElementById("emojiBtn");
 const emojiPicker = document.getElementById("emojiPicker");
 const emojiGrid = document.getElementById("emojiGrid");
-const attachBtn = document.getElementById("attachBtn");
 const voiceBtn = document.getElementById("voiceBtn");
 const notifCount = document.getElementById("notifCount");
 
@@ -27,6 +26,14 @@ let currentOtherId = null;
 let globalSub = null;
 let activeChatSub = null;
 let communitySub = null;
+
+// Toggle between voice and send button based on input
+function toggleSendVoiceButton() {
+  const hasText = chatInput && chatInput.value.trim().length > 0;
+  console.log('Toggle called:', hasText ? 'HAS TEXT' : 'NO TEXT', sendBtn, voiceBtn);
+  if (sendBtn) sendBtn.style.display = hasText ? 'flex' : 'none';
+  if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
+}
 
 // Emoji data
 const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '👻', '👽', '🤖', '💩', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁', '👅', '👄', '💋', '🩸'];
@@ -64,13 +71,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Toggle between voice and send button based on input
-function toggleSendVoiceButton() {
-  const hasText = chatInput && chatInput.value.trim().length > 0;
-  if (sendBtn) sendBtn.style.display = hasText ? 'flex' : 'none';
-  if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
-}
-
 // Input change listener
 if (chatInput) {
   chatInput.addEventListener('input', toggleSendVoiceButton);
@@ -84,13 +84,6 @@ if (chatInput) {
       }
     }
   });
-}
-
-// Attachment button (placeholder)
-if (attachBtn) {
-  attachBtn.onclick = () => {
-    alert('File upload coming soon! For now, you can send text messages and emojis.');
-  };
 }
 
 // Voice button (placeholder for audio recording)
