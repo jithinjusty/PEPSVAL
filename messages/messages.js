@@ -29,14 +29,19 @@ if (tabMessages) tabMessages.onclick = () => switchTab("messages");
 if (tabNotifications) tabNotifications.onclick = () => switchTab("notifications");
 
 async function switchTab(tab) {
-  if (currentTab === tab && tab !== "messages") return; // Allow re-click on messages to go back to list
-
-  // If clicking "messages" while in a chat, go back to list
-  if (tab === "messages" && currentConversationId && currentTab === "messages") {
-    currentConversationId = null;
-    currentOtherId = null;
-  } else if (tab !== "messages") {
-    currentConversationId = null;
+  // If clicking "messages" while ALREADY in "messages" tab:
+  if (currentTab === "messages" && tab === "messages") {
+    // If we are in a conversation, go back to list
+    if (currentConversationId) {
+      currentConversationId = null;
+      currentOtherId = null;
+      // re-render list
+      updateTabUI();
+      loadConversations();
+      return;
+    }
+    // If not in conversation, do nothing (already at list)
+    return;
   }
 
   currentTab = tab;
@@ -50,8 +55,12 @@ async function switchTab(tab) {
 
   if (tab === "community") loadCommunity();
   else if (tab === "messages") {
-    if (currentConversationId) loadPrivateChat(currentConversationId);
-    else loadConversations();
+    // If we have a conversation ID (e.g. from acceptRequest or URL), load it
+    if (currentConversationId) {
+      loadPrivateChat(currentConversationId);
+    } else {
+      loadConversations();
+    }
   }
   else if (tab === "notifications") loadNotifications();
 }
