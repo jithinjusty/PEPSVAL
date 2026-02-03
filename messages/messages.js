@@ -29,18 +29,27 @@ if (tabMessages) tabMessages.onclick = () => switchTab("messages");
 if (tabNotifications) tabNotifications.onclick = () => switchTab("notifications");
 
 async function switchTab(tab) {
-  // If clicking "messages" while ALREADY in "messages" tab:
+  console.log('switchTab called:', tab, 'currentTab:', currentTab, 'currentConversationId:', currentConversationId);
+
+  // If clicking "messages" tab when ALREADY viewing messages tab:
   if (currentTab === "messages" && tab === "messages") {
-    // If we are in a conversation, go back to list
+    // If we are in a conversation AND currentConversationId is still set, go back to list
+    // (This handles the case of clicking the Messages tab button while in a chat)
     if (currentConversationId) {
-      currentConversationId = null;
-      currentOtherId = null;
-      // re-render list
-      updateTabUI();
-      loadConversations();
+      console.log('Already in messages tab with conversation open - checking if we should go back to list');
+      // Check if this is a tab click (no new ID being set) vs a conversation item click
+      // If conversation item click happened, currentConversationId was just updated
+      // So we should proceed to load that chat, not go back
+      // This is a bit tricky - we need to differentiate between:
+      // 1. User clicking the "Messages" tab button (should go back to list)
+      // 2. User clicking a conversation item (should open that chat)
+      // The conversation click sets currentConversationId BEFORE calling switchTab
+      // So we can't distinguish here. Let's just load the chat if ID is set.
+      loadPrivateChat(currentConversationId);
       return;
     }
     // If not in conversation, do nothing (already at list)
+    console.log('Already at messages list, doing nothing');
     return;
   }
 
@@ -57,8 +66,10 @@ async function switchTab(tab) {
   else if (tab === "messages") {
     // If we have a conversation ID (e.g. from acceptRequest or URL), load it
     if (currentConversationId) {
+      console.log('Loading private chat:', currentConversationId);
       loadPrivateChat(currentConversationId);
     } else {
+      console.log('Loading conversations list');
       loadConversations();
     }
   }
