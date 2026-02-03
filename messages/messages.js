@@ -137,7 +137,10 @@ function updateTabUI() {
 
   // Input visibility
   const showInput = (currentTab === "community") || (currentTab === "messages" && currentConversationId);
-  if (chatInputWrap) chatInputWrap.style.display = showInput ? "flex" : "none";
+  if (chatInputWrap) {
+    chatInputWrap.style.display = showInput ? "block" : "none";
+    console.log('Chat input visibility:', showInput ? 'VISIBLE' : 'HIDDEN', 'currentTab:', currentTab, 'convId:', currentConversationId);
+  }
 }
 
 async function initLoad() {
@@ -513,6 +516,9 @@ async function loadPrivateChat(convId) {
       }
     })
     .subscribe();
+
+  // IMPORTANT: Update UI to show input
+  updateTabUI();
 }
 
 function renderPrivateMessage(m, container = list) {
