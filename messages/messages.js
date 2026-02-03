@@ -40,6 +40,7 @@ if (emojiGrid) {
     btn.onclick = () => {
       chatInput.value += emoji;
       chatInput.focus();
+      toggleSendVoiceButton();
       if (emojiPicker) emojiPicker.style.display = 'none';
     };
     emojiGrid.appendChild(btn);
@@ -63,6 +64,28 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Toggle between voice and send button based on input
+function toggleSendVoiceButton() {
+  const hasText = chatInput && chatInput.value.trim().length > 0;
+  if (sendBtn) sendBtn.style.display = hasText ? 'flex' : 'none';
+  if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
+}
+
+// Input change listener
+if (chatInput) {
+  chatInput.addEventListener('input', toggleSendVoiceButton);
+
+  // Enter key to send
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (sendBtn && chatInput.value.trim()) {
+        sendBtn.click();
+      }
+    }
+  });
+}
+
 // Attachment button (placeholder)
 if (attachBtn) {
   attachBtn.onclick = () => {
@@ -70,10 +93,10 @@ if (attachBtn) {
   };
 }
 
-// Voice button (placeholder)
+// Voice button (placeholder for audio recording)
 if (voiceBtn) {
   voiceBtn.onclick = () => {
-    alert('Voice messages coming soon!');
+    alert('Voice recording feature coming soon! For now, you can type messages or use emojis.');
   };
 }
 
@@ -660,6 +683,7 @@ if (sendBtn) sendBtn.onclick = async () => {
   if (!text || !currentUser) return;
 
   chatInput.value = ""; // Clear immediately
+  toggleSendVoiceButton(); // Toggle back to voice button
 
   if (currentTab === "community") {
     const { error } = await supabase.from("community_chat").insert({ profile_id: currentUser.id, content: text });

@@ -79,16 +79,7 @@
         <!-- Chat Input (Instagram Style) -->
         <div id="chatInputWrap" class="chatInputWrap" style="display:none;">
           <div class="chat-input-container">
-            <!-- Attachment Button -->
-            <button id="attachBtn" class="icon-btn" title="Attach file" type="button">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="16" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
-            </button>
-
-            <!-- Text Input -->
+            <!-- Text Input with Emoji -->
             <div class="input-field-wrapper">
               <input id="chatInput" type="text" placeholder="Message..." autocomplete="off" />
 
@@ -104,7 +95,7 @@
             </div>
 
             <!-- Voice/Send Button (toggles based on input) -->
-            <button id="voiceBtn" class="icon-btn" title="Voice message" type="button" style="display:none;">
+            <button id="voiceBtn" class="icon-btn" title="Voice message" type="button">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -113,7 +104,7 @@
               </svg>
             </button>
 
-            <button id="sendBtn" class="send-btn" type="button">
+            <button id="sendBtn" class="send-btn" type="button" style="display:none;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
               </svg>
@@ -123,6 +114,20 @@
           <!-- Emoji Picker Popup -->
           <div id="emojiPicker" class="emoji-picker" style="display:none;">
             <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
+
+          <!-- Voice Recording UI -->
+          <div id="voiceRecordingUI" class="voice-recording-ui" style="display:none;">
+            <div class="recording-indicator">
+              <div class="pulse-dot"></div>
+              <span id="recordingTime">0:00</span>
+            </div>
+            <button id="cancelRecording" class="cancel-btn" type="button">Cancel</button>
+            <button id="sendRecording" class="send-recording-btn" type="button">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
