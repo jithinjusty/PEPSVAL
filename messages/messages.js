@@ -7,6 +7,11 @@ const tabNotifications = document.getElementById("tabNotifications");
 const chatInputWrap = document.getElementById("chatInputWrap");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
+const emojiBtn = document.getElementById("emojiBtn");
+const emojiPicker = document.getElementById("emojiPicker");
+const emojiGrid = document.getElementById("emojiGrid");
+const attachBtn = document.getElementById("attachBtn");
+const voiceBtn = document.getElementById("voiceBtn");
 const notifCount = document.getElementById("notifCount");
 
 const currentUrlParams = new URLSearchParams(window.location.search);
@@ -22,6 +27,55 @@ let currentOtherId = null;
 let globalSub = null;
 let activeChatSub = null;
 let communitySub = null;
+
+// Emoji data
+const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '👻', '👽', '🤖', '💩', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁', '👅', '👄', '💋', '🩸'];
+
+// Populate emoji grid
+if (emojiGrid) {
+  emojis.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.type = 'button';
+    btn.onclick = () => {
+      chatInput.value += emoji;
+      chatInput.focus();
+      if (emojiPicker) emojiPicker.style.display = 'none';
+    };
+    emojiGrid.appendChild(btn);
+  });
+}
+
+// Emoji picker toggle
+if (emojiBtn) {
+  emojiBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (emojiPicker) {
+      emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+    }
+  };
+}
+
+// Close emoji picker on outside click
+document.addEventListener('click', (e) => {
+  if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPicker.style.display = 'none';
+  }
+});
+
+// Attachment button (placeholder)
+if (attachBtn) {
+  attachBtn.onclick = () => {
+    alert('File upload coming soon! For now, you can send text messages and emojis.');
+  };
+}
+
+// Voice button (placeholder)
+if (voiceBtn) {
+  voiceBtn.onclick = () => {
+    alert('Voice messages coming soon!');
+  };
+}
 
 // Tab switching
 if (tabCommunity) tabCommunity.onclick = () => switchTab("community");
