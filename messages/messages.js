@@ -227,23 +227,26 @@ function createCommunityMsgEl(m) {
 
 // --- PRIVATE LIST ---
 async function loadConversations() {
+  if (!list) return;
+  list.innerHTML = ""; // Clear immediately to avoid duplicates visual
+
   const { data: convs, error } = await supabase
     .from("conversation_participants")
     .select(`conversation_id`)
     .eq("profile_id", currentUser.id);
 
-  if (!list) return;
-
   if (!convs || convs.length === 0) {
-    list.innerHTML = `<div class="item muted" style="text-align:center; padding: 40px;">No messages yet.<br>Visit profiles to start chatting.</div>`;
+    list.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:300px; color:var(--text-muted);">
+        <div style="font-size:48px; margin-bottom:12px;">Waiting...</div>
+        <div>No messages yet.</div>
+        <div style="font-size:13px; margin-top:6px;">Connect with other users to start chatting!</div>
+      </div>`;
     return;
   }
 
-  list.innerHTML = "";
-
-  const items = [];
-
-  for (const c of convs) {
+  // Fetch details for all conversations in parallel
+  const promises = convs.map(async (c) => {
     // 1. Get other participant
     const { data: parts } = await supabase
       .from("conversation_participants")
@@ -251,7 +254,7 @@ async function loadConversations() {
       .eq("conversation_id", c.conversation_id);
 
     const other = parts?.find(p => p.profiles.id !== currentUser.id)?.profiles;
-    if (!other) continue;
+    if (!other) return null;
 
     // 2. Get last message
     const { data: msgs } = await supabase
@@ -262,50 +265,69 @@ async function loadConversations() {
       .limit(1);
 
     const lastMsg = msgs?.[0];
-    items.push({
+    return {
       convId: c.conversation_id,
       other,
       lastMsg
-    });
-  }
+    };
+  });
 
-  // Sort by latest activity
-  items.sort((a, b) => {
+  const results = await Promise.all(promises);
+  // Filter nulls and sort
+  const items = results.filter(i => i !== null).sort((a, b) => {
     const tA = new Date(a.lastMsg?.created_at || 0).getTime();
     const tB = new Date(b.lastMsg?.created_at || 0).getTime();
     return tB - tA;
   });
 
+  // Unique Check (Defensive UI)
+  const seenIds = new Set();
+
   items.forEach(item => {
+    if (seenIds.has(item.convId)) return;
+    seenIds.add(item.convId);
+
     const div = document.createElement("div");
-    div.className = "item";
-    div.style.cursor = "pointer";
+    div.className = "item pv-chat-item"; // Use new class for better styling
+    // Instagram-like Styling
+    div.style.cssText = `
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; cursor: pointer;
+      transition: background 0.2s ease;
+      border-bottom: 1px solid var(--stroke);
+    `;
+    div.onmouseover = () => div.style.background = "var(--bg-hover)";
+    div.onmouseout = () => div.style.background = "transparent";
+
     div.onclick = () => {
+      // Visual feedback
+      div.style.background = "var(--brand-light)";
       currentConversationId = item.convId;
       currentOtherId = item.other.id;
       switchTab("messages");
     };
 
-    const initial = (item.other.full_name || "?")[0];
+    const initial = (item.other.full_name || "?")[0].toUpperCase();
     const preview = item.lastMsg ? (item.lastMsg.sender_id === currentUser.id ? "You: " : "") + item.lastMsg.content : "Start a conversation";
-    const time = item.lastMsg ? formatTime(item.lastMsg.created_at) : "";
+    const time = item.lastMsg ? formatTimeSmart(item.lastMsg.created_at) : "";
     const isUnread = item.lastMsg && !item.lastMsg.is_read && item.lastMsg.sender_id !== currentUser.id;
 
     div.innerHTML = `
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:48px; height:48px; border-radius:14px; background:var(--brand-light); color:var(--brand); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; flex-shrink:0;">
-          ${item.other.avatar_url ? `<img src="${item.other.avatar_url}" style="width:100%; height:100%; border-radius:14px; object-fit:cover;">` : initial}
+      <div style="position:relative;">
+         <div style="width:52px; height:52px; border-radius:50%; background:var(--brand-light); color:var(--brand); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; flex-shrink:0; overflow:hidden;">
+            ${item.other.avatar_url ? `<img src="${item.other.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : initial}
+         </div>
+         ${isUnread ? `<div style="position:absolute; bottom:2px; right:2px; width:12px; height:12px; background:var(--brand); border:2px solid #fff; border-radius:50%;"></div>` : ''}
+      </div>
+      
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+          <h4 style="margin:0; font-size:16px; font-weight:${isUnread ? '700' : '600'}; color:var(--text-main);">${escapeHtml(item.other.full_name)}</h4>
+          <span style="font-size:11px; color:${isUnread ? 'var(--brand)' : 'var(--text-muted)'}; font-weight:${isUnread ? '700' : '400'};">${time}</span>
         </div>
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <h4 style="margin:0; font-size:15px; font-weight:700; color:var(--text-main);">${item.other.full_name}</h4>
-            <span style="font-size:11px; color:var(--text-muted);">${time}</span>
-          </div>
-          <p style="margin:2px 0 0; font-size:13px; color: ${isUnread ? 'var(--text-main)' : 'var(--text-muted)'}; font-weight: ${isUnread ? '700' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml(preview)}
-          </p>
-        </div>
-        ${isUnread ? `<div style="width:10px; height:10px; background:var(--brand); border-radius:50%;"></div>` : ''}
+        <p style="margin:0; font-size:14px; color: ${isUnread ? 'var(--text-main)' : 'var(--text-muted)'}; font-weight: ${isUnread ? '600' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${escapeHtml(preview)}
+        </p>
       </div>
     `;
     list.appendChild(div);
@@ -316,31 +338,70 @@ async function loadConversations() {
 async function loadPrivateChat(convId) {
   if (chatInput) chatInput.placeholder = "Message...";
   if (!list) return;
-  list.innerHTML = ""; // Clear list
+
+  // Loading state
+  list.innerHTML = `
+    <div style="display:flex; flex-direction:column; height:100%; justify-content:center; align-items:center; color:var(--text-muted);">
+      <div class="spinner"></div>
+      <div style="margin-top:10px; font-size:14px;">Loading Chat...</div>
+    </div>`;
 
   // Fetch Header info (Other user)
-  if (!currentOtherId) {
+  let otherUser = null;
+  if (currentOtherId) {
+    // If we already have the ID (e.g. from list click), fetch details quickly if needed
+    // But usually we want fresh data
+    const { data: prof } = await supabase.from("profiles").select("id, full_name, avatar_url, rank").eq("id", currentOtherId).single();
+    otherUser = prof;
+  } else {
+    // Fallback if we only have convId
     const { data: parts } = await supabase
       .from("conversation_participants")
-      .select(`profiles:profile_id (id, full_name)`)
+      .select(`profiles:profile_id (id, full_name, avatar_url, rank)`)
       .eq("conversation_id", convId);
-    const other = parts?.find(p => p.profiles.id !== currentUser.id)?.profiles;
-    if (other) {
-      currentOtherId = other.id;
-      if (chatInput) chatInput.placeholder = `Message ${other.full_name}...`;
-    }
+    otherUser = parts?.find(p => p.profiles.id !== currentUser.id)?.profiles;
+    if (otherUser) currentOtherId = otherUser.id;
   }
 
-  // Back Button
-  const backDiv = document.createElement("div");
-  backDiv.className = "item";
-  backDiv.style = "background:transparent; border:none; padding:10px 0; margin-bottom:10px; cursor:pointer; color:var(--text-muted); font-size:14px; font-weight:600;";
-  backDiv.innerHTML = "&#8592; Back";
-  backDiv.onclick = () => {
-    currentConversationId = null;
-    switchTab("messages");
-  };
-  list.appendChild(backDiv);
+  // Clear loading
+  list.innerHTML = "";
+
+  // 1. Sticky Header
+  if (otherUser) {
+    if (chatInput) chatInput.placeholder = `Message ${otherUser.full_name}...`;
+
+    // Create a slick header
+    const header = document.createElement("div");
+    header.style.cssText = `
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--stroke);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+    `;
+    header.innerHTML = `
+      <button id="chatBackBtn" style="background:none; border:none; padding:8px; margin-left:-8px; cursor:pointer; color:var(--text-main); font-size:18px;">&#8592;</button>
+      <div style="width:36px; height:36px; border-radius:50%; background:var(--brand-light); overflow:hidden;">
+        ${otherUser.avatar_url ? `<img src="${otherUser.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : `<div style="display:flex;justify-content:center;align-items:center;height:100%;color:var(--brand);font-weight:700;">${otherUser.full_name[0]}</div>`}
+      </div>
+      <div>
+        <div style="font-weight:700; font-size:15px; color:var(--text-main); line-height:1.2;">${escapeHtml(otherUser.full_name)}</div>
+        <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(otherUser.rank || "Pepsval Member")}</div>
+      </div>
+    `;
+    list.appendChild(header);
+
+    // Bind back button
+    header.querySelector("#chatBackBtn").onclick = () => {
+      currentConversationId = null;
+      switchTab("messages");
+    };
+  }
+
+  // Container for messages
+  const msgContainer = document.createElement("div");
+  msgContainer.style.cssText = "padding: 16px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 80px;"; // Padding for input
+  list.appendChild(msgContainer);
 
   // Messages
   const { data, error } = await supabase
@@ -350,7 +411,8 @@ async function loadPrivateChat(convId) {
     .order("created_at", { ascending: true });
 
   if (data) {
-    data.forEach(renderPrivateMessage);
+    // Group by Date? For now just render
+    data.forEach(m => renderPrivateMessage(m, msgContainer));
     window.scrollTo(0, document.body.scrollHeight);
   }
 
@@ -364,7 +426,7 @@ async function loadPrivateChat(convId) {
   // Subscribe
   activeChatSub = supabase.channel(`dm_${convId}`)
     .on('postgres_changes', { event: 'INSERT', table: 'private_messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
-      renderPrivateMessage(payload.new);
+      renderPrivateMessage(payload.new, msgContainer);
       window.scrollTo(0, document.body.scrollHeight);
       // Mark as read immediately if looking
       if (payload.new.sender_id !== currentUser.id) {
@@ -374,16 +436,44 @@ async function loadPrivateChat(convId) {
     .subscribe();
 }
 
-function renderPrivateMessage(m) {
-  if (!list) return;
+function renderPrivateMessage(m, container = list) {
+  if (!container) return;
   const isMe = m.sender_id === currentUser.id;
   const div = document.createElement("div");
   div.className = `msg-row ${isMe ? 'me' : ''}`;
-  div.innerHTML = `
-    <div class="msg-bubble">${escapeHtml(m.content)}</div>
-    <div class="msg-info"><span>${formatTime(m.created_at)}</span></div>
+
+  // Premium Bubble Styling
+  div.style.cssText = `
+    display: flex; 
+    flex-direction: column; 
+    align-items: ${isMe ? 'flex-end' : 'flex-start'};
+    max-width: 100%;
+    animation: fadeIn 0.2s ease-out;
   `;
-  list.appendChild(div);
+
+  const bubbleColor = isMe ? 'var(--brand)' : 'var(--bg-body-secondary, #f0f2f5)';
+  const textColor = isMe ? '#fff' : 'var(--text-main)';
+
+  div.innerHTML = `
+    <div style="
+      background: ${bubbleColor}; 
+      color: ${textColor};
+      padding: 8px 14px; 
+      border-radius: 18px; 
+      border-${isMe ? 'bottom-right' : 'bottom-left'}-radius: 4px;
+      font-size: 15px; 
+      line-height: 1.5;
+      max-width: 75%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
+    ">
+      ${escapeHtml(m.content)}
+    </div>
+    <div style="font-size:10px; color:var(--text-muted); margin-top:4px; margin-${isMe ? 'right' : 'left'}: 4px;">
+      ${formatTimeSmart(m.created_at)}
+    </div>
+  `;
+  container.appendChild(div);
 }
 
 // --- NOTIFICATIONS ---
@@ -529,6 +619,24 @@ function formatTime(iso) {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function formatTimeSmart(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return "Just now";
+  if (diffMin < 60) return `${diffMin}m`;
+  if (diffHour < 24) return `${diffHour}h`;
+  if (diffDay < 7) return `${diffDay}d`;
+
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 function escapeHtml(text) {
