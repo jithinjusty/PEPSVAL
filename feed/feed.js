@@ -1,12 +1,12 @@
 ﻿import { supabase, getCurrentUser, sendNotification } from "/js/supabase.js";
 
 /* =========================================================
-   PEPSVAL FEED â€” FINAL BUG-FIX BUILD
+   PEPSVAL FEED — FINAL BUG-FIX BUILD
    - Robust avatar everywhere
    - Avatar menu: settings + logout
    - Posts: create (media upload), delete
    - Likes + comments: instant update (no reload)
-   - Comment likes + delete: safe (wonâ€™t crash if table/policy missing)
+   - Comment likes + delete: safe (won’t crash if table/policy missing)
    - Clear on-screen errors when Supabase blocks (RLS/policy)
 ========================================================= */
 
@@ -84,7 +84,7 @@ function safeDate(v) {
 function showDbError(prefix, err) {
   const msg = err?.message || String(err || "Unknown error");
   console.error(prefix, err);
-  setStatus(`âŒ ${prefix}: ${msg}`);
+  setStatus(`❌ ${prefix}: ${msg}`);
   toast(`${prefix}: ${msg}`);
 }
 
@@ -92,7 +92,7 @@ function showDbError(prefix, err) {
 async function requireLogin() {
   me = await getCurrentUser();
   if (!me) {
-    toast("Not logged in â€” redirecting");
+    toast("Not logged in — redirecting");
     window.location.href = "/auth/login.html";
     return false;
   }
@@ -112,7 +112,7 @@ function bindAvatarMenu() {
   const logoutFn = async () => {
     try {
       setMenuOpen(false);
-      setStatus("Logging outâ€¦");
+      setStatus("Logging out…");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       window.location.href = "/auth/login.html";
@@ -236,14 +236,14 @@ async function uploadMedia(file) {
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${me.id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
 
-  showProgress(true, "Preparingâ€¦", 0);
+  showProgress(true, "Preparing…", 0);
 
   // Faux progress animation
   let pct = 0;
   const simulateInterval = setInterval(() => {
     pct += Math.random() * 10; // random increment
     if (pct > 90) pct = 90; // cap at 90 until real completion
-    showProgress(true, "Uploadingâ€¦", Math.round(pct));
+    showProgress(true, "Uploading…", Math.round(pct));
   }, 200);
 
   try {
@@ -255,7 +255,7 @@ async function uploadMedia(file) {
 
     // Success -> jump to 100
     clearInterval(simulateInterval);
-    showProgress(true, "Finalizingâ€¦", 100);
+    showProgress(true, "Finalizing…", 100);
 
     const { data: pub } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     const url = pub?.publicUrl || null;
@@ -371,7 +371,7 @@ async function fetchComments(postIds) {
   return { counts, byPost };
 }
 
-/* comment_likes is optional; donâ€™t crash if missing */
+/* comment_likes is optional; don’t crash if missing */
 async function fetchCommentLikes(commentIds) {
   const counts = new Map();
   const mine = new Set();
@@ -432,10 +432,10 @@ function renderCommentRow(c, profMap, cLikeInfo) {
         <div class="pv-commentText">${esc(text)}</div>
         <div class="pv-commentActions">
           ${clAvail ? `<button class="pv-commentActionBtn ${clMine ? 'active' : ''}" data-action="likeComment" data-comment-id="${esc(c.id)}">
-            ${clMine ? 'â¤ï¸' : 'ðŸ¤'} <span class="action-count">${clCount}</span>
+            ${clMine ? '&#10084;&#65039;' : '&#129309;'} <span class="action-count">${clCount}</span>
           </button>` : ``}
-          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}"><span>ðŸ’¬</span> Reply</button>
-          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}" style="color:var(--danger)"><span>ðŸ—‘ï¸</span> Delete</button>` : ``}
+          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}"><span>&#128172;</span> Reply</button>
+          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}" style="color:var(--danger)"><span>&#128465;</span> Delete</button>` : ``}
         </div>
       </div>
     </div>
@@ -494,8 +494,8 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const prof = uid ? (profMap.get(uid) || {}) : {};
     const name = prof.full_name || "Seafarer";
     const avatar = prof.avatar_url || "";
-    const rank = prof.rank ? ` â€¢ ${esc(prof.rank)}` : "";
-    const country = prof.country ? ` â€¢ ${esc(prof.country)}` : "";
+    const rank = prof.rank ? ` &bull; ${esc(prof.rank)}` : "";
+    const country = prof.country ? ` &bull; ${esc(prof.country)}` : "";
 
     const text = getPostText(p, ks);
     const media = getPostMedia(p, ks);
@@ -527,25 +527,25 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
           <div class="pv-postRight" style="display:flex; align-items:center; gap:8px;">
              <div style="display:flex; flex-direction:column; align-items:flex-end;">
                 <div class="pv-time" style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${esc(safeDate(created))}</div>
-                ${visibility === 'private' ? '<div class="post-visibility-badge" style="font-size:10px;">🔒 Private</div>' : ''}
+                ${visibility === 'private' ? '<div class="post-visibility-badge" style="font-size:10px;">&#128274; Private</div>' : ''}
              </div>
              <div class="post-menu-wrap">
                <button class="post-menu-btn" data-action="toggleMenu" style="padding:4px;">&#8942;</button>
                <div class="post-menu-dropdown">
                  ${isMine ? `
                    <button class="post-menu-item" data-action="deletePost">
-                     <span>🗑️</span> Delete
+                     <span>&#128465;</span> Delete
                    </button>
                    <div class="post-menu-divider"></div>
                    <button class="post-menu-item" data-action="setVisibility" data-value="public">
-                     <span>🌍</span> Make Public
+                     <span>&#127757;</span> Make Public
                    </button>
                    <button class="post-menu-item" data-action="setVisibility" data-value="private">
-                      <span>🔒</span> Make Private
+                      <span>&#128274;</span> Make Private
                    </button>
                  ` : `
                    <button class="post-menu-item danger" data-action="reportPost">
-                      <span>🚩</span> Report
+                      <span>&#128681;</span> Report
                    </button>
                  `}
                </div>
@@ -558,17 +558,17 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
 
         <div class="pv-actions">
           <button class="pv-actionBtn ${iLiked ? 'active' : ''}" data-action="toggleLike">
-            <span class="action-icon">${iLiked ? 'â¤ï¸' : 'ðŸ¤'}</span>
+            <span class="action-icon">${iLiked ? '&#10084;&#65039;' : '&#129309;'}</span>
             <span>Like</span>
             <span data-like-count>${likes}</span>
           </button>
           <button class="pv-actionBtn" data-action="toggleComments">
-            <span class="action-icon">ðŸ’¬</span>
+            <span class="action-icon">&#128172;</span>
             <span>Comment</span>
             <span data-comment-count>${commCount}</span>
           </button>
           <button class="pv-actionBtn" data-action="sharePost">
-            <span class="action-icon">ðŸ”—</span>
+            <span class="action-icon">&#128279;</span>
             <span>Share</span>
           </button>
         </div>
@@ -580,7 +580,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
           </div>
 
           <div class="pv-commentComposer">
-            <input data-comment-input placeholder="Write a commentâ€¦" />
+            <input data-comment-input placeholder="Write a comment…" />
             <button class="pv-btn" data-action="sendComment">Send</button>
           </div>
         </div>
@@ -598,7 +598,7 @@ async function createPost() {
 
   try {
     elPostBtn && (elPostBtn.disabled = true);
-    setStatus("Postingâ€¦");
+    setStatus("Posting…");
 
     let mediaUrl = null;
     if (selectedFile) mediaUrl = await uploadMedia(selectedFile);
@@ -645,7 +645,7 @@ async function deletePost(postId) {
   if (!confirm("Delete this post?")) return;
 
   try {
-    setStatus("Deletingâ€¦");
+    setStatus("Deleting…");
     const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", me.id);
     if (error) throw error;
 
@@ -675,12 +675,12 @@ async function toggleLike(postId, postEl) {
   if (currentlyLiked) {
     count = Math.max(0, count - 1);
     btn.classList.remove("active");
-    if (iconEl) iconEl.textContent = "ðŸ¤";
+    if (iconEl) iconEl.innerHTML = "&#129309;";
   }
   else {
     count = count + 1;
     btn.classList.add("active");
-    if (iconEl) iconEl.textContent = "â¤ï¸";
+    if (iconEl) iconEl.innerHTML = "&#10084;&#65039;";
   }
   countEl.textContent = String(count);
 
@@ -701,12 +701,12 @@ async function toggleLike(postId, postEl) {
     if (currentlyLiked) {
       countEl.textContent = String(count + 1);
       btn.classList.add("active");
-      if (iconEl) iconEl.textContent = "â¤ï¸";
+      if (iconEl) iconEl.innerHTML = "&#10084;&#65039;";
     }
     else {
       countEl.textContent = String(Math.max(0, count - 1));
       btn.classList.remove("active");
-      if (iconEl) iconEl.textContent = "ðŸ¤";
+      if (iconEl) iconEl.innerHTML = "&#129309;";
     }
     showDbError("Like failed", e);
   }
@@ -768,7 +768,7 @@ async function sendComment(postId, postEl) {
   if (input) {
     input.value = "";
     input.removeAttribute("data-reply-to");
-    input.placeholder = "Write a commentâ€¦";
+    input.placeholder = "Write a comment…";
   }
 
   try {
@@ -819,11 +819,11 @@ async function toggleCommentLike(commentId, btn) {
   if (currentlyLiked) {
     count = Math.max(0, count - 1);
     btn.classList.remove("active");
-    btn.innerHTML = `ðŸ¤ <span class="action-count">${count}</span>`;
+    btn.innerHTML = `&#129309; <span class="action-count">${count}</span>`;
   } else {
     count++;
     btn.classList.add("active");
-    btn.innerHTML = `â¤ï¸ <span class="action-count">${count}</span>`;
+    btn.innerHTML = `&#10084;&#65039; <span class="action-count">${count}</span>`;
   }
 
   try {
@@ -839,11 +839,11 @@ async function toggleCommentLike(commentId, btn) {
     if (currentlyLiked) {
       count++;
       btn.classList.add("active");
-      btn.innerHTML = `â¤ï¸ <span class="action-count">${count}</span>`;
+      btn.innerHTML = `&#10084;&#65039; <span class="action-count">${count}</span>`;
     } else {
       count = Math.max(0, count - 1);
       btn.classList.remove("active");
-      btn.innerHTML = `ðŸ¤ <span class="action-count">${count}</span>`;
+      btn.innerHTML = `&#129309; <span class="action-count">${count}</span>`;
     }
     showDbError("Comment like failed", e);
   }
@@ -958,7 +958,7 @@ function bindFeedEvents() {
         wrap.style.display = "block";
         input.value = `@${author} `;
         input.setAttribute("data-reply-to", cid);
-        input.placeholder = `Replying to ${author}â€¦`;
+        input.placeholder = `Replying to ${author}…`;
         input.focus();
       }
       return;
@@ -1056,7 +1056,7 @@ function showSkeleton() {
 async function loadFeed() {
   try {
     showSkeleton();
-    setStatus("Loading feedâ€¦");
+    setStatus("Loading feed…");
 
     const posts = await fetchPosts();
     const ks = detectPostKeys(posts[0] || {});
