@@ -418,12 +418,12 @@ async function loadNotifications() {
           <p style="margin:4px 0; font-size:14px; line-height:1.4; color:var(--text-soft);">${escapeHtml(n.body)}</p>
           <small style="color:var(--text-muted); font-size:11px;">${new Date(n.created_at).toLocaleString()}</small>
           
-          ${n.type === 'message_request' ? `
+          ${(n.type === 'message_request' && !n.is_read) ? `
             <div style="margin-top:12px; display:flex; gap:10px;">
               <button class="accept-btn pv-btn pv-primary-btn" style="padding:6px 16px; font-size:13px;">Accept</button>
               <button class="ignore-btn pv-btn pv-ghost-btn" style="padding:6px 16px; font-size:13px;">Dismiss</button>
             </div>
-          ` : ''}
+          ` : (n.type === 'message_request' ? `<div style="margin-top:8px; font-size:12px; font-style:italic; color:var(--text-muted);">Request handled</div>` : '')}
         </div>
         ${isUnread ? `<div style="width:8px; height:8px; background:var(--brand); border-radius:50%; margin-top:6px;"></div>` : ''}
       </div>
@@ -432,10 +432,19 @@ async function loadNotifications() {
     const acceptBtn = div.querySelector('.accept-btn');
     const ignoreBtn = div.querySelector('.ignore-btn');
 
-    if (acceptBtn) acceptBtn.onclick = () => acceptRequest(n.metadata?.sender_id, n.id);
+    if (acceptBtn) acceptBtn.onclick = async () => {
+      // Disable immediately to prevent double clicks
+      acceptBtn.disabled = true;
+      acceptBtn.textContent = "Processing...";
+      await acceptRequest(n.metadata?.sender_id, n.id);
+    };
+
     if (ignoreBtn) ignoreBtn.onclick = async () => {
       await markNotificationAsRead(n.id);
       div.style.opacity = '0.5';
+      // Remove buttons
+      const btnRow = div.querySelector('.accept-btn')?.parentNode;
+      if (btnRow) btnRow.innerHTML = "Dismissed";
       fetchNotificationCount();
     };
 
