@@ -288,24 +288,38 @@ async function loadConversations() {
     seenIds.add(item.convId);
 
     const div = document.createElement("div");
-    div.className = "item pv-chat-item"; // Use new class for better styling
-    // Instagram-like Styling
+    div.className = "item pv-chat-item";
+
+    // Instagram-like Styling with proper colors
     div.style.cssText = `
       display: flex; align-items: center; gap: 12px;
       padding: 12px 16px; cursor: pointer;
-      transition: background 0.2s ease;
-      border-bottom: 1px solid var(--stroke);
+      transition: background 0.15s ease;
+      border-bottom: 1px solid #e5e5e5;
+      background: #fff;
     `;
-    div.onmouseover = () => div.style.background = "var(--bg-hover)";
-    div.onmouseout = () => div.style.background = "transparent";
 
-    div.onclick = () => {
+    // Replace inline handlers with addEventListener
+    div.addEventListener('mouseenter', () => {
+      div.style.background = "#f5f5f5";
+    });
+    div.addEventListener('mouseleave', () => {
+      div.style.background = "#fff";
+    });
+
+    div.addEventListener('click', (e) => {
+      console.log('Chat item clicked:', item.other.full_name, 'Conv ID:', item.convId);
+      e.stopPropagation();
+
       // Visual feedback
-      div.style.background = "var(--brand-light)";
+      div.style.background = "#e0f2fe";
+
       currentConversationId = item.convId;
       currentOtherId = item.other.id;
+
+      console.log('Set currentConversationId to:', currentConversationId);
       switchTab("messages");
-    };
+    });
 
     const initial = (item.other.full_name || "?")[0].toUpperCase();
     const preview = item.lastMsg ? (item.lastMsg.sender_id === currentUser.id ? "You: " : "") + item.lastMsg.content : "Start a conversation";
@@ -314,18 +328,18 @@ async function loadConversations() {
 
     div.innerHTML = `
       <div style="position:relative;">
-         <div style="width:52px; height:52px; border-radius:50%; background:var(--brand-light); color:var(--brand); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; flex-shrink:0; overflow:hidden;">
+         <div style="width:56px; height:56px; border-radius:50%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:22px; flex-shrink:0; overflow:hidden; border: 2px solid ${isUnread ? '#0095f6' : 'transparent'};">
             ${item.other.avatar_url ? `<img src="${item.other.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : initial}
          </div>
-         ${isUnread ? `<div style="position:absolute; bottom:2px; right:2px; width:12px; height:12px; background:var(--brand); border:2px solid #fff; border-radius:50%;"></div>` : ''}
+         ${isUnread ? `<div style="position:absolute; bottom:0; right:0; width:14px; height:14px; background:#0095f6; border:3px solid #fff; border-radius:50%;"></div>` : ''}
       </div>
       
       <div style="flex:1; min-width:0;">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-          <h4 style="margin:0; font-size:16px; font-weight:${isUnread ? '700' : '600'}; color:var(--text-main);">${escapeHtml(item.other.full_name)}</h4>
-          <span style="font-size:11px; color:${isUnread ? 'var(--brand)' : 'var(--text-muted)'}; font-weight:${isUnread ? '700' : '400'};">${time}</span>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px;">
+          <h4 style="margin:0; font-size:15px; font-weight:${isUnread ? '700' : '500'}; color:#262626;">${escapeHtml(item.other.full_name)}</h4>
+          <span style="font-size:12px; color:#8e8e8e;">${time}</span>
         </div>
-        <p style="margin:0; font-size:14px; color: ${isUnread ? 'var(--text-main)' : 'var(--text-muted)'}; font-weight: ${isUnread ? '600' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        <p style="margin:0; font-size:14px; color: ${isUnread ? '#262626' : '#8e8e8e'}; font-weight: ${isUnread ? '500' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           ${escapeHtml(preview)}
         </p>
       </div>
