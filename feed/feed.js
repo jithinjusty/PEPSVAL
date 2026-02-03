@@ -74,7 +74,10 @@ function showProgress(on, label = "", pct = 0) {
 }
 function safeDate(v) {
   if (!v) return "";
-  try { return new Date(v).toLocaleString(); } catch { return ""; }
+  try {
+    const d = new Date(v);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch { return ""; }
 }
 
 /* ---------- Error surfacing (so you SEE what's failing) ---------- */
@@ -505,6 +508,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const commCount = commentInfo.counts.get(String(pid)) || 0;
     const comments = commentInfo.byPost.get(String(pid)) || [];
 
+
     const isMine = (uid === me.id);
 
     return `
@@ -520,28 +524,28 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
             </div>
           </div>
           
-          <div class="pv-postRight">
+          <div class="pv-postRight" style="display:flex; align-items:center; gap:8px;">
              <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                <div class="pv-time">${esc(safeDate(created))}</div>
-                ${visibility === 'private' ? '<div class="post-visibility-badge">ðŸ”’ Private</div>' : ''}
+                <div class="pv-time" style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${esc(safeDate(created))}</div>
+                ${visibility === 'private' ? '<div class="post-visibility-badge" style="font-size:10px;">🔒 Private</div>' : ''}
              </div>
              <div class="post-menu-wrap">
-               <button class="post-menu-btn" data-action="toggleMenu">â‹®</button>
+               <button class="post-menu-btn" data-action="toggleMenu" style="padding:4px;">&#8942;</button>
                <div class="post-menu-dropdown">
                  ${isMine ? `
                    <button class="post-menu-item" data-action="deletePost">
-                     <span>ðŸ—‘ï¸</span> Delete
+                     <span>🗑️</span> Delete
                    </button>
                    <div class="post-menu-divider"></div>
                    <button class="post-menu-item" data-action="setVisibility" data-value="public">
-                     <span>ðŸŒ</span> Make Public
+                     <span>🌍</span> Make Public
                    </button>
                    <button class="post-menu-item" data-action="setVisibility" data-value="private">
-                      <span>ðŸ”’</span> Make Private
+                      <span>🔒</span> Make Private
                    </button>
                  ` : `
                    <button class="post-menu-item danger" data-action="reportPost">
-                      <span>ðŸš©</span> Report
+                      <span>🚩</span> Report
                    </button>
                  `}
                </div>
