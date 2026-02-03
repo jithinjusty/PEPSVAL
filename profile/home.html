@@ -8,6 +8,7 @@
 
   <link rel="stylesheet" href="/css/style.css?v=3001" />
   <link rel="stylesheet" href="/profile/profile.css?v=20260118-bottomnav-v2" />
+  <link rel="stylesheet" href="/css/editor.css" />
   <script>
     (function () {
       const theme = localStorage.getItem('theme') || 'light';
@@ -258,67 +259,6 @@
           <span class="lifebuoy">+</span>
         </a>
 
-        <!-- Avatar Upload Modal -->
-        <div id="avatarModal" class="modal hidden">
-          <div class="modalOverlay"></div>
-          <div class="modalContent">
-            <div class="modalHeader">
-              <h2>Upload Profile Photo</h2>
-              <button id="closeAvatarModal" class="iconBtn" aria-label="Close">&times;</button>
-            </div>
-
-            <input type="file" id="avatarInput" accept="image/*" style="display:none">
-
-            <div id="avatarSelectView">
-              <button id="selectImageBtn" class="btnPrimary">Select Photo</button>
-            </div>
-
-            <div id="avatarEditView" class="hidden">
-              <div class="canvasWrap">
-                <canvas id="avatarCanvas"></canvas>
-              </div>
-
-              <!-- Preset Filters -->
-              <div class="presetFilters">
-                <button class="filterBtn active" data-filter="normal">Normal</button>
-                <button class="filterBtn" data-filter="grayscale">B&W</button>
-                <button class="filterBtn" data-filter="sepia">Sepia</button>
-                <button class="filterBtn" data-filter="vintage">Vintage</button>
-                <button class="filterBtn" data-filter="cool">Cool</button>
-                <button class="filterBtn" data-filter="warm">Warm</button>
-              </div>
-
-              <!-- Fine-tune Controls -->
-              <div class="filterControls">
-                <label>
-                  <span>Zoom</span>
-                  <input type="range" id="zoom" min="100" max="300" value="100">
-                </label>
-                <label>
-                  <span>Brightness</span>
-                  <input type="range" id="brightness" min="0" max="200" value="100">
-                </label>
-                <label>
-                  <span>Contrast</span>
-                  <input type="range" id="contrast" min="0" max="200" value="100">
-                </label>
-                <label>
-                  <span>Saturation</span>
-                  <input type="range" id="saturation" min="0" max="200" value="100">
-                </label>
-                <label>
-                  <span>Blur</span>
-                  <input type="range" id="blur" min="0" max="10" value="0">
-                </label>
-              </div>
-
-              <div class="modalActions">
-                <button id="uploadAvatarBtn" class="btnPrimary">Upload & Save</button>
-                <button id="cancelAvatarBtn" class="btnSecondary">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Job Posting Modal -->
         <div id="jobModal" class="modal hidden">
@@ -437,6 +377,7 @@
     </a>
   </nav>
 
+  <script src="/js/image-editor.js"></script>
   <script type="module" src="/profile/profile.js?v=20260118-avatar-v2"></script>
 
 </html>

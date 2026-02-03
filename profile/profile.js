@@ -1,4 +1,4 @@
-import { supabase, getCurrentUser } from "../js/supabase.js";
+﻿import { supabase, getCurrentUser } from "../js/supabase.js";
 
 /*
   PEPSVAL Profile (single page, all account types)
@@ -94,7 +94,7 @@ let editing = false;
 
 const LOCAL_COMPANY_KEY = "pepsval_company_dropdown_local_v1";
 
-// These “extras” are stored locally to avoid crashes if your DB doesn’t have columns yet
+// These â€œextrasâ€ are stored locally to avoid crashes if your DB doesnâ€™t have columns yet
 const localExtraKey = (kind) => `pepsval_profile_extra_${kind}_v1`;
 
 // ---------- helpers ----------
@@ -282,22 +282,22 @@ function paintHeader() {
   elProfileName.innerHTML = name;
 
   if (profile?.is_verified) {
-    elProfileName.innerHTML += ` <span class="v-badge" title="Verified Member">✅</span>`;
+    elProfileName.innerHTML += ` <span class="v-badge" title="Verified Member">âœ…</span>`;
   }
 
   // mini row tries to show rank + nationality for seafarer, else role/company hints
   if (accountKind === "seafarer") {
-    elMiniRank.textContent = safeText(profile?.rank, "—");
-    elMiniNationality.textContent = safeText(profile?.nationality, "—");
+    elMiniRank.textContent = safeText(profile?.rank, "â€”");
+    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
   } else if (accountKind === "company") {
-    elMiniRank.textContent = safeText(profile?.company_name, "—");
-    elMiniNationality.textContent = safeText(profile?.nationality, "—");
+    elMiniRank.textContent = safeText(profile?.company_name, "â€”");
+    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
   } else if (accountKind === "professional") {
-    elMiniRank.textContent = safeText(profile?.role, "—");
-    elMiniNationality.textContent = safeText(profile?.nationality, "—");
+    elMiniRank.textContent = safeText(profile?.role, "â€”");
+    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
   } else {
-    elMiniRank.textContent = safeText(profile?.rank || profile?.role, "—");
-    elMiniNationality.textContent = safeText(profile?.nationality, "—");
+    elMiniRank.textContent = safeText(profile?.rank || profile?.role, "â€”");
+    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
   }
 
   setAvatar(profile?.avatar_url, name);
@@ -599,8 +599,8 @@ function paintCompanyEmails(list) {
     return `
       <div class="multiRow" data-idx="${idx}">
         <input class="input" placeholder="email" value="${escapeHtml(email)}" ${editing ? "" : "disabled"} />
-        <input class="input" placeholder="purpose (Career / Support…)" value="${escapeHtml(purpose)}" ${editing ? "" : "disabled"} />
-        <button class="iconBtn" type="button" data-action="removeEmail" ${editing ? "" : "disabled"}>✕</button>
+        <input class="input" placeholder="purpose (Career / Supportâ€¦)" value="${escapeHtml(purpose)}" ${editing ? "" : "disabled"} />
+        <button class="iconBtn" type="button" data-action="removeEmail" ${editing ? "" : "disabled"}>âœ•</button>
       </div>`;
   }).join("");
 }
@@ -644,7 +644,7 @@ async function loadPostsSafe() {
   if (!me) return;
   if (!postsWrap) return;
 
-  postsWrap.textContent = "Loading…";
+  postsWrap.textContent = "Loadingâ€¦";
   postCounts.textContent = "0 posts";
 
   try {
@@ -675,7 +675,7 @@ async function loadPostsSafe() {
       return;
     }
 
-    // We’ll show owner controls: visibility + delete.
+    // Weâ€™ll show owner controls: visibility + delete.
     postsWrap.innerHTML = rows.map(r => {
       const id = r.id;
       const text = safeText(r.content || r.body || "", "");
@@ -698,7 +698,7 @@ async function loadPostsSafe() {
                 <option value="hide" ${vis === "hide" ? "selected" : ""}>Hide</option>
                 <option value="private" ${vis === "private" ? "selected" : ""}>Private</option>
               </select>
-              <button class="pv-btn pv-btn-ghost" style="padding:4px 10px; color:var(--danger); border-color:var(--stroke);" type="button" data-action="deletePost" data-id="${id}" title="Delete">✕</button>
+              <button class="pv-btn pv-btn-ghost" style="padding:4px 10px; color:var(--danger); border-color:var(--stroke);" type="button" data-action="deletePost" data-id="${id}" title="Delete">âœ•</button>
             </div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">${escapeHtml(formatDate(r.created_at || r.inserted_at || ""))}</div>
@@ -763,7 +763,7 @@ function daysToHuman(days) {
 }
 
 function computeExpiry(expiryDate) {
-  if (!expiryDate) return { raw: "", label: "—" };
+  if (!expiryDate) return { raw: "", label: "â€”" };
   const now = new Date();
   const exp = new Date(expiryDate);
   const diff = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -800,7 +800,7 @@ function renderDocs(rows) {
                 <td><input class="input" name="issue_date" type="date" value="${escapeHtml(safeText(r.issue_date, ""))}"></td>
                 <td><input class="input" name="expiry_date" type="date" value="${escapeHtml(safeText(r.expiry_date, ""))}"></td>
                 <td><span class="badPill">${escapeHtml(ex.label)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove">✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeDoc" title="Remove">âœ•</button></td>
               </tr>
             `;
   }).join("")}
@@ -940,13 +940,13 @@ function renderSea(rows) {
   // experience per rank
   const byRank = new Map();
   list.forEach(r => {
-    const rank = safeText(r.rank, "—");
+    const rank = safeText(r.rank, "â€”");
     const d = daysBetween(r.signed_on, r.signed_off);
     byRank.set(rank, (byRank.get(rank) || 0) + d);
   });
 
   const rankChips = Array.from(byRank.entries())
-    .filter(([k]) => k && k !== "—")
+    .filter(([k]) => k && k !== "â€”")
     .sort((a, b) => b[1] - a[1])
     .slice(0, 50)
     .map(([rank, days]) => `<div class="summaryChip">${escapeHtml(rank)}: ${monthsFromDays(days)} mo</div>`)
@@ -996,7 +996,7 @@ function renderSea(rows) {
                 <td><input class="input" name="signed_off" type="date" value="${escapeHtml(displayOff)}" /></td>
                 <td><span class="badPill">${d}</span></td>
                 <td><span class="badPill">${Number(r.peers_verified || 0)}</span></td>
-                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove">✕</button></td>
+                <td><button class="iconBtn" type="button" data-action="removeSea" title="Remove">âœ•</button></td>
               </tr>
             `;
   }).join("")}
@@ -1146,7 +1146,7 @@ function renderJobs(rows) {
             <div class="jobTitleText">${escapeHtml(j.title)}</div>
             <div class="jobSubText">
               <span>${escapeHtml(j.rank || "Any Rank")}</span>
-              ${j.vessel_type ? `• <span>${escapeHtml(j.vessel_type)}</span>` : ""}
+              ${j.vessel_type ? `â€¢ <span>${escapeHtml(j.vessel_type)}</span>` : ""}
             </div>
           </div>
           <div class="jobBadge ${isUrgent ? 'urgent' : ''}">${isUrgent ? 'Urgent' : 'Active'}</div>
@@ -1168,7 +1168,7 @@ function renderJobs(rows) {
 
         <div class="jobActions">
           <button class="btnGhost" type="button" data-action="editJob">Edit Post</button>
-          <button class="iconBtn" type="button" data-action="removeJob" title="Delete">✕</button>
+          <button class="iconBtn" type="button" data-action="removeJob" title="Delete">âœ•</button>
         </div>
       </div>
       `;
@@ -1338,7 +1338,7 @@ function renderExperience(rows) {
       <div style="border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px;margin:10px 0;background:#fff;" data-id="${x.id || 'new'}" data-idx="${idx}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <div style="font-weight:900;">${escapeHtml(safeText(x.company, "Company"))}</div>
-          <button class="iconBtn" type="button" data-action="removeExp">✕</button>
+          <button class="iconBtn" type="button" data-action="removeExp">âœ•</button>
         </div>
         <div class="aboutGrid" style="margin-top:10px;">
           <div class="box"><div class="k">Company</div><input class="v input" name="company" value="${escapeHtml(safeText(x.company, ""))}" placeholder="Company" list="companyList"></div>
@@ -1443,290 +1443,54 @@ function scrapeExpFromDOM() {
 }
 
 // ---------- Avatar Upload with Filters ----------
-const avatarModal = document.getElementById("avatarModal");
-const avatarInput = document.getElementById("avatarInput");
-const selectImageBtn = document.getElementById("selectImageBtn");
-const avatarSelectView = document.getElementById("avatarSelectView");
-const avatarEditView = document.getElementById("avatarEditView");
-const avatarCanvas = document.getElementById("avatarCanvas");
-const closeAvatarModal = document.getElementById("closeAvatarModal");
-const uploadAvatarBtn = document.getElementById("uploadAvatarBtn");
-const cancelAvatarBtn = document.getElementById("cancelAvatarBtn");
+/* ---------- Avatar Upload ---------- */
 
-const zoomSlider = document.getElementById("zoom");
-const brightnessSlider = document.getElementById("brightness");
-const contrastSlider = document.getElementById("contrast");
-const saturationSlider = document.getElementById("saturation");
-const blurSlider = document.getElementById("blur");
+if (avatarEditBtn) {
+  avatarEditBtn.addEventListener("click", () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (window.PepsvalEditor) {
+          window.PepsvalEditor.open(file, async (blob) => {
+            if (!me) return;
+            // Upload
+            try {
+              // Show some UI feedback?
+              avatarEditBtn.disabled = true;
+              avatarEditBtn.innerHTML = "âŒ›";
 
-let originalImage = null;
-let ctx = null;
-let zoom = 1.0;
-let offsetX = 0;
-let offsetY = 0;
-let isDragging = false;
-let dragStartX = 0;
-let dragStartY = 0;
+              const path = `${me.id}/${Date.now()}.jpg`;
+              const { error } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
 
-const filterPresets = {
-  normal: { brightness: 100, contrast: 100, saturation: 100, blur: 0 },
-  grayscale: { brightness: 100, contrast: 110, saturation: 0, blur: 0 },
-  sepia: { brightness: 110, contrast: 90, saturation: 80, blur: 0, sepia: true },
-  vintage: { brightness: 105, contrast: 120, saturation: 70, blur: 1 },
-  cool: { brightness: 95, contrast: 105, saturation: 110, blur: 0, cool: true },
-  warm: { brightness: 105, contrast: 100, saturation: 115, blur: 0, warm: true }
-};
+              if (error) throw error;
 
-function openAvatarModal() {
-  avatarModal.classList.remove("hidden");
-  avatarSelectView.classList.remove("hidden");
-  avatarEditView.classList.add("hidden");
-}
+              const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+              const publicUrl = data?.publicUrl;
 
-function closeAvatarModalFn() {
-  avatarModal.classList.add("hidden");
-  originalImage = null;
-  if (avatarInput) avatarInput.value = "";
-}
-
-avatarEditBtn?.addEventListener("click", openAvatarModal);
-closeAvatarModal?.addEventListener("click", closeAvatarModalFn);
-cancelAvatarBtn?.addEventListener("click", closeAvatarModalFn);
-
-// Click overlay to close
-avatarModal?.querySelector(".modalOverlay")?.addEventListener("click", closeAvatarModalFn);
-
-selectImageBtn?.addEventListener("click", () => {
-  avatarInput?.click();
-});
-
-avatarInput?.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  // Check file size (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Image too large. Please select an image under 5MB.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      originalImage = img;
-
-      // Set canvas size (square, max 500px)
-      const size = Math.min(img.width, img.height, 500);
-      avatarCanvas.width = size;
-      avatarCanvas.height = size;
-      ctx = avatarCanvas.getContext("2d");
-
-      // Show edit view
-      avatarSelectView.classList.add("hidden");
-      avatarEditView.classList.remove("hidden");
-
-      // Reset sliders and position
-      zoomSlider.value = 100;
-      brightnessSlider.value = 100;
-      contrastSlider.value = 100;
-      saturationSlider.value = 100;
-      blurSlider.value = 0;
-      zoom = 1.0;
-      offsetX = 0;
-      offsetY = 0;
-
-      // Render initial image
-      applyFilters();
+              if (publicUrl) {
+                await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", me.id);
+                setAvatar(publicUrl, profile?.full_name);
+                alert("Profile photo updated!");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Failed to upload avatar: " + err.message);
+            } finally {
+              avatarEditBtn.disabled = false;
+              avatarEditBtn.innerHTML = "âœŽ";
+            }
+          });
+        } else {
+          alert("Editor not ready");
+        }
+      }
     };
-    img.src = event.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-function applyFilters() {
-  if (!originalImage || !ctx) return;
-
-  const size = avatarCanvas.width;
-
-  // Clear canvas
-  ctx.clearRect(0, 0, size, size);
-
-  // Calculate zoomed size
-  const scaledSize = size * zoom;
-
-  // Calculate source crop (center of original image)
-  const sourceSize = Math.min(originalImage.width, originalImage.height);
-  const sx = (originalImage.width - sourceSize) / 2;
-  const sy = (originalImage.height - sourceSize) / 2;
-
-  // Calculate destination with zoom and offset
-  const dx = (size - scaledSize) / 2 + offsetX;
-  const dy = (size - scaledSize) / 2 + offsetY;
-
-  // Apply CSS filters
-  const brightness = brightnessSlider.value;
-  const contrast = contrastSlider.value;
-  const saturation = saturationSlider.value;
-  const blur = blurSlider.value;
-
-  ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px)`;
-
-  // Draw image with zoom and pan
-  ctx.drawImage(originalImage, sx, sy, sourceSize, sourceSize, dx, dy, scaledSize, scaledSize);
-  ctx.filter = "none";
-}
-
-// Live filter and zoom updates
-zoomSlider?.addEventListener("input", () => {
-  zoom = zoomSlider.value / 100;
-  applyFilters();
-});
-brightnessSlider?.addEventListener("input", applyFilters);
-contrastSlider?.addEventListener("input", applyFilters);
-saturationSlider?.addEventListener("input", applyFilters);
-blurSlider?.addEventListener("input", applyFilters);
-
-// Pan with mouse drag
-avatarCanvas?.addEventListener("mousedown", (e) => {
-  isDragging = true;
-  dragStartX = e.offsetX;
-  dragStartY = e.offsetY;
-  avatarCanvas.style.cursor = "grabbing";
-});
-
-avatarCanvas?.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-
-  const dx = e.offsetX - dragStartX;
-  const dy = e.offsetY - dragStartY;
-
-  offsetX += dx;
-  offsetY += dy;
-
-  dragStartX = e.offsetX;
-  dragStartY = e.offsetY;
-
-  applyFilters();
-});
-
-avatarCanvas?.addEventListener("mouseup", () => {
-  isDragging = false;
-  avatarCanvas.style.cursor = "grab";
-});
-
-avatarCanvas?.addEventListener("mouseleave", () => {
-  isDragging = false;
-  avatarCanvas.style.cursor = "grab";
-});
-
-// Touch support for mobile
-avatarCanvas?.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const rect = avatarCanvas.getBoundingClientRect();
-  isDragging = true;
-  dragStartX = touch.clientX - rect.left;
-  dragStartY = touch.clientY - rect.top;
-});
-
-avatarCanvas?.addEventListener("touchmove", (e) => {
-  if (!isDragging) return;
-  e.preventDefault();
-
-  const touch = e.touches[0];
-  const rect = avatarCanvas.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-
-  const dx = x - dragStartX;
-  const dy = y - dragStartY;
-
-  offsetX += dx;
-  offsetY += dy;
-
-  dragStartX = x;
-  dragStartY = y;
-
-  applyFilters();
-});
-
-avatarCanvas?.addEventListener("touchend", () => {
-  isDragging = false;
-});
-
-// Preset filters
-document.querySelectorAll(".filterBtn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const filter = btn.dataset.filter;
-    const preset = filterPresets[filter];
-
-    if (preset) {
-      brightnessSlider.value = preset.brightness;
-      contrastSlider.value = preset.contrast;
-      saturationSlider.value = preset.saturation;
-      blurSlider.value = preset.blur || 0;
-      applyFilters();
-    }
-
-    // Update active state
-    document.querySelectorAll(".filterBtn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
+    fileInput.click();
   });
-});
-
-uploadAvatarBtn?.addEventListener("click", async () => {
-  if (!me || !avatarCanvas) return;
-
-  uploadAvatarBtn.disabled = true;
-  uploadAvatarBtn.textContent = "Uploading...";
-
-  try {
-    // Convert canvas to blob
-    const blob = await new Promise(resolve => avatarCanvas.toBlob(resolve, "image/jpeg", 0.9));
-
-    // Generate unique filename
-    const fileName = `${me.id}/${Date.now()}.jpg`;
-
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from("avatars")
-      .upload(fileName, blob, {
-        cacheControl: "3600",
-        upsert: true
-      });
-
-    if (error) throw error;
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(fileName);
-
-    const avatarUrl = urlData.publicUrl;
-
-    // Update profile
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: avatarUrl })
-      .eq("id", me.id);
-
-    if (updateError) throw updateError;
-
-    // Update UI
-    setAvatar(avatarUrl, profile?.full_name || profile?.company_name || "User");
-
-    alert("Profile photo updated!");
-    closeAvatarModalFn();
-
-  } catch (err) {
-    console.error("Upload failed:", err);
-    alert("Upload failed: " + err.message);
-  } finally {
-    uploadAvatarBtn.disabled = false;
-    uploadAvatarBtn.textContent = "Upload & Save";
-  }
-});
+}
 
 // ---------- main events ----------
 editBtn?.addEventListener("click", () => setEditing(true));
@@ -1734,7 +1498,7 @@ editBtn?.addEventListener("click", () => setEditing(true));
 saveBtn?.addEventListener("click", async () => {
   try {
     saveBtn.disabled = true;
-    saveBtn.textContent = "Saving…";
+    saveBtn.textContent = "Savingâ€¦";
     await saveProfile();
   } catch (e) {
     console.error("Save failed:", e);

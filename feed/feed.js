@@ -1,12 +1,12 @@
-import { supabase, getCurrentUser, sendNotification } from "/js/supabase.js";
+﻿import { supabase, getCurrentUser, sendNotification } from "/js/supabase.js";
 
 /* =========================================================
-   PEPSVAL FEED — FINAL BUG-FIX BUILD
+   PEPSVAL FEED â€” FINAL BUG-FIX BUILD
    - Robust avatar everywhere
    - Avatar menu: settings + logout
    - Posts: create (media upload), delete
    - Likes + comments: instant update (no reload)
-   - Comment likes + delete: safe (won’t crash if table/policy missing)
+   - Comment likes + delete: safe (wonâ€™t crash if table/policy missing)
    - Clear on-screen errors when Supabase blocks (RLS/policy)
 ========================================================= */
 
@@ -81,7 +81,7 @@ function safeDate(v) {
 function showDbError(prefix, err) {
   const msg = err?.message || String(err || "Unknown error");
   console.error(prefix, err);
-  setStatus(`❌ ${prefix}: ${msg}`);
+  setStatus(`âŒ ${prefix}: ${msg}`);
   toast(`${prefix}: ${msg}`);
 }
 
@@ -89,7 +89,7 @@ function showDbError(prefix, err) {
 async function requireLogin() {
   me = await getCurrentUser();
   if (!me) {
-    toast("Not logged in — redirecting");
+    toast("Not logged in â€” redirecting");
     window.location.href = "/auth/login.html";
     return false;
   }
@@ -109,7 +109,7 @@ function bindAvatarMenu() {
   const logoutFn = async () => {
     try {
       setMenuOpen(false);
-      setStatus("Logging out…");
+      setStatus("Logging outâ€¦");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       window.location.href = "/auth/login.html";
@@ -176,534 +176,7 @@ async function loadMyAvatar() {
 
 /* ---------- Composer ---------- */
 /* ---------- Image Editor State ---------- */
-let editorState = {
-  originalImage: null,
-  canvas: null,
-  ctx: null,
-  history: [],
-  historyIndex: -1,
 
-  // Current State
-  filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 },
-
-  // Transform (Viewport)
-  transform: { x: 0, y: 0, scale: 1 },
-  // Drawings & Text
-  drawings: [],
-  texts: [],
-  selectedTextIndex: -1, // New: track active text object
-
-  // Interaction State
-  activeTab: 'filters',
-  drawColor: '#000000',
-  drawSize: 5,
-  isDrawing: false,
-  isDragging: false,
-  dragStart: { x: 0, y: 0 },
-  dragTarget: null, // 'pan', 'text'
-
-  drawMode: 'brush',
-};
-
-/* ---------- Undo/Redo ---------- */
-function pushHistory() {
-  const state = {
-    filters: { ...editorState.filters },
-    transform: { ...editorState.transform },
-    drawings: JSON.parse(JSON.stringify(editorState.drawings)),
-    texts: JSON.parse(JSON.stringify(editorState.texts))
-  };
-
-  if (editorState.historyIndex < editorState.history.length - 1) {
-    editorState.history = editorState.history.slice(0, editorState.historyIndex + 1);
-  }
-
-  editorState.history.push(state);
-  editorState.historyIndex = editorState.history.length - 1;
-  updateUndoRedoUI();
-}
-
-function undo() {
-  if (editorState.historyIndex > 0) {
-    editorState.historyIndex--;
-    restoreState(editorState.history[editorState.historyIndex]);
-    renderEditor();
-    updateUndoRedoUI();
-  }
-}
-
-function redo() {
-  if (editorState.historyIndex < editorState.history.length - 1) {
-    editorState.historyIndex++;
-    restoreState(editorState.history[editorState.historyIndex]);
-    renderEditor();
-    updateUndoRedoUI();
-  }
-}
-
-function restoreState(state) {
-  editorState.filters = { ...state.filters };
-  editorState.transform = { ...state.transform };
-  editorState.drawings = JSON.parse(JSON.stringify(state.drawings));
-  editorState.texts = JSON.parse(JSON.stringify(state.texts));
-  editorState.selectedTextIndex = -1; // Deselect on undo/redo
-  updateFilterUI();
-}
-
-function updateUndoRedoUI() {
-  const undoBtn = $("btnUndo");
-  const redoBtn = $("btnRedo");
-  if (undoBtn) undoBtn.disabled = editorState.historyIndex <= 0;
-  if (redoBtn) redoBtn.disabled = editorState.historyIndex >= editorState.history.length - 1;
-
-  if (undoBtn) undoBtn.style.opacity = undoBtn.disabled ? 0.3 : 1;
-  if (redoBtn) redoBtn.style.opacity = redoBtn.disabled ? 0.3 : 1;
-}
-
-function updateFilterUI() {
-  const f = editorState.filters;
-  const setVal = (k, v, s = "%") => {
-    const el = $(`rng-${k}`);
-    const lab = $(`val-${k}`);
-    if (el) el.value = v;
-    if (lab) lab.textContent = v + s;
-  };
-  setVal("brightness", f.brightness);
-  setVal("contrast", f.contrast);
-  setVal("saturate", f.saturate);
-  setVal("blur", f.blur, "px");
-  setVal("sepia", f.sepia);
-}
-
-/* ---------- Logic ---------- */
-function initEditor(file) {
-  editorState.canvas = $("editCanvas");
-  editorState.ctx = editorState.canvas.getContext("2d");
-
-  const img = new Image();
-  img.onload = () => {
-    editorState.originalImage = img;
-
-    const MAX_W = 800;
-    const MAX_H = 600;
-    let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
-
-    editorState.canvas.width = img.width * scale;
-    editorState.canvas.height = img.height * scale;
-
-    editorState.transform = { x: 0, y: 0, scale: scale }; // Fit initial
-
-    editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
-    editorState.drawings = [];
-    editorState.texts = [];
-    editorState.selectedTextIndex = -1;
-    editorState.history = [];
-    editorState.historyIndex = -1;
-
-    pushHistory();
-    switchTab('filters');
-
-    const modal = $("editorModal");
-    if (modal) modal.style.display = "flex";
-
-    renderEditor();
-
-    // Bind Text Prop listeners for live updates
-    const bindLive = (id, prop) => {
-      const el = $(id);
-      if (!el) return;
-      // Remove old listeners to avoid stacks
-      const clone = el.cloneNode(true);
-      el.parentNode.replaceChild(clone, el);
-
-      clone.addEventListener('input', () => {
-        if (editorState.selectedTextIndex !== -1 && editorState.texts[editorState.selectedTextIndex]) {
-          editorState.texts[editorState.selectedTextIndex][prop] = clone.value;
-          renderEditor();
-        }
-      });
-      clone.addEventListener('change', pushHistory); // Save on finish
-    };
-
-    bindLive('text-size-input', 'size');
-    bindLive('text-color', 'color');
-    bindLive('text-font-input', 'font');
-  };
-  img.src = URL.createObjectURL(file);
-}
-
-// Convert Canvas/Pointer Coords -> Image Space Coords
-function toImageSpace(cx, cy) {
-  const t = editorState.transform;
-  return {
-    x: (cx - t.x) / t.scale,
-    y: (cy - t.y) / t.scale
-  };
-}
-
-function renderEditor() {
-  if (!editorState.originalImage || !editorState.ctx) return;
-  const ctx = editorState.ctx;
-  const img = editorState.originalImage;
-  const cvs = editorState.canvas;
-  const t = editorState.transform;
-
-  // Clear
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-  // Apply Filters
-  const f = editorState.filters;
-  let filterString = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) blur(${f.blur}px) sepia(${f.sepia}%) grayscale(${f.grayscale}%) invert(${f.invert}%)`;
-  if (f.warm > 0) filterString += ` sepia(${f.warm * 0.3}%) saturate(${100 + f.warm}%)`;
-  if (f.cool > 0) filterString += ` hue-rotate(-${f.cool * 0.5}deg) saturate(${100 - f.cool * 0.2}%)`;
-  if (f.vintage > 0) filterString += ` sepia(${f.vintage * 0.5}%) contrast(${100 + f.vintage * 0.2}%)`;
-
-  ctx.save();
-  ctx.translate(t.x, t.y);
-  ctx.scale(t.scale, t.scale);
-
-  // 1. Image
-  ctx.filter = filterString;
-  ctx.drawImage(img, 0, 0);
-  ctx.filter = "none";
-
-  // 2. Drawings
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  editorState.drawings.forEach(stroke => {
-    ctx.beginPath();
-    ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.size;
-    if (stroke.isErase) ctx.globalCompositeOperation = "destination-out";
-    else ctx.globalCompositeOperation = "source-over";
-
-    if (stroke.points.length > 0) {
-      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-      }
-    }
-    ctx.stroke();
-  });
-  ctx.globalCompositeOperation = "source-over";
-
-  // 3. Text
-  editorState.texts.forEach((txt, idx) => {
-    ctx.fillStyle = txt.color;
-    ctx.font = `bold ${txt.size}px ${txt.font || 'sans-serif'}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(txt.text, txt.x, txt.y);
-
-    // Selection Box
-    if (idx === editorState.selectedTextIndex) {
-      ctx.save();
-      ctx.strokeStyle = "#00FFFF";
-      ctx.lineWidth = 2 / t.scale;
-      const metrics = ctx.measureText(txt.text);
-      const h = txt.size;
-      const w = metrics.width;
-      ctx.setLineDash([5 / t.scale, 5 / t.scale]);
-      ctx.strokeRect(txt.x - w / 2 - 10, txt.y - h / 2 - 10, w + 20, h + 20);
-      ctx.restore();
-    }
-  });
-
-  ctx.restore();
-}
-
-/* ---------- Interactions ---------- */
-
-function handlePointer(e) {
-  const rect = editorState.canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-  const ip = toImageSpace(cx, cy);
-
-  if (e.type === 'mousedown') {
-    editorState.isDragging = true;
-    editorState.dragStart = { x: cx, y: cy };
-
-    if (editorState.activeTab === 'draw') {
-      editorState.isDrawing = true;
-      editorState.currentStroke = {
-        color: editorState.drawColor,
-        size: editorState.drawSize / editorState.transform.scale,
-        isErase: editorState.drawMode === 'erase',
-        points: [{ x: ip.x, y: ip.y }]
-      };
-      editorState.drawings.push(editorState.currentStroke);
-      renderEditor();
-    }
-    else if (editorState.activeTab === 'text') {
-      // Hit Test Text
-      editorState.selectedTextIndex = -1; // Reset
-      let hit = -1;
-
-      // Check Top-most first
-      editorState.ctx.save(); // Context for measurement
-      for (let i = editorState.texts.length - 1; i >= 0; i--) {
-        const t = editorState.texts[i];
-        editorState.ctx.font = `bold ${t.size}px ${t.font || 'sans-serif'}`;
-        const metrics = editorState.ctx.measureText(t.text);
-        const w = metrics.width;
-        const h = t.size;
-
-        // Simple Box hit test
-        if (Math.abs(ip.x - t.x) < w / 2 + 10 && Math.abs(ip.y - t.y) < h / 2 + 10) {
-          hit = i;
-          break;
-        }
-      }
-      editorState.ctx.restore();
-
-      if (hit !== -1) {
-        editorState.selectedTextIndex = hit;
-        editorState.dragTarget = { type: 'text', index: hit };
-
-        // Populate UI with selected text props
-        const t = editorState.texts[hit];
-        $("text-input").value = "";
-        $("text-size-input").value = t.size;
-        $("text-color").value = t.color;
-        $("text-font-input").value = t.font;
-      } else {
-        editorState.dragTarget = { type: 'pan' };
-      }
-      renderEditor();
-    }
-    else {
-      // Crop/Adjust/Filter -> Pan Image
-      editorState.dragTarget = { type: 'pan' };
-    }
-
-  } else if (e.type === 'mousemove') {
-    if (!editorState.isDragging) return;
-
-    const dx = cx - editorState.dragStart.x;
-    const dy = cy - editorState.dragStart.y;
-    editorState.dragStart = { x: cx, y: cy };
-
-    if (editorState.activeTab === 'draw' && editorState.isDrawing) {
-      editorState.currentStroke.points.push({ x: ip.x, y: ip.y });
-      renderEditor();
-    }
-    else if (editorState.dragTarget?.type === 'text') {
-      const idx = editorState.dragTarget.index;
-      if (editorState.texts[idx]) {
-        editorState.texts[idx].x += dx / editorState.transform.scale;
-        editorState.texts[idx].y += dy / editorState.transform.scale;
-        renderEditor();
-      }
-    }
-    else if (editorState.dragTarget?.type === 'pan') {
-      editorState.transform.x += dx;
-      editorState.transform.y += dy;
-      renderEditor();
-    }
-
-  } else if (e.type === 'mouseup' || e.type === 'mouseleave') {
-    if (editorState.isDragging) {
-      editorState.isDragging = false;
-      editorState.isDrawing = false;
-      editorState.dragTarget = null;
-      pushHistory();
-    }
-  }
-}
-
-function handleZoom(delta) {
-  const factor = delta > 0 ? 1.1 : 0.9;
-  editorState.transform.scale *= factor;
-  renderEditor();
-}
-
-function applyCropRatio(ratio) {
-  const img = editorState.originalImage;
-  const canvas = editorState.canvas;
-  if (!img || !canvas) return;
-
-  if (ratio === 'reset') {
-    const MAX_W = 800;
-    const MAX_H = 600;
-    let scale = Math.min(MAX_W / img.width, MAX_H / img.height);
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
-    editorState.transform = { x: 0, y: 0, scale: scale };
-  }
-  else {
-    const [rw, rh] = ratio.split(':').map(Number);
-    const targetRatio = rw / rh;
-    let w = canvas.width;
-    let h = w / targetRatio;
-    canvas.height = h;
-    // Keep image transform as is, just change viewport frame
-  }
-  renderEditor();
-  pushHistory();
-}
-
-function addText() {
-  const input = $("text-input");
-  const txt = input.value.trim();
-  if (!txt) return;
-
-  const size = Number($("text-size-input")?.value || 40);
-  const font = $("text-font-input")?.value || "sans-serif";
-  const color = $("text-color").value || "#ffffff";
-
-  // Center of Viewport in Image Space
-  const canvas = editorState.canvas;
-  // We want the visual center of canvas -> image space coords
-  const center = toImageSpace(canvas.width / 2, canvas.height / 2);
-
-  editorState.texts.push({
-    text: txt,
-    x: center.x,
-    y: center.y,
-    color,
-    size,
-    font
-  });
-
-  // Auto-select new text
-  editorState.selectedTextIndex = editorState.texts.length - 1;
-
-  input.value = "";
-  renderEditor();
-  pushHistory();
-}
-
-function switchTab(tabId) {
-  editorState.activeTab = tabId;
-  document.querySelectorAll(".editor-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
-  document.querySelectorAll(".editor-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${tabId}`));
-
-  // Deselect text when leaving text tab? Or keep it?
-  // Use case: Adding text then filter. 
-  // Probably harmless to keep selected index, but maybe confusing visual.
-  if (tabId !== 'text') {
-    editorState.selectedTextIndex = -1;
-    renderEditor();
-  }
-}
-
-// ---- Colors ----
-const PALETTE = [
-  '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00',
-  '#00ffff', '#ff00ff', '#FFA500', '#800080', '#A52A2A', '#808080'
-];
-
-function generatePalette(containerId, inputId) {
-  const container = $(containerId);
-  if (!container) return;
-  container.innerHTML = PALETTE.map(c => `
-    <div class="color-dot" style="background:${c}" data-color="${c}"></div>
-  `).join('');
-
-  container.querySelectorAll('.color-dot').forEach(d => {
-    d.addEventListener('click', () => {
-      container.querySelectorAll('.color-dot').forEach(x => x.classList.remove('active'));
-      d.classList.add('active');
-      if (inputId) {
-        $(inputId).value = d.dataset.color;
-        $(inputId).dispatchEvent(new Event('input')); // Trigger live update
-      }
-      if (editorState.activeTab === 'draw') editorState.drawColor = d.dataset.color;
-    });
-  });
-}
-
-/* ---------- Binders ---------- */
-function bindEditorEvents() {
-  const modal = $("editorModal");
-  if (!modal) return;
-
-  // Close / Cancel / Save
-  $("closeEditorInv")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
-  $("cancelEdit")?.addEventListener("click", () => { modal.style.display = "none"; setFileUI(null); elFile.value = ""; });
-
-  $("saveEdit")?.addEventListener("click", () => {
-    if (!editorState.canvas) return;
-    // For final save, we just grab the canvas content as is (WYSIWYG)
-    // Because the canvas IS the crop window.
-    editorState.canvas.toBlob((blob) => {
-      const editedFile = new File([blob], "edited_" + (editorState.originalImage?.name || "image.jpg"), { type: "image/jpeg" });
-      setFileUI(editedFile);
-      modal.style.display = "none";
-      toast("Image Saved!");
-    }, "image/jpeg", 0.95);
-  });
-
-  // Undo/Redo
-  $("btnUndo")?.addEventListener("click", undo);
-  $("btnRedo")?.addEventListener("click", redo);
-
-  // Tabs
-  document.querySelectorAll(".editor-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
-
-  // Filters
-  document.querySelectorAll(".filter-btn").forEach(b => {
-    b.addEventListener("click", () => {
-      // Logic for presets
-      const name = b.dataset.filter;
-      // Reset base
-      editorState.filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, sepia: 0, grayscale: 0, invert: 0, warm: 0, cool: 0, vintage: 0 };
-      if (name === 'grayscale') editorState.filters.grayscale = 100;
-      if (name === 'sepia') editorState.filters.sepia = 100;
-      if (name === 'invert') editorState.filters.invert = 100;
-      if (name === 'warm') editorState.filters.warm = 50;
-      if (name === 'cool') editorState.filters.cool = 50;
-      if (name === 'vintage') editorState.filters.vintage = 60;
-      renderEditor(); updateFilterUI(); pushHistory();
-      document.querySelectorAll(".filter-btn").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-    });
-  });
-
-  // Sliders
-  const bindSlider = (id, key, suffix = "%") => {
-    $(id)?.addEventListener("input", (e) => {
-      editorState.filters[key] = Number(e.target.value);
-      $(`val-${key}`).textContent = e.target.value + suffix;
-      renderEditor();
-    });
-    $(id)?.addEventListener("change", () => pushHistory());
-  };
-  bindSlider("rng-brightness", "brightness");
-  bindSlider("rng-contrast", "contrast");
-  bindSlider("rng-saturate", "saturate");
-  bindSlider("rng-blur", "blur", "px");
-
-  // Crop Buttons
-  document.querySelectorAll("[data-crop]").forEach(b => b.addEventListener("click", () => applyCropRatio(b.dataset.crop)));
-
-  // Colors
-  generatePalette('draw-palette', null); // For Draw
-
-  $("rng-brush")?.addEventListener("input", (e) => { editorState.drawSize = Number(e.target.value); $("val-brush").textContent = e.target.value + "px"; });
-  $("btn-draw-mode")?.addEventListener("click", () => { editorState.drawMode = 'brush'; toast("Brush Mode"); });
-  $("btn-erase-mode")?.addEventListener("click", () => { editorState.drawMode = 'erase'; toast("Eraser Mode"); });
-  $("btn-clear-draw")?.addEventListener("click", () => { if (confirm("Clear drawing?")) { editorState.drawings = []; renderEditor(); pushHistory(); } });
-
-  // Text
-  $("btn-add-text")?.addEventListener("click", addText);
-  $("btn-clear-text")?.addEventListener("click", () => { editorState.texts = []; renderEditor(); pushHistory(); });
-
-  // Canvas Interactions
-  const cvs = $("editCanvas");
-  if (cvs) {
-    cvs.addEventListener("mousedown", handlePointer);
-    cvs.addEventListener("mousemove", handlePointer);
-    cvs.addEventListener("mouseup", handlePointer);
-    cvs.addEventListener("mouseleave", handlePointer);
-    // Wheel zoom
-    cvs.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      handleZoom(e.deltaY < 0 ? 1 : -1);
-    });
-  }
-}
 
 
 function setFileUI(file) {
@@ -724,7 +197,15 @@ function openEditor(file) {
     setFileUI(file);
     return;
   }
-  initEditor(file); // Use the new initEditor
+
+  if (window.PepsvalEditor) {
+    window.PepsvalEditor.open(file, (blob) => {
+      const newFile = new File([blob], file.name, { type: file.type });
+      setFileUI(newFile);
+    });
+  } else {
+    setFileUI(file);
+  }
 }
 
 function bindComposer() {
@@ -742,8 +223,7 @@ function bindComposer() {
 
   elPostBtn?.addEventListener("click", createPost);
 
-  // init editor
-  bindEditorEvents();
+
 }
 
 /* ---------- Media upload (Enhanced Progress) ---------- */
@@ -753,14 +233,14 @@ async function uploadMedia(file) {
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${me.id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
 
-  showProgress(true, "Preparing…", 0);
+  showProgress(true, "Preparingâ€¦", 0);
 
   // Faux progress animation
   let pct = 0;
   const simulateInterval = setInterval(() => {
     pct += Math.random() * 10; // random increment
     if (pct > 90) pct = 90; // cap at 90 until real completion
-    showProgress(true, "Uploading…", Math.round(pct));
+    showProgress(true, "Uploadingâ€¦", Math.round(pct));
   }, 200);
 
   try {
@@ -772,7 +252,7 @@ async function uploadMedia(file) {
 
     // Success -> jump to 100
     clearInterval(simulateInterval);
-    showProgress(true, "Finalizing…", 100);
+    showProgress(true, "Finalizingâ€¦", 100);
 
     const { data: pub } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     const url = pub?.publicUrl || null;
@@ -888,7 +368,7 @@ async function fetchComments(postIds) {
   return { counts, byPost };
 }
 
-/* comment_likes is optional; don’t crash if missing */
+/* comment_likes is optional; donâ€™t crash if missing */
 async function fetchCommentLikes(commentIds) {
   const counts = new Map();
   const mine = new Set();
@@ -949,10 +429,10 @@ function renderCommentRow(c, profMap, cLikeInfo) {
         <div class="pv-commentText">${esc(text)}</div>
         <div class="pv-commentActions">
           ${clAvail ? `<button class="pv-commentActionBtn ${clMine ? 'active' : ''}" data-action="likeComment" data-comment-id="${esc(c.id)}">
-            ${clMine ? '❤️' : '🤍'} <span class="action-count">${clCount}</span>
+            ${clMine ? 'â¤ï¸' : 'ðŸ¤'} <span class="action-count">${clCount}</span>
           </button>` : ``}
-          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}"><span>💬</span> Reply</button>
-          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}" style="color:var(--danger)"><span>🗑️</span> Delete</button>` : ``}
+          <button class="pv-commentActionBtn" data-action="replyComment" data-author-name="${esc(name)}" data-comment-id="${esc(c.id)}"><span>ðŸ’¬</span> Reply</button>
+          ${mine ? `<button class="pv-commentActionBtn" data-action="deleteComment" data-comment-id="${esc(c.id)}" style="color:var(--danger)"><span>ðŸ—‘ï¸</span> Delete</button>` : ``}
         </div>
       </div>
     </div>
@@ -1011,8 +491,8 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
     const prof = uid ? (profMap.get(uid) || {}) : {};
     const name = prof.full_name || "Seafarer";
     const avatar = prof.avatar_url || "";
-    const rank = prof.rank ? ` • ${esc(prof.rank)}` : "";
-    const country = prof.country ? ` • ${esc(prof.country)}` : "";
+    const rank = prof.rank ? ` â€¢ ${esc(prof.rank)}` : "";
+    const country = prof.country ? ` â€¢ ${esc(prof.country)}` : "";
 
     const text = getPostText(p, ks);
     const media = getPostMedia(p, ks);
@@ -1043,25 +523,25 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
           <div class="pv-postRight">
              <div style="display:flex; flex-direction:column; align-items:flex-end;">
                 <div class="pv-time">${esc(safeDate(created))}</div>
-                ${visibility === 'private' ? '<div class="post-visibility-badge">🔒 Private</div>' : ''}
+                ${visibility === 'private' ? '<div class="post-visibility-badge">ðŸ”’ Private</div>' : ''}
              </div>
              <div class="post-menu-wrap">
-               <button class="post-menu-btn" data-action="toggleMenu">⋮</button>
+               <button class="post-menu-btn" data-action="toggleMenu">â‹®</button>
                <div class="post-menu-dropdown">
                  ${isMine ? `
                    <button class="post-menu-item" data-action="deletePost">
-                     <span>🗑️</span> Delete
+                     <span>ðŸ—‘ï¸</span> Delete
                    </button>
                    <div class="post-menu-divider"></div>
                    <button class="post-menu-item" data-action="setVisibility" data-value="public">
-                     <span>🌍</span> Make Public
+                     <span>ðŸŒ</span> Make Public
                    </button>
                    <button class="post-menu-item" data-action="setVisibility" data-value="private">
-                      <span>🔒</span> Make Private
+                      <span>ðŸ”’</span> Make Private
                    </button>
                  ` : `
                    <button class="post-menu-item danger" data-action="reportPost">
-                      <span>🚩</span> Report
+                      <span>ðŸš©</span> Report
                    </button>
                  `}
                </div>
@@ -1074,17 +554,17 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
 
         <div class="pv-actions">
           <button class="pv-actionBtn ${iLiked ? 'active' : ''}" data-action="toggleLike">
-            <span class="action-icon">${iLiked ? '❤️' : '🤍'}</span>
+            <span class="action-icon">${iLiked ? 'â¤ï¸' : 'ðŸ¤'}</span>
             <span>Like</span>
             <span data-like-count>${likes}</span>
           </button>
           <button class="pv-actionBtn" data-action="toggleComments">
-            <span class="action-icon">💬</span>
+            <span class="action-icon">ðŸ’¬</span>
             <span>Comment</span>
             <span data-comment-count>${commCount}</span>
           </button>
           <button class="pv-actionBtn" data-action="sharePost">
-            <span class="action-icon">🔗</span>
+            <span class="action-icon">ðŸ”—</span>
             <span>Share</span>
           </button>
         </div>
@@ -1096,7 +576,7 @@ function renderFeed(posts, ks, profMap, likeInfo, commentInfo, cLikeInfo) {
           </div>
 
           <div class="pv-commentComposer">
-            <input data-comment-input placeholder="Write a comment…" />
+            <input data-comment-input placeholder="Write a commentâ€¦" />
             <button class="pv-btn" data-action="sendComment">Send</button>
           </div>
         </div>
@@ -1114,7 +594,7 @@ async function createPost() {
 
   try {
     elPostBtn && (elPostBtn.disabled = true);
-    setStatus("Posting…");
+    setStatus("Postingâ€¦");
 
     let mediaUrl = null;
     if (selectedFile) mediaUrl = await uploadMedia(selectedFile);
@@ -1147,7 +627,7 @@ async function createPost() {
     setStatus("");
 
     // Reload list (safe + consistent)
-    await loadFeed();
+    await loadFeed(); setupGlobalNotifications();
   } catch (e) {
     showDbError("Post failed", e);
     setStatus("");
@@ -1161,7 +641,7 @@ async function deletePost(postId) {
   if (!confirm("Delete this post?")) return;
 
   try {
-    setStatus("Deleting…");
+    setStatus("Deletingâ€¦");
     const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", me.id);
     if (error) throw error;
 
@@ -1191,12 +671,12 @@ async function toggleLike(postId, postEl) {
   if (currentlyLiked) {
     count = Math.max(0, count - 1);
     btn.classList.remove("active");
-    if (iconEl) iconEl.textContent = "🤍";
+    if (iconEl) iconEl.textContent = "ðŸ¤";
   }
   else {
     count = count + 1;
     btn.classList.add("active");
-    if (iconEl) iconEl.textContent = "❤️";
+    if (iconEl) iconEl.textContent = "â¤ï¸";
   }
   countEl.textContent = String(count);
 
@@ -1217,12 +697,12 @@ async function toggleLike(postId, postEl) {
     if (currentlyLiked) {
       countEl.textContent = String(count + 1);
       btn.classList.add("active");
-      if (iconEl) iconEl.textContent = "❤️";
+      if (iconEl) iconEl.textContent = "â¤ï¸";
     }
     else {
       countEl.textContent = String(Math.max(0, count - 1));
       btn.classList.remove("active");
-      if (iconEl) iconEl.textContent = "🤍";
+      if (iconEl) iconEl.textContent = "ðŸ¤";
     }
     showDbError("Like failed", e);
   }
@@ -1284,7 +764,7 @@ async function sendComment(postId, postEl) {
   if (input) {
     input.value = "";
     input.removeAttribute("data-reply-to");
-    input.placeholder = "Write a comment…";
+    input.placeholder = "Write a commentâ€¦";
   }
 
   try {
@@ -1335,11 +815,11 @@ async function toggleCommentLike(commentId, btn) {
   if (currentlyLiked) {
     count = Math.max(0, count - 1);
     btn.classList.remove("active");
-    btn.innerHTML = `🤍 <span class="action-count">${count}</span>`;
+    btn.innerHTML = `ðŸ¤ <span class="action-count">${count}</span>`;
   } else {
     count++;
     btn.classList.add("active");
-    btn.innerHTML = `❤️ <span class="action-count">${count}</span>`;
+    btn.innerHTML = `â¤ï¸ <span class="action-count">${count}</span>`;
   }
 
   try {
@@ -1355,11 +835,11 @@ async function toggleCommentLike(commentId, btn) {
     if (currentlyLiked) {
       count++;
       btn.classList.add("active");
-      btn.innerHTML = `❤️ <span class="action-count">${count}</span>`;
+      btn.innerHTML = `â¤ï¸ <span class="action-count">${count}</span>`;
     } else {
       count = Math.max(0, count - 1);
       btn.classList.remove("active");
-      btn.innerHTML = `🤍 <span class="action-count">${count}</span>`;
+      btn.innerHTML = `ðŸ¤ <span class="action-count">${count}</span>`;
     }
     showDbError("Comment like failed", e);
   }
@@ -1474,7 +954,7 @@ function bindFeedEvents() {
         wrap.style.display = "block";
         input.value = `@${author} `;
         input.setAttribute("data-reply-to", cid);
-        input.placeholder = `Replying to ${author}…`;
+        input.placeholder = `Replying to ${author}â€¦`;
         input.focus();
       }
       return;
@@ -1572,7 +1052,7 @@ function showSkeleton() {
 async function loadFeed() {
   try {
     showSkeleton();
-    setStatus("Loading feed…");
+    setStatus("Loading feedâ€¦");
 
     const posts = await fetchPosts();
     const ks = detectPostKeys(posts[0] || {});
@@ -1693,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindComposer();
   bindFeedEvents();
 
-  await loadFeed();
+  await loadFeed(); setupGlobalNotifications();
 
   // --- PROFILE SEARCH LOGIC ---
   const searchInput = $("searchInput");
@@ -1745,3 +1225,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 });
+
+/* ---------- Notifications ---------- */
+function setupGlobalNotifications() {
+  if (!me) return;
+
+  supabase.channel('feed_global_notifs')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      table: 'notifications',
+      filter: `user_id=eq.${me.id}`
+    }, (payload) => {
+      console.log("New notif:", payload.new);
+      toast(`🔔 ${payload.new.title}: ${payload.new.body}`);
+
+      // Update Chats nav dot if possible?
+      // Not implemented in HTML yet, but toast is the key requirement.
+    })
+    .subscribe();
+}

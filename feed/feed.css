@@ -377,7 +377,6 @@
   margin: 16px 0;
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
