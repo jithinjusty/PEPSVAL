@@ -106,11 +106,19 @@ export async function getMessagingStatus(myId, theirId) {
  * Create a new conversation between two users
  */
 export async function createConversation(u1, u2) {
-  const { data: conv, error } = await supabase.from("conversations").insert({}).select().single();
-  if (error) throw error;
-  await supabase.from("conversation_participants").insert([
-    { conversation_id: conv.id, profile_id: u1 },
-    { conversation_id: conv.id, profile_id: u2 }
-  ]);
-  return conv.id;
+  // Use RPC to avoid RLS race conditions where we can't see the conversation we just created
+  // because we haven't been added as a participant yet.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Determine which arg is the "other" user
+  const otherId = u1 === user.id ? u2 : u1;
+
+  const { data, error } = await supabase.rpc('create_new_conversation', { other_user_id: otherId });
+
+  if (error) {
+    console.error("Error creating conversation:", error);
+    throw error;
+  }
+  return data;
 }
