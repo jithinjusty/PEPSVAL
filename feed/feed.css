@@ -503,6 +503,12 @@
   margin-bottom: 16px;
 }
 
+.pv-commentReply {
+  margin-left: 42px;
+  padding-left: 12px;
+  border-left: 2px solid var(--stroke);
+}
+
 .pv-commentAvatar {
   width: 32px;
   height: 32px;

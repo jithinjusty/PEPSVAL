@@ -1074,12 +1074,40 @@ function showSkeleton() {
   `).join("");
 }
 
+async function fetchPost(id) {
+  const { data, error } = await supabase.from("posts").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ? [data] : [];
+}
+
 async function loadFeed() {
   try {
     showSkeleton();
-    setStatus("Loading feed…");
+    setStatus("Loading…");
 
-    const posts = await fetchPosts();
+    const params = new URLSearchParams(window.location.search);
+    const specificPostId = params.get("id");
+
+    let posts = [];
+    if (specificPostId) {
+      // Single post mode
+      posts = await fetchPost(specificPostId);
+      if (!posts.length) {
+        elList.innerHTML = `<div style="padding:24px; text-align:center;">Post not found or deleted. <a href="/feed/index.html">Go to Feed</a></div>`;
+        setStatus("");
+        return;
+      }
+    } else {
+      // Normal feed
+      posts = await fetchPosts();
+    }
+
+    // Hide composer if single post (optional, but cleaner)
+    if (specificPostId) {
+      const composer = document.querySelector(".composer");
+      if (composer) composer.style.display = "none";
+    }
+
     const ks = detectPostKeys(posts[0] || {});
 
     const postIds = [];

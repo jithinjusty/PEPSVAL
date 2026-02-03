@@ -282,22 +282,22 @@ function paintHeader() {
   elProfileName.innerHTML = name;
 
   if (profile?.is_verified) {
-    elProfileName.innerHTML += ` <span class="v-badge" title="Verified Member">âœ…</span>`;
+    elProfileName.innerHTML += ` <span class="v-badge" title="Verified Member">&#9989;</span>`;
   }
 
   // mini row tries to show rank + nationality for seafarer, else role/company hints
   if (accountKind === "seafarer") {
-    elMiniRank.textContent = safeText(profile?.rank, "â€”");
-    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
+    elMiniRank.textContent = safeText(profile?.rank, "&mdash;");
+    elMiniNationality.textContent = safeText(profile?.nationality, "&mdash;");
   } else if (accountKind === "company") {
-    elMiniRank.textContent = safeText(profile?.company_name, "â€”");
-    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
+    elMiniRank.textContent = safeText(profile?.company_name, "&mdash;");
+    elMiniNationality.textContent = safeText(profile?.nationality, "&mdash;");
   } else if (accountKind === "professional") {
-    elMiniRank.textContent = safeText(profile?.role, "â€”");
-    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
+    elMiniRank.textContent = safeText(profile?.role, "&mdash;");
+    elMiniNationality.textContent = safeText(profile?.nationality, "&mdash;");
   } else {
-    elMiniRank.textContent = safeText(profile?.rank || profile?.role, "â€”");
-    elMiniNationality.textContent = safeText(profile?.nationality, "â€”");
+    elMiniRank.textContent = safeText(profile?.rank || profile?.role, "&mdash;");
+    elMiniNationality.textContent = safeText(profile?.nationality, "&mdash;");
   }
 
   setAvatar(profile?.avatar_url, name);
@@ -599,8 +599,8 @@ function paintCompanyEmails(list) {
     return `
       <div class="multiRow" data-idx="${idx}">
         <input class="input" placeholder="email" value="${escapeHtml(email)}" ${editing ? "" : "disabled"} />
-        <input class="input" placeholder="purpose (Career / Supportâ€¦)" value="${escapeHtml(purpose)}" ${editing ? "" : "disabled"} />
-        <button class="iconBtn" type="button" data-action="removeEmail" ${editing ? "" : "disabled"}>âœ•</button>
+        <input class="input" placeholder="purpose (Career / Support&hellip;)" value="${escapeHtml(purpose)}" ${editing ? "" : "disabled"} />
+        <button class="iconBtn" type="button" data-action="removeEmail" ${editing ? "" : "disabled"}>&#10005;</button>
       </div>`;
   }).join("");
 }
@@ -644,7 +644,7 @@ async function loadPostsSafe() {
   if (!me) return;
   if (!postsWrap) return;
 
-  postsWrap.textContent = "Loadingâ€¦";
+  postsWrap.textContent = "Loading&hellip;";
   postCounts.textContent = "0 posts";
 
   try {
@@ -698,7 +698,7 @@ async function loadPostsSafe() {
                 <option value="hide" ${vis === "hide" ? "selected" : ""}>Hide</option>
                 <option value="private" ${vis === "private" ? "selected" : ""}>Private</option>
               </select>
-              <button class="pv-btn pv-btn-ghost" style="padding:4px 10px; color:var(--danger); border-color:var(--stroke);" type="button" data-action="deletePost" data-id="${id}" title="Delete">âœ•</button>
+              <button class="pv-btn pv-btn-ghost" style="padding:4px 10px; color:var(--danger); border-color:var(--stroke);" type="button" data-action="deletePost" data-id="${id}" title="Delete">&#10005;</button>
             </div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">${escapeHtml(formatDate(r.created_at || r.inserted_at || ""))}</div>
@@ -763,7 +763,7 @@ function daysToHuman(days) {
 }
 
 function computeExpiry(expiryDate) {
-  if (!expiryDate) return { raw: "", label: "â€”" };
+  if (!expiryDate) return { raw: "", label: "&mdash;" };
   const now = new Date();
   const exp = new Date(expiryDate);
   const diff = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));

@@ -42,7 +42,7 @@ function roleToJobsLabel(role) {
       "Post a job (coming next)",
       "This space is for companies/institutes to create and manage job posts.",
       `
-        <div class="muted">Next we’ll add: job post form → approvals → applicants → chat.</div>
+        <div class="muted">Next we’ll add: job post form &rarr; approvals &rarr; applicants &rarr; chat.</div>
         <div style="margin-top:10px;">
           <button class="pv-btn" type="button" disabled>+ Create job (soon)</button>
         </div>
@@ -102,7 +102,7 @@ function roleToJobsLabel(role) {
           jobSearchDrop.innerHTML = data.map(j => `
             <div class="searchItem" style="display:flex; flex-direction:column; padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="alert('Job details for ${j.title} coming soon!')">
               <div style="font-weight:800; font-size:14px; color:#1F6F86;">${j.title}</div>
-              <div style="font-size:12px; opacity:.7; color:#444;">${j.company || "Unknown Company"} • ${j.location || "Remote"}</div>
+              <div style="font-size:12px; opacity:.7; color:#444;">${j.company || "Unknown Company"} &bull; ${j.location || "Remote"}</div>
               <div style="font-size:11px; margin-top:2px; color:#888;">Rank: ${j.rank || "Any"}</div>
             </div>
           `).join("");
