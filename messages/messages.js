@@ -11,6 +11,11 @@ const emojiBtn = document.getElementById("emojiBtn");
 const emojiPicker = document.getElementById("emojiPicker");
 const emojiGrid = document.getElementById("emojiGrid");
 const voiceBtn = document.getElementById("voiceBtn");
+const voiceRecordingUI = document.getElementById("voiceRecordingUI");
+const recordingTime = document.getElementById("recordingTime");
+const cancelRecording = document.getElementById("cancelRecording");
+const sendRecording = document.getElementById("sendRecording");
+const chatInputContainer = document.getElementById("chatInputContainer");
 const notifCount = document.getElementById("notifCount");
 
 const currentUrlParams = new URLSearchParams(window.location.search);
@@ -74,27 +79,65 @@ document.addEventListener('click', (e) => {
 // Input change listener
 if (chatInput) {
   chatInput.addEventListener('input', toggleSendVoiceButton);
+  chatInput.addEventListener('keyup', toggleSendVoiceButton);
+  chatInput.addEventListener('change', toggleSendVoiceButton);
 
   // Enter key to send
-  chatInput.addEventListener('keypress', (e) => {
+  chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (sendBtn && chatInput.value.trim()) {
-        sendBtn.click();
+      const hasText = chatInput.value.trim().length > 0;
+      if (hasText) {
+        e.preventDefault();
+        console.log('Enter pressed, triggering send');
+        if (sendBtn) sendBtn.click();
       }
     }
   });
 }
 
-// Voice button (placeholder for audio recording)
+// --- VOICE RECORDING LOGIC ---
+let recordingInterval = null;
+let recordingSeconds = 0;
+
+function startVoiceRecording() {
+  if (chatInputContainer) chatInputContainer.style.display = 'none';
+  if (voiceRecordingUI) voiceRecordingUI.style.display = 'flex';
+  recordingSeconds = 0;
+  if (recordingTime) recordingTime.textContent = '0:00';
+
+  recordingInterval = setInterval(() => {
+    recordingSeconds++;
+    const mins = Math.floor(recordingSeconds / 60);
+    const secs = recordingSeconds % 60;
+    if (recordingTime) recordingTime.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, 1000);
+}
+
+function stopVoiceRecording(shouldSend = false) {
+  if (recordingInterval) clearInterval(recordingInterval);
+  if (chatInputContainer) chatInputContainer.style.display = 'flex';
+  if (voiceRecordingUI) voiceRecordingUI.style.display = 'none';
+
+  if (shouldSend) {
+    const timeStr = recordingTime ? recordingTime.textContent : "0:00";
+    const text = `🎤 Voice Message (${timeStr})`;
+    sendPrivateMessage(text);
+  }
+}
+
+// Voice button
 if (voiceBtn) {
-  voiceBtn.onclick = () => {
-    alert('Voice recording feature coming soon! For now, you can type messages or use emojis.');
-  };
+  voiceBtn.onclick = startVoiceRecording;
+}
+if (cancelRecording) {
+  cancelRecording.onclick = () => stopVoiceRecording(false);
+}
+if (sendRecording) {
+  sendRecording.onclick = () => stopVoiceRecording(true);
 }
 
 // Tab switching
-if (tabCommunity) tabCommunity.onclick = () => switchTab("community");
+if (tabCommunity) tabCommunity.onclick = () => { currentConversationId = null; switchTab("community"); };
 if (tabMessages) tabMessages.onclick = () => switchTab("messages");
 if (tabNotifications) tabNotifications.onclick = () => switchTab("notifications");
 
@@ -535,6 +578,7 @@ async function loadPrivateChat(convId) {
 
   // IMPORTANT: Update UI to show input
   updateTabUI();
+  toggleSendVoiceButton(); // Set initial state (Mic vs Send)
 }
 
 function renderPrivateMessage(m, container = list) {
@@ -671,6 +715,32 @@ async function acceptRequest(senderId, notifId) {
 }
 
 // --- SEND LOGIC ---
+async function sendPrivateMessage(text) {
+  if (!text || !currentUser || !currentConversationId) return;
+
+  // 1. Insert message
+  const { error } = await supabase.from("private_messages").insert({
+    conversation_id: currentConversationId,
+    sender_id: currentUser.id,
+    content: text
+  });
+
+  if (error) {
+    alert("Failed to send");
+  } else {
+    // 2. Notify other user (fire and forget)
+    if (currentOtherId) {
+      sendNotification(
+        currentOtherId,
+        "New Message",
+        `${currentProfile?.full_name || currentUser.user_metadata?.full_name || 'Someone'} sent you a message.`,
+        { conversationId: currentConversationId, sender_id: currentUser.id },
+        "message"
+      );
+    }
+  }
+}
+
 if (sendBtn) sendBtn.onclick = async () => {
   const text = chatInput.value.trim();
   if (!text || !currentUser) return;
@@ -683,29 +753,7 @@ if (sendBtn) sendBtn.onclick = async () => {
     if (error) alert("Failed to send");
   } else {
     // Private
-    if (!currentConversationId) return;
-
-    // 1. Insert message
-    const { error } = await supabase.from("private_messages").insert({
-      conversation_id: currentConversationId,
-      sender_id: currentUser.id,
-      content: text
-    });
-
-    if (error) {
-      alert("Failed to send");
-    } else {
-      // 2. Notify other user (fire and forget)
-      if (currentOtherId) {
-        sendNotification(
-          currentOtherId,
-          "New Message",
-          `${currentProfile?.full_name || currentUser.user_metadata?.full_name || 'Someone'} sent you a message.`,
-          { conversationId: currentConversationId, sender_id: currentUser.id },
-          "message"
-        );
-      }
-    }
+    await sendPrivateMessage(text);
   }
 };
 

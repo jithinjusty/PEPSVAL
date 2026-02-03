@@ -248,10 +248,82 @@
 }
 
 @media (min-width: 1024px) {
-  .chatInput Wrap {
+  .chatInputWrap {
     left: calc(50% + 130px);
     bottom: 32px;
   }
+}
+
+/* Voice Recording UI */
+.voice-recording-ui {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff3b30;
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  background: #ff3b30;
+  border-radius: 50%;
+  animation: pulse 1s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.cancel-btn {
+  background: transparent;
+  border: none;
+  color: #8e8e8e;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.send-recording-btn {
+  background: #0095f6;
+  border: none;
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.send-recording-btn:active {
+  transform: scale(0.9);
 }
 
 #notifCount {
