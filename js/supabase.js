@@ -36,11 +36,14 @@ export async function getCurrentUser() {
  */
 export async function sendNotification(userId, title, body, data = {}, type = "alert") {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
     console.log(`Sending notification to ${userId}: ${title}`);
     const { error } = await supabase
       .from("notifications")
       .insert({
-        user_id: userId,
+        user_id: userId,          // For "Users can view their own notifications" policy
+        recipient_id: userId,     // Redundant but safe for "notifications_select_own" policy
+        actor_id: user?.id,       // For "notifications read own" policy (Sender visibility)
         title,
         body,
         metadata: data,
@@ -84,17 +87,15 @@ export async function getMessagingStatus(myId, theirId) {
   const common = myConvs?.find(mc => theirConvs?.some(tc => tc.conversation_id === mc.conversation_id));
   if (common) return { status: 'connected', conversationId: common.conversation_id };
 
-  // 2. Check for pending request
+  // 2. Check for pending request SENT BY ME
+  // We check for a notification where user_id=theirId (recipient) AND actor_id=myId (sender)
   const { data: req } = await supabase
     .from("notifications")
     .select("id")
     .eq("user_id", theirId)
+    .eq("actor_id", myId)
     .eq("type", "message_request")
     .maybeSingle();
-
-  // Note: For simplicity, we assume if ANY message_request for this user exists, 
-  // we check metadata in the client if needed, but eq("metadata->sender_id", myId) would be ideal if Supabase supports it well here.
-  // Using a simpler approach: fetch all pending and filter.
 
   if (req) return { status: 'pending' };
 
